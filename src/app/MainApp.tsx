@@ -34,6 +34,9 @@ import {
   startOfLocalDay,
 } from './dateTimeUtils';
 import { DraftCard } from '../components/draft-card/DraftCard';
+import { ArchiveNavigation } from '../components/archive/ArchiveNavigation';
+import { ArchiveView } from '../components/archive/ArchiveView';
+import { CardSwitcher } from '../components/card-switcher/CardSwitcher';
 import { DetachedCompletionCoupon } from '../components/task-card/DetachedCompletionCoupon';
 import { TaskCard } from '../components/task-card/TaskCard';
 const createId = (): string => {
@@ -68,14 +71,18 @@ const useViewportWidth = (): number => {
 
 const MainApp: React.FC = () => {
   const viewportWidth = useViewportWidth();
+  const [isArchiveOpen, setIsArchiveOpen] = useState(false);
 
-  const [currentCard, setCurrentCard] = useState<VisualCard>({
-    id: createId(),
-    title: 'Продумать движение новой карточки',
-    kind: 'single',
-    timeMode: 'none',
-    createdAt: new Date().toISOString(),
-  });
+  const [cards, setCards] = useState<VisualCard[]>(() => [
+    {
+      id: createId(),
+      title: 'Продумать движение новой карточки',
+      kind: 'single',
+      timeMode: 'none',
+      createdAt: new Date().toISOString(),
+    },
+  ]);
+  const [activeCardId, setActiveCardId] = useState(() => cards[0]!.id);
 
   const [creationState, setCreationState] =
     useState<CreationState>('idle');
@@ -114,6 +121,8 @@ const MainApp: React.FC = () => {
   const commitTimerRef = useRef<number | null>(null);
 
   const isCreating = creationState !== 'idle';
+  const activeCard =
+    cards.find((card) => card.id === activeCardId) ?? cards[0]!;
   const currentCardExitX = Math.max(520, viewportWidth * 0.72);
   const draftPalette = PALETTES[timeMode ?? 'none'];
 
@@ -282,7 +291,7 @@ const MainApp: React.FC = () => {
         ? new Date(creationDateTimeValue).toISOString()
         : undefined;
 
-      setCurrentCard({
+      const newCard: VisualCard = {
         id: createId(),
         title: draftTitle.trim(),
         kind: 'single',
@@ -292,7 +301,10 @@ const MainApp: React.FC = () => {
         reminderAt:
           creationTimeMode === 'reminder' ? storedDate : undefined,
         createdAt: new Date().toISOString(),
-      });
+      };
+
+      setCards((previous) => [...previous, newCard]);
+      setActiveCardId(newCard.id);
 
       resetDraft();
       setCreationCycle((previous) => previous + 1);
@@ -588,28 +600,49 @@ const MainApp: React.FC = () => {
   };
 
   const handleCompleteCard = (couponBounds: DOMRect) => {
-    if (currentCard.completedAt) {
+    if (activeCard.completedAt) {
       return;
     }
 
     setDetachedCoupon({
-      id: currentCard.id,
+      id: activeCard.id,
       left: couponBounds.left,
       top: couponBounds.top,
       width: couponBounds.width,
       height: couponBounds.height,
-      palette: PALETTES[currentCard.timeMode],
+      palette: PALETTES[activeCard.timeMode],
     });
 
-    setCurrentCard((previous) => ({
-      ...previous,
-      completedAt: new Date().toISOString(),
-    }));
+    setCards((previous) =>
+      previous.map((card) =>
+        card.id === activeCard.id
+          ? {
+              ...card,
+              completedAt: new Date().toISOString(),
+            }
+          : card,
+      ),
+    );
   };
 
   return (
     <main className="relative h-full w-full overflow-hidden">
-      <TableBackground />
+      <ArchiveView isOpen={isArchiveOpen} />
+
+      <motion.div
+        className="absolute inset-0 z-20 h-full w-full"
+        animate={{ y: isArchiveOpen ? '-100%' : '0%' }}
+        transition={{ duration: 0.85, ease: [0.32, 0.72, 0, 1] }}
+      >
+        <TableBackground />
+
+        <div className="absolute left-1/2 top-4 z-30 -translate-x-1/2">
+          <CardSwitcher
+            cards={cards}
+            activeCardId={activeCardId}
+            onSelectCard={setActiveCardId}
+          />
+        </div>
 
       <div className="relative z-10 flex h-full w-full items-center justify-center px-4 py-8">
         <div
@@ -621,7 +654,7 @@ const MainApp: React.FC = () => {
         >
           <AnimatePresence initial={false} mode="popLayout">
             <motion.div
-              key={currentCard.id}
+              key={creationCycle}
               initial={{
                 opacity: 0,
                 y: 18,
@@ -666,7 +699,21 @@ const MainApp: React.FC = () => {
                 pointerEvents: isCreating ? 'none' : 'auto',
               }}
             >
-              <TaskCard card={currentCard} onComplete={handleCompleteCard} />
+              <AnimatePresence initial={false} mode="wait">
+                <motion.div
+                  key={activeCard.id}
+                  initial={{ opacity: 0, x: 6 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -6 }}
+                  transition={{ duration: 0.2, ease: 'easeOut' }}
+                  className="absolute inset-0"
+                >
+                  <TaskCard
+                    card={activeCard}
+                    onComplete={handleCompleteCard}
+                  />
+                </motion.div>
+              </AnimatePresence>
             </motion.div>
           </AnimatePresence>
 
@@ -861,6 +908,12 @@ const MainApp: React.FC = () => {
           />
         )}
       </AnimatePresence>
+      </motion.div>
+
+      <ArchiveNavigation
+        isArchiveOpen={isArchiveOpen}
+        onToggle={() => setIsArchiveOpen((previous) => !previous)}
+      />
     </main>
   );
 };
