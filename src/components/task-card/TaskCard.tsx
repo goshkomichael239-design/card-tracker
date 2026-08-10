@@ -54,20 +54,6 @@ export const TaskCard: React.FC<TaskCardProps> = ({ card, onComplete }) => {
       />
 
       <div
-        className="pointer-events-none absolute inset-0"
-        style={{
-          transform: 'translate(2px, 5px)',
-          borderRadius: `${CARD_RADIUS}px`,
-          backgroundColor: '#77624B',
-          backgroundImage: `url(${cardboardTexture})`,
-          backgroundPosition: 'center',
-          backgroundSize: 'cover',
-          backgroundBlendMode: 'multiply',
-          boxShadow: 'inset 0 -2px 2px rgba(0,0,0,0.38)',
-        }}
-      />
-
-      <div
         className="pointer-events-none absolute"
         style={{
           top: 4,

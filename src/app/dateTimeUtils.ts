@@ -2,24 +2,27 @@ export const padNumber = (value: number): string => {
   return String(value).padStart(2, '0');
 };
 
+const SHORT_DATE_FORMATTER = new Intl.DateTimeFormat('ru-RU', {
+  day: '2-digit',
+  month: 'short',
+});
+
+const HUMAN_DATE_FORMATTER = new Intl.DateTimeFormat('ru-RU', {
+  day: 'numeric',
+  month: 'long',
+  year: 'numeric',
+  hour: '2-digit',
+  minute: '2-digit',
+});
+
 export const formatShortDate = (value: string): string => {
-  return new Intl.DateTimeFormat('ru-RU', {
-    day: '2-digit',
-    month: 'short',
-  })
-    .format(new Date(value))
+  return SHORT_DATE_FORMATTER.format(new Date(value))
     .replace('.', '')
     .toUpperCase();
 };
 
 export const formatHumanDate = (value: string): string => {
-  return new Intl.DateTimeFormat('ru-RU', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(new Date(value));
+  return HUMAN_DATE_FORMATTER.format(new Date(value));
 };
 
 export const formatCompletedDate = (value: string): string => {

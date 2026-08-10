@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 
 import moleskineTexture from '../../assets/Moleskine.avif';
 import type { VisualCard } from '../../app/cardTheme';
@@ -16,7 +16,7 @@ interface CardSwitcherProps {
 
 const MAX_VISIBLE_ROWS = 4;
 const WHEEL_THRESHOLD = 36;
-const WHEEL_COOLDOWN_MS = 260;
+const WHEEL_COOLDOWN_MS = 160;
 
 export const CardSwitcher: React.FC<CardSwitcherProps> = ({
   cards,
@@ -28,6 +28,14 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
   }));
   const wheelAccumulatorRef = useRef(0);
   const wheelCooldownUntilRef = useRef(0);
+  const switcherRef = useRef<HTMLDivElement | null>(null);
+  const cardsRef = useRef(cards);
+  const activeCardIdRef = useRef(activeCardId);
+  const onSelectCardRef = useRef(onSelectCard);
+
+  cardsRef.current = cards;
+  activeCardIdRef.current = activeCardId;
+  onSelectCardRef.current = onSelectCard;
 
   const activeIndex = Math.max(
     0,
@@ -42,46 +50,69 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
     [cards, windowStart],
   );
 
-  const handleWheel = (event: React.WheelEvent<HTMLDivElement>) => {
-    event.preventDefault();
+  useEffect(() => {
+    const switcher = switcherRef.current;
 
-    const now = Date.now();
-    if (now < wheelCooldownUntilRef.current) {
+    if (!switcher) {
+      return;
+    }
+
+    const handleWheel = (event: WheelEvent) => {
+      event.preventDefault();
+
+      const currentCards = cardsRef.current;
+      if (currentCards.length <= 1) {
+        return;
+      }
+
+      const now = Date.now();
+      if (now < wheelCooldownUntilRef.current) {
+        wheelAccumulatorRef.current = 0;
+        wheelCooldownUntilRef.current = now + WHEEL_COOLDOWN_MS;
+        return;
+      }
+
+      const normalizedDelta =
+        event.deltaMode === 1
+          ? event.deltaY * 16
+          : event.deltaMode === 2
+            ? event.deltaY * window.innerHeight
+            : event.deltaY;
+      wheelAccumulatorRef.current += normalizedDelta;
+
+      if (Math.abs(wheelAccumulatorRef.current) < WHEEL_THRESHOLD) {
+        return;
+      }
+
+      const currentActiveIndex = Math.max(
+        0,
+        currentCards.findIndex(
+          (card) => card.id === activeCardIdRef.current,
+        ),
+      );
+      const direction = wheelAccumulatorRef.current > 0 ? 1 : -1;
+      const nextIndex =
+        (currentActiveIndex + direction + currentCards.length) %
+        currentCards.length;
+
       wheelAccumulatorRef.current = 0;
-      return;
-    }
+      wheelCooldownUntilRef.current = now + WHEEL_COOLDOWN_MS;
+      onSelectCardRef.current(currentCards[nextIndex]!.id);
+    };
 
-    const normalizedDelta =
-      event.deltaMode === 1
-        ? event.deltaY * 16
-        : event.deltaMode === 2
-          ? event.deltaY * window.innerHeight
-          : event.deltaY;
-    wheelAccumulatorRef.current += normalizedDelta;
+    switcher.addEventListener('wheel', handleWheel, { passive: false });
 
-    if (Math.abs(wheelAccumulatorRef.current) < WHEEL_THRESHOLD) {
-      return;
-    }
-
-    const direction = wheelAccumulatorRef.current > 0 ? 1 : -1;
-    const nextIndex = Math.min(
-      cards.length - 1,
-      Math.max(0, activeIndex + direction),
-    );
-    wheelAccumulatorRef.current = 0;
-    wheelCooldownUntilRef.current = now + WHEEL_COOLDOWN_MS;
-
-    if (nextIndex !== activeIndex) {
-      onSelectCard(cards[nextIndex].id);
-    }
-  };
+    return () => {
+      switcher.removeEventListener('wheel', handleWheel);
+    };
+  }, []);
 
   return (
     <>
       <div
+        ref={switcherRef}
         className="relative"
         style={{ width: config.width, height: config.height }}
-        onWheel={handleWheel}
       >
         <div
           className="relative h-full w-full overflow-hidden"
@@ -122,13 +153,14 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
                   >
                     {isActive && (
                       <span
-                        className="pointer-events-none absolute left-1/2 top-1/2"
+                        className="pointer-events-none absolute left-0 top-1/2"
                         style={{
-                          width: config.activeWidth,
+                          left: -10,
+                          right: -(config.paddingRight - 8),
                           height: config.activeHeight,
                           borderRadius: config.activeRadius,
                           backgroundColor: `rgba(46,42,36,${config.activeOpacity})`,
-                          transform: 'translate(-50%, -50%)',
+                          transform: 'translateY(-50%)',
                         }}
                       />
                     )}
@@ -154,14 +186,16 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
           className="absolute top-1/2 flex -translate-y-1/2 flex-col"
           style={{ left: config.dotsX, gap: config.dotGap }}
         >
-          {cards.map((card) => {
-            const isActive = card.id === activeCardId;
+          {Array.from({ length: MAX_VISIBLE_ROWS }, (_, position) => {
+            const card = visibleCards[position];
+            const isActive = card?.id === activeCardId;
 
             return (
               <button
-                key={card.id}
+                key={card?.id ?? 'empty-' + position}
                 type="button"
-                onClick={() => onSelectCard(card.id)}
+                onClick={() => card && onSelectCard(card.id)}
+                disabled={!card}
                 className="shrink-0 rounded-full border-0 p-0"
                 style={{
                   width: config.dotSize,
@@ -173,7 +207,11 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
                     ? '0 0 0 1px rgba(25,20,16,0.42)'
                     : 'none',
                 }}
-                aria-label={`Выбрать карточку ${card.title}`}
+                aria-label={
+                  card
+                    ? 'Выбрать карточку ' + card.title
+                    : 'Пустая позиция ' + (position + 1)
+                }
                 aria-pressed={isActive}
               />
             );

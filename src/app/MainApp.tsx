@@ -37,6 +37,7 @@ import { DraftCard } from '../components/draft-card/DraftCard';
 import { ArchiveNavigation } from '../components/archive/ArchiveNavigation';
 import { ArchiveView } from '../components/archive/ArchiveView';
 import { CardSwitcher } from '../components/card-switcher/CardSwitcher';
+import { CardStack } from '../components/card-stack/CardStack';
 import { DetachedCompletionCoupon } from '../components/task-card/DetachedCompletionCoupon';
 import { TaskCard } from '../components/task-card/TaskCard';
 const createId = (): string => {
@@ -73,15 +74,53 @@ const MainApp: React.FC = () => {
   const viewportWidth = useViewportWidth();
   const [isArchiveOpen, setIsArchiveOpen] = useState(false);
 
-  const [cards, setCards] = useState<VisualCard[]>(() => [
-    {
-      id: createId(),
-      title: 'Продумать движение новой карточки',
-      kind: 'single',
-      timeMode: 'none',
-      createdAt: new Date().toISOString(),
-    },
-  ]);
+  const [cards, setCards] = useState<VisualCard[]>(() => {
+    if (!import.meta.env.DEV) {
+      return [
+        {
+          id: createId(),
+          title: 'Продумать движение новой карточки',
+          kind: 'single',
+          timeMode: 'none',
+          createdAt: new Date().toISOString(),
+        },
+      ];
+    }
+
+    const now = Date.now();
+    const seeds: Array<{ title: string; timeMode: TimeMode }> = [
+      { title: 'Хлеб', timeMode: 'none' },
+      { title: 'Абсолютное безумие', timeMode: 'none' },
+      { title: 'Мама мыла раму', timeMode: 'deadline' },
+      { title: 'Рыба в воде', timeMode: 'reminder' },
+      { title: 'Кленовый сироп', timeMode: 'deadline' },
+      {
+        title: 'Продумать движение новой карточки',
+        timeMode: 'reminder',
+      },
+      {
+        title:
+          'Очень длинное название карточки для проверки обрезания текста в переключателе',
+        timeMode: 'none',
+      },
+    ];
+
+    return seeds.map((seed, index) => {
+      const targetAt = new Date(
+        now + (index + 1) * 24 * 60 * 60 * 1000,
+      ).toISOString();
+
+      return {
+        id: createId(),
+        title: seed.title,
+        kind: 'single',
+        timeMode: seed.timeMode,
+        deadlineAt: seed.timeMode === 'deadline' ? targetAt : undefined,
+        reminderAt: seed.timeMode === 'reminder' ? targetAt : undefined,
+        createdAt: new Date(now - index * 60 * 1000).toISOString(),
+      };
+    });
+  });
   const [activeCardId, setActiveCardId] = useState(() => cards[0]!.id);
 
   const [creationState, setCreationState] =
@@ -652,6 +691,8 @@ const MainApp: React.FC = () => {
             maxHeight: '78vh',
           }}
         >
+          <CardStack cards={cards} activeCardId={activeCardId} />
+
           <AnimatePresence initial={false} mode="popLayout">
             <motion.div
               key={creationCycle}
@@ -699,7 +740,7 @@ const MainApp: React.FC = () => {
                 pointerEvents: isCreating ? 'none' : 'auto',
               }}
             >
-              <AnimatePresence initial={false} mode="wait">
+              <AnimatePresence initial={false} mode="sync">
                 <motion.div
                   key={activeCard.id}
                   initial={{ opacity: 0, x: 6 }}
@@ -707,6 +748,10 @@ const MainApp: React.FC = () => {
                   exit={{ opacity: 0, x: -6 }}
                   transition={{ duration: 0.2, ease: 'easeOut' }}
                   className="absolute inset-0"
+                  style={{
+                    willChange: 'transform, opacity',
+                    backfaceVisibility: 'hidden',
+                  }}
                 >
                   <TaskCard
                     card={activeCard}
