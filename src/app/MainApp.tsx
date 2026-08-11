@@ -51,6 +51,28 @@ const createId = (): string => {
   return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 };
 
+type CompletionPhase =
+  | 'idle'
+  | 'preparing-next'
+  | 'coupon-complete'
+  | 'waiting-for-coupon'
+  | 'exiting'
+  | 'finalizing';
+
+interface CompletionTransition {
+  phase: CompletionPhase;
+  completedCard: VisualCard | null;
+  nextCard: VisualCard | null;
+}
+
+const IDLE_COMPLETION_TRANSITION: CompletionTransition = {
+  phase: 'idle',
+  completedCard: null,
+  nextCard: null,
+};
+
+const ignoreCompletion = (): void => undefined;
+
 const useViewportWidth = (): number => {
   const [width, setWidth] = useState(() => {
     if (typeof window === 'undefined') {
@@ -155,13 +177,32 @@ const MainApp: React.FC = () => {
   const [isGhostHovered, setIsGhostHovered] = useState(false);
   const [detachedCoupon, setDetachedCoupon] =
     useState<DetachedCoupon | null>(null);
+  const [completionTransition, setCompletionTransition] =
+    useState<CompletionTransition>(IDLE_COMPLETION_TRANSITION);
 
   const titleInputRef = useRef<HTMLTextAreaElement | null>(null);
   const commitTimerRef = useRef<number | null>(null);
+  const completionTransitionRef = useRef(completionTransition);
 
   const isCreating = creationState !== 'idle';
-  const activeCard =
-    cards.find((card) => card.id === activeCardId) ?? cards[0]!;
+  const activeCard = cards.find((card) => card.id === activeCardId);
+  const isCompletionTransitioning =
+    completionTransition.phase !== 'idle';
+  const isCompletionExiting = completionTransition.phase === 'exiting';
+  const displayedActiveCard =
+    completionTransition.phase === 'preparing-next' ||
+    completionTransition.phase === 'coupon-complete' ||
+    completionTransition.phase === 'waiting-for-coupon' ||
+    completionTransition.phase === 'exiting'
+      ? completionTransition.completedCard
+      : activeCard;
+  const preparedNextCard =
+    completionTransition.phase === 'preparing-next' ||
+    completionTransition.phase === 'coupon-complete' ||
+    completionTransition.phase === 'waiting-for-coupon' ||
+    completionTransition.phase === 'exiting'
+      ? completionTransition.nextCard
+      : null;
   const currentCardExitX = Math.max(520, viewportWidth * 0.72);
   const draftPalette = PALETTES[timeMode ?? 'none'];
 
@@ -240,6 +281,14 @@ const MainApp: React.FC = () => {
     setIsManualCalendarOpen(false);
   }, []);
 
+  const updateCompletionTransition = useCallback(
+    (nextTransition: CompletionTransition) => {
+      completionTransitionRef.current = nextTransition;
+      setCompletionTransition(nextTransition);
+    },
+    [],
+  );
+
   useEffect(() => {
     if (creationState !== 'editing' || draftStep !== 'title') {
       return;
@@ -272,8 +321,68 @@ const MainApp: React.FC = () => {
     };
   }, []);
 
+  useEffect(() => {
+    if (
+      completionTransition.phase === 'preparing-next' ||
+      completionTransition.phase === 'coupon-complete'
+    ) {
+      let secondFrameId: number | null = null;
+      const firstFrameId = window.requestAnimationFrame(() => {
+        secondFrameId = window.requestAnimationFrame(() => {
+          const transition = completionTransitionRef.current;
+
+          if (transition.phase === 'coupon-complete') {
+            updateCompletionTransition({
+              ...transition,
+              phase: 'exiting',
+            });
+          } else if (transition.phase === 'preparing-next') {
+            updateCompletionTransition({
+              ...transition,
+              phase: 'waiting-for-coupon',
+            });
+          }
+        });
+      });
+
+      return () => {
+        window.cancelAnimationFrame(firstFrameId);
+        if (secondFrameId !== null) {
+          window.cancelAnimationFrame(secondFrameId);
+        }
+      };
+    }
+
+    if (completionTransition.phase === 'finalizing') {
+      let secondFrameId: number | null = null;
+      const firstFrameId = window.requestAnimationFrame(() => {
+        secondFrameId = window.requestAnimationFrame(() => {
+          updateCompletionTransition(IDLE_COMPLETION_TRANSITION);
+        });
+      });
+
+      return () => {
+        window.cancelAnimationFrame(firstFrameId);
+        if (secondFrameId !== null) {
+          window.cancelAnimationFrame(secondFrameId);
+        }
+      };
+    }
+  }, [completionTransition, updateCompletionTransition]);
+
+  const handleSelectCard = useCallback((cardId: string) => {
+    if (completionTransitionRef.current.phase !== 'idle') {
+      return;
+    }
+
+    setActiveCardId(cardId);
+  }, []);
+
   const handleStartCreating = () => {
-    if (creationState !== 'idle') {
+    if (
+      creationState !== 'idle' ||
+      completionTransitionRef.current.phase !== 'idle'
+    ) {
       return;
     }
 
@@ -639,8 +748,30 @@ const MainApp: React.FC = () => {
   };
 
   const handleCompleteCard = (couponBounds: DOMRect) => {
-    if (activeCard.completedAt) {
+    if (
+      !activeCard ||
+      activeCard.completedAt ||
+      completionTransitionRef.current.phase !== 'idle'
+    ) {
       return;
+    }
+
+    const completedCard: VisualCard = {
+      ...activeCard,
+      completedAt: new Date().toISOString(),
+    };
+    const activeIndex = cards.findIndex(
+      (card) => card.id === activeCard.id,
+    );
+    let nextCard: VisualCard | null = null;
+
+    for (let offset = 1; offset < cards.length; offset += 1) {
+      const candidate = cards[(activeIndex + offset) % cards.length];
+
+      if (candidate && !candidate.completedAt) {
+        nextCard = candidate;
+        break;
+      }
     }
 
     setDetachedCoupon({
@@ -652,16 +783,51 @@ const MainApp: React.FC = () => {
       palette: PALETTES[activeCard.timeMode],
     });
 
+    updateCompletionTransition({
+      phase: 'preparing-next',
+      completedCard,
+      nextCard,
+    });
+  };
+
+  const handleCouponFlightComplete = () => {
+    setDetachedCoupon(null);
+
+    const transition = completionTransitionRef.current;
+
+    if (transition.phase === 'waiting-for-coupon') {
+      updateCompletionTransition({
+        ...transition,
+        phase: 'exiting',
+      });
+    } else if (transition.phase === 'preparing-next') {
+      updateCompletionTransition({
+        ...transition,
+        phase: 'coupon-complete',
+      });
+    }
+  };
+
+  const handleCompletionExitComplete = () => {
+    const transition = completionTransitionRef.current;
+
+    if (
+      transition.phase !== 'exiting' ||
+      !transition.completedCard
+    ) {
+      return;
+    }
+
+    updateCompletionTransition({
+      ...transition,
+      phase: 'finalizing',
+    });
     setCards((previous) =>
-      previous.map((card) =>
-        card.id === activeCard.id
-          ? {
-              ...card,
-              completedAt: new Date().toISOString(),
-            }
-          : card,
+      previous.filter(
+        (card) => card.id !== transition.completedCard!.id,
       ),
     );
+    setActiveCardId(transition.nextCard?.id ?? '');
   };
 
   return (
@@ -679,7 +845,7 @@ const MainApp: React.FC = () => {
           <CardSwitcher
             cards={cards}
             activeCardId={activeCardId}
-            onSelectCard={setActiveCardId}
+            onSelectCard={handleSelectCard}
           />
         </div>
 
@@ -693,75 +859,122 @@ const MainApp: React.FC = () => {
         >
           <CardStack cards={cards} activeCardId={activeCardId} />
 
-          <AnimatePresence initial={false} mode="popLayout">
-            <motion.div
-              key={creationCycle}
-              initial={{
-                opacity: 0,
-                y: 18,
-                rotate: -1.5,
-                scale: 0.96,
-              }}
-              animate={
-                isCreating
-                  ? {
-                      x: currentCardExitX,
-                      y: -125,
-                      rotate: 15,
-                      scale: 0.86,
-                      opacity: 0,
-                      filter: 'blur(2px) saturate(0.65)',
-                    }
-                  : {
-                      x: 0,
-                      y: 0,
-                      rotate: 0,
-                      scale: 1,
-                      opacity: 1,
-                      filter: 'blur(0px) saturate(1)',
-                    }
-              }
-              exit={{
-                x: currentCardExitX,
-                y: -125,
-                rotate: 15,
-                scale: 0.86,
-                opacity: 0,
-              }}
-              transition={{
-                type: 'spring',
-                stiffness: 185,
-                damping: 21,
-                mass: 0.9,
-              }}
-              className="absolute inset-0"
+          {preparedNextCard && (
+            <div
+              className="pointer-events-none absolute inset-0"
               style={{
-                zIndex: 20,
-                pointerEvents: isCreating ? 'none' : 'auto',
+                zIndex: 19,
+                backfaceVisibility: 'hidden',
               }}
             >
-              <AnimatePresence initial={false} mode="sync">
-                <motion.div
-                  key={activeCard.id}
-                  initial={{ opacity: 0, x: 6 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -6 }}
-                  transition={{ duration: 0.2, ease: 'easeOut' }}
-                  className="absolute inset-0"
-                  style={{
-                    willChange: 'transform, opacity',
-                    backfaceVisibility: 'hidden',
-                  }}
-                >
-                  <TaskCard
-                    card={activeCard}
-                    onComplete={handleCompleteCard}
-                  />
-                </motion.div>
-              </AnimatePresence>
-            </motion.div>
-          </AnimatePresence>
+              <TaskCard
+                card={preparedNextCard}
+                onComplete={ignoreCompletion}
+              />
+            </div>
+          )}
 
+          <AnimatePresence initial={false} mode="popLayout">
+            {displayedActiveCard && (
+              <motion.div
+                key={creationCycle}
+                initial={{
+                  opacity: 0,
+                  y: 18,
+                  rotate: -1.5,
+                  scale: 0.96,
+                }}
+                animate={
+                  isCreating
+                    ? {
+                        x: currentCardExitX,
+                        y: -125,
+                        rotate: 15,
+                        scale: 0.86,
+                        opacity: 0,
+                        filter: 'blur(2px) saturate(0.65)',
+                      }
+                    : {
+                        x: 0,
+                        y: 0,
+                        rotate: 0,
+                        scale: 1,
+                        opacity: 1,
+                        filter: 'blur(0px) saturate(1)',
+                      }
+                }
+                exit={{
+                  x: currentCardExitX,
+                  y: -125,
+                  rotate: 15,
+                  scale: 0.86,
+                  opacity: 0,
+                }}
+                transition={{
+                  type: 'spring',
+                  stiffness: 185,
+                  damping: 21,
+                  mass: 0.9,
+                }}
+                className="absolute inset-0"
+                style={{
+                  zIndex: 20,
+                  pointerEvents:
+                    isCreating || isCompletionTransitioning
+                      ? 'none'
+                      : 'auto',
+                }}
+              >
+                <AnimatePresence initial={false} mode="sync">
+                  <motion.div
+                    key={displayedActiveCard.id}
+                    initial={
+                      completionTransition.phase === 'finalizing'
+                        ? false
+                        : { opacity: 0, x: 6 }
+                    }
+                    animate={
+                      isCompletionExiting
+                        ? {
+                            opacity: 0,
+                            x: 18,
+                            y: -8,
+                            rotate: 1.2,
+                            scale: 0.985,
+                          }
+                        : {
+                            opacity: 1,
+                            x: 0,
+                            y: 0,
+                            rotate: 0,
+                            scale: 1,
+                          }
+                    }
+                    exit={{ opacity: 0, x: -6 }}
+                    transition={
+                      isCompletionExiting
+                        ? {
+                            duration: 0.4,
+                            ease: [0.32, 0.72, 0, 1],
+                          }
+                        : { duration: 0.2, ease: 'easeOut' }
+                    }
+                    onAnimationComplete={handleCompletionExitComplete}
+                    className="absolute inset-0"
+                    style={{
+                      willChange: 'transform, opacity',
+                      backfaceVisibility: 'hidden',
+                    }}
+                  >
+                    <TaskCard
+                      card={displayedActiveCard}
+                      onComplete={handleCompleteCard}
+                    />
+                  </motion.div>
+                </AnimatePresence>
+              </motion.div>
+            )}
+          </AnimatePresence>
           <AnimatePresence initial={false}>
             {creationState === 'idle' && (
               <motion.div
@@ -949,7 +1162,7 @@ const MainApp: React.FC = () => {
           <DetachedCompletionCoupon
             key={detachedCoupon.id}
             coupon={detachedCoupon}
-            onFlightComplete={() => setDetachedCoupon(null)}
+            onFlightComplete={handleCouponFlightComplete}
           />
         )}
       </AnimatePresence>

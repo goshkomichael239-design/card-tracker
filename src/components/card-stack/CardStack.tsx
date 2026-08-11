@@ -26,10 +26,13 @@ export const CardStack: React.FC<CardStackProps> = ({
     0,
     cards.findIndex((card) => card.id === activeCardId),
   );
-  const layerCount = Math.min(
-    cards.length - 1,
-    MAX_LOWER_LAYERS,
-    Math.max(0, Math.round(config.visibleLayers)),
+  const layerCount = Math.max(
+    0,
+    Math.min(
+      cards.length - 1,
+      MAX_LOWER_LAYERS,
+      Math.max(0, Math.round(config.visibleLayers)),
+    ),
   );
   const stackCards = useMemo(
     () =>
