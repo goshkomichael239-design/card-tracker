@@ -14,6 +14,7 @@ interface CardStackProps {
 }
 
 const MAX_LOWER_LAYERS = 6;
+const SHOW_CARD_STACK_DEBUG = false;
 
 export const CardStack: React.FC<CardStackProps> = ({
   cards,
@@ -57,7 +58,7 @@ export const CardStack: React.FC<CardStackProps> = ({
         ))}
       </div>
 
-      {import.meta.env.DEV && (
+      {import.meta.env.DEV && SHOW_CARD_STACK_DEBUG && (
         <CardStackDebugPanel config={config} onChange={setConfig} />
       )}
     </>

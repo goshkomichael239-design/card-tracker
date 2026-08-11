@@ -38,6 +38,7 @@ import { ArchiveNavigation } from '../components/archive/ArchiveNavigation';
 import { ArchiveView } from '../components/archive/ArchiveView';
 import { CardSwitcher } from '../components/card-switcher/CardSwitcher';
 import { CardStack } from '../components/card-stack/CardStack';
+import { CompletedCardStack } from '../components/completed-stack/CompletedCardStack';
 import { DetachedCompletionCoupon } from '../components/task-card/DetachedCompletionCoupon';
 import { TaskCard } from '../components/task-card/TaskCard';
 const createId = (): string => {
@@ -857,6 +858,7 @@ const MainApp: React.FC = () => {
             maxHeight: '78vh',
           }}
         >
+          <CompletedCardStack />
           <CardStack cards={cards} activeCardId={activeCardId} />
 
           {preparedNextCard && (

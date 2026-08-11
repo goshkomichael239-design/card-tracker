@@ -17,6 +17,7 @@ interface CardSwitcherProps {
 const MAX_VISIBLE_ROWS = 4;
 const WHEEL_THRESHOLD = 36;
 const WHEEL_COOLDOWN_MS = 160;
+const SHOW_CARD_SWITCHER_DEBUG = false;
 
 export const CardSwitcher: React.FC<CardSwitcherProps> = ({
   cards,
@@ -219,7 +220,7 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
         </div>
       </div>
 
-      {import.meta.env.DEV && (
+      {import.meta.env.DEV && SHOW_CARD_SWITCHER_DEBUG && (
         <CardSwitcherDebugPanel config={config} onChange={setConfig} />
       )}
     </>
