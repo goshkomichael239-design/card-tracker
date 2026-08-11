@@ -1,0 +1,7 @@
+interface:
+  display_name: "Card Tracker Development"
+  short_description: "Safe, scoped development for Card Tracker"
+  default_prompt: "Use $card-tracker-development to make a minimal, verified change in the Card Tracker repository."
+
+policy:
+  allow_implicit_invocation: true
