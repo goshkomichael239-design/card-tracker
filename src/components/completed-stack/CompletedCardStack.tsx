@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 
 import cardboardTexture from '../../assets/cardboard.avif';
 import cardBackTexture from '../../assets/card_back.png';
@@ -11,6 +11,10 @@ import {
 } from './completedStackConfig';
 
 const SHOW_COMPLETED_STACK_DEBUG = false;
+
+interface CompletedCardStackProps {
+  completedCount: number;
+}
 
 interface CompletedLayerOffset {
   x: number;
@@ -77,21 +81,32 @@ const getLayerOffsets = (
     };
   });
 
-export const CompletedCardStack: React.FC = () => {
+export const CompletedCardStack: React.FC<CompletedCardStackProps> = ({
+  completedCount,
+}) => {
   const [config, setConfig] = useState<CompletedStackConfig>(() => ({
     ...INITIAL_COMPLETED_STACK_CONFIG,
   }));
+  const [devCompletedCount, setDevCompletedCount] = useState<number | null>(
+    null,
+  );
+  const effectiveCompletedCount =
+    import.meta.env.DEV && devCompletedCount !== null
+      ? devCompletedCount
+      : completedCount;
   const layerCount = Math.max(
-    1,
-    Math.min(
-      COMPLETED_STACK_MAX_LAYERS,
-      Math.round(config.completedCount),
-    ),
+    0,
+    Math.min(COMPLETED_STACK_MAX_LAYERS, effectiveCompletedCount),
   );
   const offsets = useMemo(
     () => getLayerOffsets(config, layerCount),
     [config, layerCount],
   );
+  useEffect(() => {
+    const image = new Image();
+    image.src = cardBackTexture;
+    void image.decode?.().catch(() => undefined);
+  }, []);
 
   return (
     <>
@@ -100,7 +115,7 @@ export const CompletedCardStack: React.FC = () => {
         style={{ zIndex: 9 }}
         aria-hidden="true"
       >
-        {offsets.map((offset, index) => {
+        {layerCount > 0 && offsets.map((offset, index) => {
           const isAccent =
             index === layerCount - 1 || index === layerCount - 2;
           const shadowScale = isAccent ? 1 : 0.5;
@@ -141,24 +156,14 @@ export const CompletedCardStack: React.FC = () => {
           <div className="fixed right-3 top-3 z-[100] flex gap-2">
             <button
               type="button"
-              onClick={() =>
-                setConfig((current) => ({
-                  ...current,
-                  completedCount: COMPLETED_STACK_MAX_LAYERS,
-                }))
-              }
+              onClick={() => setDevCompletedCount(COMPLETED_STACK_MAX_LAYERS)}
               className="rounded-md border border-white/15 bg-black/75 px-3 py-2 font-mono text-[10px] text-white/80 shadow-lg"
             >
               Заполнить стопку
             </button>
             <button
               type="button"
-              onClick={() =>
-                setConfig((current) => ({
-                  ...current,
-                  completedCount: 1,
-                }))
-              }
+              onClick={() => setDevCompletedCount(1)}
               className="rounded-md border border-white/15 bg-black/75 px-3 py-2 font-mono text-[10px] text-white/80 shadow-lg"
             >
               Оставить одну

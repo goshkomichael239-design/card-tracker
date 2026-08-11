@@ -41,6 +41,7 @@ import { CardStack } from '../components/card-stack/CardStack';
 import { CompletedCardStack } from '../components/completed-stack/CompletedCardStack';
 import { DetachedCompletionCoupon } from '../components/task-card/DetachedCompletionCoupon';
 import { TaskCard } from '../components/task-card/TaskCard';
+import { TransientTaskCardOverlay } from '../components/task-card/TransientTaskCardOverlay';
 const createId = (): string => {
   if (
     typeof globalThis.crypto !== 'undefined' &&
@@ -52,27 +53,13 @@ const createId = (): string => {
   return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 };
 
-type CompletionPhase =
-  | 'idle'
-  | 'preparing-next'
-  | 'coupon-complete'
-  | 'waiting-for-coupon'
-  | 'exiting'
-  | 'finalizing';
+type TransientOutgoingKind = 'switch' | 'completion';
 
-interface CompletionTransition {
-  phase: CompletionPhase;
-  completedCard: VisualCard | null;
-  nextCard: VisualCard | null;
+interface TransientOutgoingCard {
+  key: number;
+  card: VisualCard;
+  kind: TransientOutgoingKind;
 }
-
-const IDLE_COMPLETION_TRANSITION: CompletionTransition = {
-  phase: 'idle',
-  completedCard: null,
-  nextCard: null,
-};
-
-const ignoreCompletion = (): void => undefined;
 
 const useViewportWidth = (): number => {
   const [width, setWidth] = useState(() => {
@@ -178,32 +165,18 @@ const MainApp: React.FC = () => {
   const [isGhostHovered, setIsGhostHovered] = useState(false);
   const [detachedCoupon, setDetachedCoupon] =
     useState<DetachedCoupon | null>(null);
-  const [completionTransition, setCompletionTransition] =
-    useState<CompletionTransition>(IDLE_COMPLETION_TRANSITION);
+  const [transientOutgoing, setTransientOutgoing] =
+    useState<TransientOutgoingCard | null>(null);
+  const [completedCount, setCompletedCount] = useState(0);
 
   const titleInputRef = useRef<HTMLTextAreaElement | null>(null);
   const commitTimerRef = useRef<number | null>(null);
-  const completionTransitionRef = useRef(completionTransition);
+  const completionInProgressRef = useRef(false);
+  const transientSequenceRef = useRef(0);
 
   const isCreating = creationState !== 'idle';
   const activeCard = cards.find((card) => card.id === activeCardId);
-  const isCompletionTransitioning =
-    completionTransition.phase !== 'idle';
-  const isCompletionExiting = completionTransition.phase === 'exiting';
-  const displayedActiveCard =
-    completionTransition.phase === 'preparing-next' ||
-    completionTransition.phase === 'coupon-complete' ||
-    completionTransition.phase === 'waiting-for-coupon' ||
-    completionTransition.phase === 'exiting'
-      ? completionTransition.completedCard
-      : activeCard;
-  const preparedNextCard =
-    completionTransition.phase === 'preparing-next' ||
-    completionTransition.phase === 'coupon-complete' ||
-    completionTransition.phase === 'waiting-for-coupon' ||
-    completionTransition.phase === 'exiting'
-      ? completionTransition.nextCard
-      : null;
+  const isCompletionTransitioning = completionInProgressRef.current;
   const currentCardExitX = Math.max(520, viewportWidth * 0.72);
   const draftPalette = PALETTES[timeMode ?? 'none'];
 
@@ -282,10 +255,14 @@ const MainApp: React.FC = () => {
     setIsManualCalendarOpen(false);
   }, []);
 
-  const updateCompletionTransition = useCallback(
-    (nextTransition: CompletionTransition) => {
-      completionTransitionRef.current = nextTransition;
-      setCompletionTransition(nextTransition);
+  const createTransientOutgoing = useCallback(
+    (card: VisualCard, kind: TransientOutgoingKind) => {
+      transientSequenceRef.current += 1;
+      setTransientOutgoing({
+        key: transientSequenceRef.current,
+        card,
+        kind,
+      });
     },
     [],
   );
@@ -322,67 +299,29 @@ const MainApp: React.FC = () => {
     };
   }, []);
 
-  useEffect(() => {
-    if (
-      completionTransition.phase === 'preparing-next' ||
-      completionTransition.phase === 'coupon-complete'
-    ) {
-      let secondFrameId: number | null = null;
-      const firstFrameId = window.requestAnimationFrame(() => {
-        secondFrameId = window.requestAnimationFrame(() => {
-          const transition = completionTransitionRef.current;
 
-          if (transition.phase === 'coupon-complete') {
-            updateCompletionTransition({
-              ...transition,
-              phase: 'exiting',
-            });
-          } else if (transition.phase === 'preparing-next') {
-            updateCompletionTransition({
-              ...transition,
-              phase: 'waiting-for-coupon',
-            });
-          }
-        });
-      });
+  const handleSelectCard = useCallback(
+    (cardId: string) => {
+      if (
+        completionInProgressRef.current ||
+        cardId === activeCard?.id
+      ) {
+        return;
+      }
 
-      return () => {
-        window.cancelAnimationFrame(firstFrameId);
-        if (secondFrameId !== null) {
-          window.cancelAnimationFrame(secondFrameId);
-        }
-      };
-    }
+      if (activeCard) {
+        createTransientOutgoing(activeCard, 'switch');
+      }
 
-    if (completionTransition.phase === 'finalizing') {
-      let secondFrameId: number | null = null;
-      const firstFrameId = window.requestAnimationFrame(() => {
-        secondFrameId = window.requestAnimationFrame(() => {
-          updateCompletionTransition(IDLE_COMPLETION_TRANSITION);
-        });
-      });
-
-      return () => {
-        window.cancelAnimationFrame(firstFrameId);
-        if (secondFrameId !== null) {
-          window.cancelAnimationFrame(secondFrameId);
-        }
-      };
-    }
-  }, [completionTransition, updateCompletionTransition]);
-
-  const handleSelectCard = useCallback((cardId: string) => {
-    if (completionTransitionRef.current.phase !== 'idle') {
-      return;
-    }
-
-    setActiveCardId(cardId);
-  }, []);
+      setActiveCardId(cardId);
+    },
+    [activeCard, createTransientOutgoing],
+  );
 
   const handleStartCreating = () => {
     if (
       creationState !== 'idle' ||
-      completionTransitionRef.current.phase !== 'idle'
+      completionInProgressRef.current
     ) {
       return;
     }
@@ -752,10 +691,12 @@ const MainApp: React.FC = () => {
     if (
       !activeCard ||
       activeCard.completedAt ||
-      completionTransitionRef.current.phase !== 'idle'
+      completionInProgressRef.current
     ) {
       return;
     }
+
+    completionInProgressRef.current = true;
 
     const completedCard: VisualCard = {
       ...activeCard,
@@ -775,6 +716,7 @@ const MainApp: React.FC = () => {
       }
     }
 
+    createTransientOutgoing(completedCard, 'completion');
     setDetachedCoupon({
       id: activeCard.id,
       left: couponBounds.left,
@@ -783,53 +725,21 @@ const MainApp: React.FC = () => {
       height: couponBounds.height,
       palette: PALETTES[activeCard.timeMode],
     });
-
-    updateCompletionTransition({
-      phase: 'preparing-next',
-      completedCard,
-      nextCard,
-    });
-  };
-
-  const handleCouponFlightComplete = () => {
-    setDetachedCoupon(null);
-
-    const transition = completionTransitionRef.current;
-
-    if (transition.phase === 'waiting-for-coupon') {
-      updateCompletionTransition({
-        ...transition,
-        phase: 'exiting',
-      });
-    } else if (transition.phase === 'preparing-next') {
-      updateCompletionTransition({
-        ...transition,
-        phase: 'coupon-complete',
-      });
-    }
-  };
-
-  const handleCompletionExitComplete = () => {
-    const transition = completionTransitionRef.current;
-
-    if (
-      transition.phase !== 'exiting' ||
-      !transition.completedCard
-    ) {
-      return;
-    }
-
-    updateCompletionTransition({
-      ...transition,
-      phase: 'finalizing',
-    });
     setCards((previous) =>
-      previous.filter(
-        (card) => card.id !== transition.completedCard!.id,
-      ),
+      previous.filter((card) => card.id !== completedCard.id),
     );
-    setActiveCardId(transition.nextCard?.id ?? '');
+    setActiveCardId(nextCard?.id ?? '');
+    setCompletedCount((previous) => Math.min(10, previous + 1));
   };
+
+  const handleCouponFlightComplete = useCallback(() => {
+    completionInProgressRef.current = false;
+    setDetachedCoupon(null);
+  }, []);
+
+  const handleTransientOutgoingFinish = useCallback(() => {
+    setTransientOutgoing(null);
+  }, []);
 
   return (
     <main className="relative h-full w-full overflow-hidden">
@@ -858,26 +768,11 @@ const MainApp: React.FC = () => {
             maxHeight: '78vh',
           }}
         >
-          <CompletedCardStack />
+          <CompletedCardStack completedCount={completedCount} />
           <CardStack cards={cards} activeCardId={activeCardId} />
 
-          {preparedNextCard && (
-            <div
-              className="pointer-events-none absolute inset-0"
-              style={{
-                zIndex: 19,
-                backfaceVisibility: 'hidden',
-              }}
-            >
-              <TaskCard
-                card={preparedNextCard}
-                onComplete={ignoreCompletion}
-              />
-            </div>
-          )}
-
           <AnimatePresence initial={false} mode="popLayout">
-            {displayedActiveCard && (
+            {activeCard && (
               <motion.div
                 key={creationCycle}
                 initial={{
@@ -927,56 +822,23 @@ const MainApp: React.FC = () => {
                       : 'auto',
                 }}
               >
-                <AnimatePresence initial={false} mode="sync">
-                  <motion.div
-                    key={displayedActiveCard.id}
-                    initial={
-                      completionTransition.phase === 'finalizing'
-                        ? false
-                        : { opacity: 0, x: 6 }
-                    }
-                    animate={
-                      isCompletionExiting
-                        ? {
-                            opacity: 0,
-                            x: 18,
-                            y: -8,
-                            rotate: 1.2,
-                            scale: 0.985,
-                          }
-                        : {
-                            opacity: 1,
-                            x: 0,
-                            y: 0,
-                            rotate: 0,
-                            scale: 1,
-                          }
-                    }
-                    exit={{ opacity: 0, x: -6 }}
-                    transition={
-                      isCompletionExiting
-                        ? {
-                            duration: 0.4,
-                            ease: [0.32, 0.72, 0, 1],
-                          }
-                        : { duration: 0.2, ease: 'easeOut' }
-                    }
-                    onAnimationComplete={handleCompletionExitComplete}
-                    className="absolute inset-0"
-                    style={{
-                      willChange: 'transform, opacity',
-                      backfaceVisibility: 'hidden',
-                    }}
-                  >
-                    <TaskCard
-                      card={displayedActiveCard}
-                      onComplete={handleCompleteCard}
-                    />
-                  </motion.div>
-                </AnimatePresence>
+                <TaskCard
+                  card={activeCard}
+                  onComplete={handleCompleteCard}
+                />
               </motion.div>
             )}
           </AnimatePresence>
+
+          {transientOutgoing && (
+            <TransientTaskCardOverlay
+              key={transientOutgoing.key}
+              card={transientOutgoing.card}
+              kind={transientOutgoing.kind}
+              onFinish={handleTransientOutgoingFinish}
+            />
+          )}
+
           <AnimatePresence initial={false}>
             {creationState === 'idle' && (
               <motion.div
@@ -1159,15 +1021,13 @@ const MainApp: React.FC = () => {
         </div>
       </div>
 
-      <AnimatePresence>
-        {detachedCoupon && (
-          <DetachedCompletionCoupon
-            key={detachedCoupon.id}
-            coupon={detachedCoupon}
-            onFlightComplete={handleCouponFlightComplete}
-          />
-        )}
-      </AnimatePresence>
+      {detachedCoupon && (
+        <DetachedCompletionCoupon
+          key={detachedCoupon.id}
+          coupon={detachedCoupon}
+          onFlightComplete={handleCouponFlightComplete}
+        />
+      )}
       </motion.div>
 
       <ArchiveNavigation

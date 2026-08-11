@@ -14,9 +14,16 @@ import { CountdownPanel } from './CountdownPanel';
 interface TaskCardProps {
   card: VisualCard;
   onComplete: (couponBounds: DOMRect) => void;
+  isStatic?: boolean;
+  hideCoupon?: boolean;
 }
 
-export const TaskCard: React.FC<TaskCardProps> = ({ card, onComplete }) => {
+export const TaskCard: React.FC<TaskCardProps> = ({
+  card,
+  onComplete,
+  isStatic = false,
+  hideCoupon = false
+}) => {
   const palette = PALETTES[card.timeMode];
 
   const targetAt =
@@ -154,6 +161,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({ card, onComplete }) => {
                 mode={card.timeMode}
                 completedAt={card.completedAt}
                 palette={palette}
+                isStatic={isStatic}
               />
             </div>
 
@@ -173,11 +181,13 @@ export const TaskCard: React.FC<TaskCardProps> = ({ card, onComplete }) => {
 
         <div className="flex-1" />
 
-        <CompletionCoupon
-          completedAt={card.completedAt}
-          palette={palette}
-          onComplete={onComplete}
-        />
+        {!hideCoupon && (
+          <CompletionCoupon
+            completedAt={card.completedAt}
+            palette={palette}
+            onComplete={onComplete}
+          />
+        )}
 
         <div
           className="relative z-10 flex items-center justify-between border-t pt-4"

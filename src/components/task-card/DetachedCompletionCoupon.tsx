@@ -1,5 +1,4 @@
-import React, { useMemo } from 'react';
-import { motion } from 'framer-motion';
+import React, { useEffect, useMemo, useRef } from 'react';
 
 import cardboardTexture from '../../assets/cardboard.avif';
 import {
@@ -41,31 +40,49 @@ export const DetachedCompletionCoupon: React.FC<
   }, [coupon.id]);
   const fallDistance =
     window.innerHeight - coupon.top + coupon.height + 80;
+  const couponRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const couponElement = couponRef.current;
+
+    if (!couponElement) {
+      return;
+    }
+
+    let animation: Animation | null = null;
+    const frameId = window.requestAnimationFrame(() => {
+      animation = couponElement.animate(
+        [
+          {
+            transform: 'translate3d(0, 0, 0) rotate(0deg)',
+            opacity: 1,
+          },
+          {
+            transform: `translate3d(${flight.driftX}px, ${fallDistance}px, 0) rotate(${flight.finalRotation}deg)`,
+            opacity: 1,
+          },
+        ],
+        {
+          duration: flight.duration * 1000,
+          easing: 'cubic-bezier(0.4, 0, 1, 1)',
+          fill: 'forwards',
+        },
+      );
+
+      animation.finished
+        .then(onFlightComplete)
+        .catch(() => undefined);
+    });
+
+    return () => {
+      window.cancelAnimationFrame(frameId);
+      animation?.cancel();
+    };
+  }, [fallDistance, flight, onFlightComplete]);
 
   return (
-    <motion.div
-      initial={{ x: 0, y: 0, rotate: 0, opacity: 1 }}
-      animate={{
-        x: flight.driftX,
-        y: fallDistance,
-        rotate: flight.finalRotation,
-        opacity: 1,
-      }}
-      transition={{
-        x: {
-          duration: flight.duration,
-          ease: 'linear',
-        },
-        y: {
-          duration: flight.duration,
-          ease: [0.4, 0, 1, 1],
-        },
-        rotate: {
-          duration: flight.duration,
-          ease: 'linear',
-        },
-      }}
-      onAnimationComplete={onFlightComplete}
+    <div
+      ref={couponRef}
       className="pointer-events-none fixed"
       style={{
         zIndex: 100,
@@ -74,6 +91,8 @@ export const DetachedCompletionCoupon: React.FC<
         width: coupon.width,
         height: coupon.height,
         transformOrigin: `${flight.originX}% ${flight.originY}%`,
+        willChange: 'transform, opacity',
+        backfaceVisibility: 'hidden',
         filter:
           'drop-shadow(0 18px 14px rgba(0,0,0,0.62)) drop-shadow(0 6px 5px rgba(0,0,0,0.46))',
       }}
@@ -148,6 +167,6 @@ export const DetachedCompletionCoupon: React.FC<
       >
         {'\u0417\u0430\u0432\u0435\u0440\u0448\u0438\u0442\u044c'}
       </span>
-    </motion.div>
+    </div>
   );
 };

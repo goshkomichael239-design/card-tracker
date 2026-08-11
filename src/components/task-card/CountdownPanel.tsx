@@ -10,6 +10,7 @@ interface CountdownPanelProps {
   mode: Exclude<TimeMode, 'none'>;
   completedAt?: string;
   palette: CardPalette;
+  isStatic?: boolean;
 }
 
 export const CountdownPanel: React.FC<CountdownPanelProps> = ({
@@ -17,17 +18,18 @@ export const CountdownPanel: React.FC<CountdownPanelProps> = ({
   mode,
   completedAt,
   palette,
+  isStatic = false,
 }) => {
   const [now, setNow] = useState(Date.now());
 
   useEffect(() => {
-    if (completedAt) {
+    if (completedAt || isStatic) {
       return;
     }
 
     const timer = window.setInterval(() => setNow(Date.now()), 1000);
     return () => window.clearInterval(timer);
-  }, [completedAt]);
+  }, [completedAt, isStatic]);
 
   const remaining = new Date(targetAt).getTime() - now;
 
