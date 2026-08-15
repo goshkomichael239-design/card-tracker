@@ -181,7 +181,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
 
         <div className="flex-1" />
 
-        {!hideCoupon && (
+        {(!hideCoupon || card.completedAt) && (
           <CompletionCoupon
             completedAt={card.completedAt}
             palette={palette}

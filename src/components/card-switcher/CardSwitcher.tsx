@@ -12,31 +12,38 @@ interface CardSwitcherProps {
   cards: VisualCard[];
   activeCardId: string;
   onSelectCard: (cardId: string) => void;
+  onNextCard: () => void;
+  onPreviousCard: () => void;
 }
 
 const MAX_VISIBLE_ROWS = 4;
-const WHEEL_THRESHOLD = 36;
-const WHEEL_COOLDOWN_MS = 160;
+const WHEEL_INTENT_THRESHOLD = 6;
+const WHEEL_GESTURE_END_MS = 90;
 const SHOW_CARD_SWITCHER_DEBUG = false;
 
 export const CardSwitcher: React.FC<CardSwitcherProps> = ({
   cards,
   activeCardId,
   onSelectCard,
+  onNextCard,
+  onPreviousCard,
 }) => {
   const [config, setConfig] = useState<CardSwitcherConfig>(() => ({
     ...INITIAL_CARD_SWITCHER_CONFIG,
   }));
   const wheelAccumulatorRef = useRef(0);
-  const wheelCooldownUntilRef = useRef(0);
+  const wheelGestureActiveRef = useRef(false);
+  const wheelLastEventAtRef = useRef(0);
   const switcherRef = useRef<HTMLDivElement | null>(null);
   const cardsRef = useRef(cards);
-  const activeCardIdRef = useRef(activeCardId);
-  const onSelectCardRef = useRef(onSelectCard);
+  const onNextCardRef = useRef(onNextCard);
+  const onPreviousCardRef = useRef(onPreviousCard);
 
-  cardsRef.current = cards;
-  activeCardIdRef.current = activeCardId;
-  onSelectCardRef.current = onSelectCard;
+  useEffect(() => {
+    cardsRef.current = cards;
+    onNextCardRef.current = onNextCard;
+    onPreviousCardRef.current = onPreviousCard;
+  }, [cards, onNextCard, onPreviousCard]);
 
   const activeIndex = Math.max(
     0,
@@ -66,39 +73,57 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
         return;
       }
 
-      const now = Date.now();
-      if (now < wheelCooldownUntilRef.current) {
-        wheelAccumulatorRef.current = 0;
-        wheelCooldownUntilRef.current = now + WHEEL_COOLDOWN_MS;
-        return;
-      }
-
       const normalizedDelta =
         event.deltaMode === 1
           ? event.deltaY * 16
           : event.deltaMode === 2
             ? event.deltaY * window.innerHeight
             : event.deltaY;
-      wheelAccumulatorRef.current += normalizedDelta;
 
-      if (Math.abs(wheelAccumulatorRef.current) < WHEEL_THRESHOLD) {
+      if (normalizedDelta === 0) {
         return;
       }
 
-      const currentActiveIndex = Math.max(
-        0,
-        currentCards.findIndex(
-          (card) => card.id === activeCardIdRef.current,
-        ),
-      );
+      const now = performance.now();
+      const isNewGesture =
+        now - wheelLastEventAtRef.current > WHEEL_GESTURE_END_MS;
+
+      wheelLastEventAtRef.current = now;
+
+      if (isNewGesture) {
+        wheelGestureActiveRef.current = false;
+        wheelAccumulatorRef.current = 0;
+      }
+
+      if (wheelGestureActiveRef.current) {
+        return;
+      }
+
+      if (
+        wheelAccumulatorRef.current !== 0 &&
+        Math.sign(wheelAccumulatorRef.current) !== Math.sign(normalizedDelta)
+      ) {
+        wheelAccumulatorRef.current = 0;
+      }
+
+      wheelAccumulatorRef.current += normalizedDelta;
+
+      if (
+        Math.abs(wheelAccumulatorRef.current) < WHEEL_INTENT_THRESHOLD
+      ) {
+        return;
+      }
+
       const direction = wheelAccumulatorRef.current > 0 ? 1 : -1;
-      const nextIndex =
-        (currentActiveIndex + direction + currentCards.length) %
-        currentCards.length;
 
       wheelAccumulatorRef.current = 0;
-      wheelCooldownUntilRef.current = now + WHEEL_COOLDOWN_MS;
-      onSelectCardRef.current(currentCards[nextIndex]!.id);
+      wheelGestureActiveRef.current = true;
+
+      if (direction > 0) {
+        onNextCardRef.current();
+      } else {
+        onPreviousCardRef.current();
+      }
     };
 
     switcher.addEventListener('wheel', handleWheel, { passive: false });

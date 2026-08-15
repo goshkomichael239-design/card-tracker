@@ -1,4 +1,9 @@
-import React, { useEffect, useMemo, useRef } from 'react';
+import {
+  forwardRef,
+  useEffect,
+  useImperativeHandle,
+  useRef,
+} from 'react';
 
 import cardboardTexture from '../../assets/cardboard.avif';
 import {
@@ -15,70 +20,92 @@ import {
 } from '../../app/cardTheme';
 
 interface DetachedCompletionCouponProps {
-  coupon: DetachedCoupon;
   onFlightComplete: () => void;
 }
 
-export const DetachedCompletionCoupon: React.FC<
+export interface DetachedCompletionCouponHandle {
+  launch: (coupon: DetachedCoupon) => void;
+}
+
+export const DetachedCompletionCoupon = forwardRef<
+  DetachedCompletionCouponHandle,
   DetachedCompletionCouponProps
-> = ({ coupon, onFlightComplete }) => {
+>(({ onFlightComplete }, ref) => {
   const dashPattern = `${COUPON_DASH_LENGTH} ${COUPON_DASH_GAP}`;
   const rectWidth = COUPON_WIDTH - COUPON_STROKE_INSET * 2;
   const rectHeight = COUPON_HEIGHT - COUPON_STROKE_INSET * 2;
   const rectRadius = Math.max(1, COUPON_RADIUS - COUPON_STROKE_INSET / 2);
-  const flight = useMemo(() => {
-    const driftDirection = Math.random() < 0.5 ? -1 : 1;
-    const rotationDirection = Math.random() < 0.5 ? -1 : 1;
-
-    return {
-      originX: 25 + Math.random() * 50,
-      originY: 25 + Math.random() * 50,
-      driftX: driftDirection * (18 + Math.random() * 27),
-      finalRotation: rotationDirection * (35 + Math.random() * 50),
-      duration: 1.15 + Math.random() * 0.2,
-    };
-  }, [coupon.id]);
-  const fallDistance =
-    window.innerHeight - coupon.top + coupon.height + 80;
   const couponRef = useRef<HTMLDivElement | null>(null);
+  const paperRef = useRef<HTMLDivElement | null>(null);
+  const animationRef = useRef<Animation | null>(null);
+  const onFlightCompleteRef = useRef(onFlightComplete);
 
   useEffect(() => {
-    const couponElement = couponRef.current;
+    onFlightCompleteRef.current = onFlightComplete;
+  }, [onFlightComplete]);
 
-    if (!couponElement) {
-      return;
-    }
+  useImperativeHandle(ref, () => ({
+    launch: (coupon) => {
+      const couponElement = couponRef.current;
+      const paperElement = paperRef.current;
 
-    let animation: Animation | null = null;
-    const frameId = window.requestAnimationFrame(() => {
-      animation = couponElement.animate(
+      if (!couponElement || !paperElement) {
+        return;
+      }
+
+      animationRef.current?.cancel();
+
+      const driftDirection = Math.random() < 0.5 ? -1 : 1;
+      const rotationDirection = Math.random() < 0.5 ? -1 : 1;
+      const originX = 25 + Math.random() * 50;
+      const originY = 25 + Math.random() * 50;
+      const driftX = driftDirection * (18 + Math.random() * 27);
+      const finalRotation = rotationDirection * (35 + Math.random() * 50);
+      const fallDistance = window.innerHeight - coupon.top + coupon.height + 80;
+
+      couponElement.style.left = `${coupon.left}px`;
+      couponElement.style.top = `${coupon.top}px`;
+      couponElement.style.width = `${coupon.width}px`;
+      couponElement.style.height = `${coupon.height}px`;
+      couponElement.style.transformOrigin = `${originX}% ${originY}%`;
+      couponElement.style.transform = 'translate3d(0, 0, 0) rotate(0deg)';
+      couponElement.style.visibility = 'visible';
+      paperElement.style.backgroundColor = coupon.palette.paper;
+
+      const animation = couponElement.animate(
         [
+          { transform: 'translate3d(0, 0, 0) rotate(0deg)' },
           {
-            transform: 'translate3d(0, 0, 0) rotate(0deg)',
-            opacity: 1,
-          },
-          {
-            transform: `translate3d(${flight.driftX}px, ${fallDistance}px, 0) rotate(${flight.finalRotation}deg)`,
-            opacity: 1,
+            transform: `translate3d(${driftX}px, ${fallDistance}px, 0) rotate(${finalRotation}deg)`,
           },
         ],
         {
-          duration: flight.duration * 1000,
-          easing: 'cubic-bezier(0.4, 0, 1, 1)',
+          duration: 1.15 * 1000,
+          easing: 'linear',
           fill: 'forwards',
         },
       );
 
+      animationRef.current = animation;
       animation.finished
-        .then(onFlightComplete)
-        .catch(() => undefined);
-    });
+        .then(() => {
+          if (animationRef.current !== animation) {
+            return;
+          }
 
+          couponElement.style.visibility = 'hidden';
+          animationRef.current = null;
+          onFlightCompleteRef.current();
+        })
+        .catch(() => undefined);
+    },
+  }), []);
+
+  useEffect(() => {
     return () => {
-      window.cancelAnimationFrame(frameId);
-      animation?.cancel();
+      animationRef.current?.cancel();
     };
-  }, [fallDistance, flight, onFlightComplete]);
+  }, []);
 
   return (
     <div
@@ -86,23 +113,26 @@ export const DetachedCompletionCoupon: React.FC<
       className="pointer-events-none fixed"
       style={{
         zIndex: 100,
-        left: coupon.left,
-        top: coupon.top,
-        width: coupon.width,
-        height: coupon.height,
-        transformOrigin: `${flight.originX}% ${flight.originY}%`,
-        willChange: 'transform, opacity',
+        willChange: 'transform',
         backfaceVisibility: 'hidden',
-        filter:
-          'drop-shadow(0 18px 14px rgba(0,0,0,0.62)) drop-shadow(0 6px 5px rgba(0,0,0,0.46))',
+        visibility: 'hidden',
       }}
       aria-hidden="true"
     >
       <div
+        className="pointer-events-none absolute"
+        style={{
+          inset: '5px -3px -6px 3px',
+          borderRadius: `${COUPON_RADIUS}px`,
+          backgroundColor: 'rgba(0,0,0,0.32)',
+          boxShadow: '0 5px 9px rgba(0,0,0,0.32)',
+        }}
+      />
+      <div
+        ref={paperRef}
         className="absolute inset-0 overflow-hidden"
         style={{
           borderRadius: `${COUPON_RADIUS}px`,
-          backgroundColor: coupon.palette.paper,
           backgroundImage: `
             linear-gradient(
               180deg,
@@ -115,7 +145,7 @@ export const DetachedCompletionCoupon: React.FC<
           backgroundPosition: 'center, center',
           backgroundSize: '100% 100%, cover',
           backgroundBlendMode: 'soft-light, multiply',
-          boxShadow: 'none',
+          boxShadow: '0 2px 3px rgba(0,0,0,0.22)',
         }}
       />
 
@@ -169,4 +199,4 @@ export const DetachedCompletionCoupon: React.FC<
       </span>
     </div>
   );
-};
+});

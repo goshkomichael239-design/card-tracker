@@ -13,7 +13,7 @@ import {
 const SHOW_COMPLETED_STACK_DEBUG = false;
 
 interface CompletedCardStackProps {
-  completedCount: number;
+  completedTodayCount: number;
 }
 
 interface CompletedLayerOffset {
@@ -82,7 +82,7 @@ const getLayerOffsets = (
   });
 
 export const CompletedCardStack: React.FC<CompletedCardStackProps> = ({
-  completedCount,
+  completedTodayCount,
 }) => {
   const [config, setConfig] = useState<CompletedStackConfig>(() => ({
     ...INITIAL_COMPLETED_STACK_CONFIG,
@@ -93,7 +93,7 @@ export const CompletedCardStack: React.FC<CompletedCardStackProps> = ({
   const effectiveCompletedCount =
     import.meta.env.DEV && devCompletedCount !== null
       ? devCompletedCount
-      : completedCount;
+      : completedTodayCount;
   const layerCount = Math.max(
     0,
     Math.min(COMPLETED_STACK_MAX_LAYERS, effectiveCompletedCount),

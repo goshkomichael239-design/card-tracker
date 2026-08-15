@@ -8,7 +8,7 @@ type TransientCardKind = 'switch' | 'completion';
 interface TransientTaskCardOverlayProps {
   card: VisualCard;
   kind: TransientCardKind;
-  onFinish: () => void;
+  onFinish: (kind: TransientCardKind) => void;
 }
 
 export const TransientTaskCardOverlay: React.FC<
@@ -60,7 +60,7 @@ export const TransientTaskCardOverlay: React.FC<
       );
 
       animation.finished
-        .then(onFinish)
+        .then(() => onFinish(kind))
         .catch(() => undefined);
     });
 

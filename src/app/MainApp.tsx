@@ -18,7 +18,6 @@ import {
   PHYSICAL_SPRING,
   type CardKind,
   type CreationState,
-  type DetachedCoupon,
   type DraftStep,
   type TimeMode,
   type VisualCard,
@@ -37,9 +36,11 @@ import { DraftCard } from '../components/draft-card/DraftCard';
 import { ArchiveNavigation } from '../components/archive/ArchiveNavigation';
 import { ArchiveView } from '../components/archive/ArchiveView';
 import { CardSwitcher } from '../components/card-switcher/CardSwitcher';
-import { CardStack } from '../components/card-stack/CardStack';
 import { CompletedCardStack } from '../components/completed-stack/CompletedCardStack';
-import { DetachedCompletionCoupon } from '../components/task-card/DetachedCompletionCoupon';
+import {
+  DetachedCompletionCoupon,
+  type DetachedCompletionCouponHandle,
+} from '../components/task-card/DetachedCompletionCoupon';
 import { TaskCard } from '../components/task-card/TaskCard';
 import { TransientTaskCardOverlay } from '../components/task-card/TransientTaskCardOverlay';
 const createId = (): string => {
@@ -60,6 +61,29 @@ interface TransientOutgoingCard {
   card: VisualCard;
   kind: TransientOutgoingKind;
 }
+
+const getLocalDayKey = (date: Date): string =>
+  `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+
+const isEditableTarget = (target: EventTarget | null): boolean => {
+  if (!(target instanceof Element)) {
+    return false;
+  }
+
+  return Boolean(
+    target.closest('input, textarea, select, [contenteditable="true"]'),
+  );
+};
+
+const isSceneGestureTarget = (target: EventTarget | null): boolean => {
+  if (!(target instanceof Element)) {
+    return false;
+  }
+
+  return !target.closest(
+    'button, input, textarea, select, [contenteditable="true"]',
+  );
+};
 
 const useViewportWidth = (): number => {
   const [width, setWidth] = useState(() => {
@@ -163,20 +187,35 @@ const MainApp: React.FC = () => {
     useState(false);
   const [creationCycle, setCreationCycle] = useState(0);
   const [isGhostHovered, setIsGhostHovered] = useState(false);
-  const [detachedCoupon, setDetachedCoupon] =
-    useState<DetachedCoupon | null>(null);
   const [transientOutgoing, setTransientOutgoing] =
     useState<TransientOutgoingCard | null>(null);
-  const [completedCount, setCompletedCount] = useState(0);
+  const [completedAtHistory, setCompletedAtHistory] = useState<string[]>([]);
+  const [pendingCompletedCardId, setPendingCompletedCardId] =
+    useState<string | null>(null);
+  const [currentDayKey, setCurrentDayKey] = useState(() =>
+    getLocalDayKey(new Date()),
+  );
 
   const titleInputRef = useRef<HTMLTextAreaElement | null>(null);
   const commitTimerRef = useRef<number | null>(null);
-  const completionInProgressRef = useRef(false);
+  const couponFlightInProgressRef = useRef(false);
+  const detachedCouponLayerRef =
+    useRef<DetachedCompletionCouponHandle | null>(null);
+  const completedRemovalTimerRef = useRef<number | null>(null);
+  const pendingCompletedCardIdRef = useRef<string | null>(null);
   const transientSequenceRef = useRef(0);
+  const scenePointerRef = useRef<{ id: number; y: number } | null>(null);
 
   const isCreating = creationState !== 'idle';
   const activeCard = cards.find((card) => card.id === activeCardId);
-  const isCompletionTransitioning = completionInProgressRef.current;
+  const completedTodayCount = useMemo(
+    () =>
+      completedAtHistory.filter(
+        (completedAt) =>
+          getLocalDayKey(new Date(completedAt)) === currentDayKey,
+      ).length,
+    [completedAtHistory, currentDayKey],
+  );
   const currentCardExitX = Math.max(520, viewportWidth * 0.72);
   const draftPalette = PALETTES[timeMode ?? 'none'];
 
@@ -296,16 +335,125 @@ const MainApp: React.FC = () => {
       if (commitTimerRef.current !== null) {
         window.clearTimeout(commitTimerRef.current);
       }
+
+      if (completedRemovalTimerRef.current !== null) {
+        window.clearTimeout(completedRemovalTimerRef.current);
+      }
     };
   }, []);
 
+  useEffect(() => {
+    let rolloverTimer: number | null = null;
+
+    const scheduleNextRollover = () => {
+      const now = new Date();
+      const nextDay = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate() + 1,
+      );
+      const delay = Math.max(1, nextDay.getTime() - now.getTime() + 50);
+
+      rolloverTimer = window.setTimeout(() => {
+        setCurrentDayKey(getLocalDayKey(new Date()));
+        scheduleNextRollover();
+      }, delay);
+    };
+
+    scheduleNextRollover();
+
+    return () => {
+      if (rolloverTimer !== null) {
+        window.clearTimeout(rolloverTimer);
+      }
+    };
+  }, []);
+
+  const clearCompletedRemovalTimer = useCallback(() => {
+    if (completedRemovalTimerRef.current !== null) {
+      window.clearTimeout(completedRemovalTimerRef.current);
+      completedRemovalTimerRef.current = null;
+    }
+  }, []);
+
+  const removePendingCompletedCard = useCallback(
+    (requestedCardId?: string) => {
+      const completedCardId = pendingCompletedCardIdRef.current;
+
+      if (!completedCardId) {
+        return;
+      }
+
+      const completedIndex = cards.findIndex(
+        (card) => card.id === completedCardId,
+      );
+      const completedCard = cards[completedIndex];
+
+      if (!completedCard) {
+        clearCompletedRemovalTimer();
+        pendingCompletedCardIdRef.current = null;
+        setPendingCompletedCardId(null);
+        return;
+      }
+
+      const requestedCard = cards.find(
+        (card) =>
+          card.id === requestedCardId &&
+          card.id !== completedCardId &&
+          !card.completedAt,
+      );
+      let nextCardId = requestedCard?.id ?? '';
+
+      if (!nextCardId) {
+        for (let offset = 1; offset < cards.length; offset += 1) {
+          const candidate =
+            cards[(completedIndex + offset) % cards.length];
+
+          if (candidate && !candidate.completedAt) {
+            nextCardId = candidate.id;
+            break;
+          }
+        }
+      }
+
+      clearCompletedRemovalTimer();
+      pendingCompletedCardIdRef.current = null;
+      setPendingCompletedCardId(null);
+      createTransientOutgoing(completedCard, 'switch');
+      setCards((previous) =>
+        previous.filter((card) => card.id !== completedCardId),
+      );
+      setActiveCardId(nextCardId);
+    },
+    [cards, clearCompletedRemovalTimer, createTransientOutgoing],
+  );
+
+  useEffect(() => {
+    if (!pendingCompletedCardId) {
+      return;
+    }
+
+    completedRemovalTimerRef.current = window.setTimeout(() => {
+      if (pendingCompletedCardIdRef.current === pendingCompletedCardId) {
+        removePendingCompletedCard();
+      }
+    }, 30_000);
+
+    return clearCompletedRemovalTimer;
+  }, [
+    clearCompletedRemovalTimer,
+    pendingCompletedCardId,
+    removePendingCompletedCard,
+  ]);
 
   const handleSelectCard = useCallback(
     (cardId: string) => {
-      if (
-        completionInProgressRef.current ||
-        cardId === activeCard?.id
-      ) {
+      if (cardId === activeCard?.id) {
+        return;
+      }
+
+      if (activeCard?.id === pendingCompletedCardIdRef.current) {
+        removePendingCompletedCard(cardId);
         return;
       }
 
@@ -315,13 +463,103 @@ const MainApp: React.FC = () => {
 
       setActiveCardId(cardId);
     },
-    [activeCard, createTransientOutgoing],
+    [activeCard, createTransientOutgoing, removePendingCompletedCard],
   );
+
+  const moveActiveCard = useCallback(
+    (direction: -1 | 1) => {
+      if (cards.length <= 1) {
+        return;
+      }
+
+      const currentIndex = cards.findIndex(
+        (card) => card.id === activeCardId,
+      );
+      const activeIndex = currentIndex >= 0 ? currentIndex : 0;
+      const nextIndex =
+        (activeIndex + direction + cards.length) % cards.length;
+
+      handleSelectCard(cards[nextIndex]!.id);
+    },
+    [activeCardId, cards, handleSelectCard],
+  );
+
+  const handleNextCard = useCallback(
+    () => moveActiveCard(1),
+    [moveActiveCard],
+  );
+
+  const handlePreviousCard = useCallback(
+    () => moveActiveCard(-1),
+    [moveActiveCard],
+  );
+
+  const handleScenePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (
+      isArchiveOpen ||
+      isCreating ||
+      (event.pointerType === 'mouse' && event.button !== 0) ||
+      !isSceneGestureTarget(event.target)
+    ) {
+      return;
+    }
+
+    scenePointerRef.current = { id: event.pointerId, y: event.clientY };
+    event.currentTarget.setPointerCapture(event.pointerId);
+  };
+
+  const handleScenePointerEnd = (event: React.PointerEvent<HTMLDivElement>) => {
+    const gesture = scenePointerRef.current;
+
+    if (!gesture || gesture.id !== event.pointerId) {
+      return;
+    }
+
+    scenePointerRef.current = null;
+    const deltaY = event.clientY - gesture.y;
+
+    if (Math.abs(deltaY) < 48) {
+      return;
+    }
+
+    if (deltaY < 0) {
+      handleNextCard();
+    } else {
+      handlePreviousCard();
+    }
+  };
+
+  const handleScenePointerCancel = () => {
+    scenePointerRef.current = null;
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (
+        isArchiveOpen ||
+        isCreating ||
+        isEditableTarget(event.target)
+      ) {
+        return;
+      }
+
+      if (event.key === 'ArrowDown' || event.key === 'PageDown') {
+        event.preventDefault();
+        handleNextCard();
+      } else if (event.key === 'ArrowUp' || event.key === 'PageUp') {
+        event.preventDefault();
+        handlePreviousCard();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleNextCard, handlePreviousCard, isArchiveOpen, isCreating]);
 
   const handleStartCreating = () => {
     if (
       creationState !== 'idle' ||
-      completionInProgressRef.current
+      pendingCompletedCardId !== null
     ) {
       return;
     }
@@ -691,33 +929,19 @@ const MainApp: React.FC = () => {
     if (
       !activeCard ||
       activeCard.completedAt ||
-      completionInProgressRef.current
+      couponFlightInProgressRef.current
     ) {
       return;
     }
 
-    completionInProgressRef.current = true;
+    couponFlightInProgressRef.current = true;
+    const completedAt = new Date().toISOString();
 
     const completedCard: VisualCard = {
       ...activeCard,
-      completedAt: new Date().toISOString(),
+      completedAt,
     };
-    const activeIndex = cards.findIndex(
-      (card) => card.id === activeCard.id,
-    );
-    let nextCard: VisualCard | null = null;
-
-    for (let offset = 1; offset < cards.length; offset += 1) {
-      const candidate = cards[(activeIndex + offset) % cards.length];
-
-      if (candidate && !candidate.completedAt) {
-        nextCard = candidate;
-        break;
-      }
-    }
-
-    createTransientOutgoing(completedCard, 'completion');
-    setDetachedCoupon({
+    detachedCouponLayerRef.current?.launch({
       id: activeCard.id,
       left: couponBounds.left,
       top: couponBounds.top,
@@ -726,20 +950,32 @@ const MainApp: React.FC = () => {
       palette: PALETTES[activeCard.timeMode],
     });
     setCards((previous) =>
-      previous.filter((card) => card.id !== completedCard.id),
+      previous.map((card) =>
+        card.id === completedCard.id ? completedCard : card,
+      ),
     );
-    setActiveCardId(nextCard?.id ?? '');
-    setCompletedCount((previous) => Math.min(10, previous + 1));
+    pendingCompletedCardIdRef.current = completedCard.id;
+    setPendingCompletedCardId(completedCard.id);
+    setCompletedAtHistory((previous) => [
+      ...previous.filter(
+        (previousCompletedAt) =>
+          getLocalDayKey(new Date(previousCompletedAt)) ===
+          getLocalDayKey(new Date(completedAt)),
+      ),
+      completedAt,
+    ]);
   };
 
   const handleCouponFlightComplete = useCallback(() => {
-    completionInProgressRef.current = false;
-    setDetachedCoupon(null);
+    couponFlightInProgressRef.current = false;
   }, []);
 
-  const handleTransientOutgoingFinish = useCallback(() => {
-    setTransientOutgoing(null);
-  }, []);
+  const handleTransientOutgoingFinish = useCallback(
+    (_kind: TransientOutgoingKind) => {
+      setTransientOutgoing(null);
+    },
+    [],
+  );
 
   return (
     <main className="relative h-full w-full overflow-hidden">
@@ -757,10 +993,18 @@ const MainApp: React.FC = () => {
             cards={cards}
             activeCardId={activeCardId}
             onSelectCard={handleSelectCard}
+            onNextCard={handleNextCard}
+            onPreviousCard={handlePreviousCard}
           />
         </div>
 
-      <div className="relative z-10 flex h-full w-full items-center justify-center px-4 py-8">
+      <div
+        className="relative z-10 flex h-full w-full items-center justify-center px-4 py-8"
+        style={{ touchAction: 'pan-x' }}
+        onPointerDown={handleScenePointerDown}
+        onPointerUp={handleScenePointerEnd}
+        onPointerCancel={handleScenePointerCancel}
+      >
         <div
           className="relative w-[280px] max-w-[78vw]"
           style={{
@@ -768,8 +1012,7 @@ const MainApp: React.FC = () => {
             maxHeight: '78vh',
           }}
         >
-          <CompletedCardStack completedCount={completedCount} />
-          <CardStack cards={cards} activeCardId={activeCardId} />
+          <CompletedCardStack completedTodayCount={completedTodayCount} />
 
           <AnimatePresence initial={false} mode="popLayout">
             {activeCard && (
@@ -816,10 +1059,7 @@ const MainApp: React.FC = () => {
                 className="absolute inset-0"
                 style={{
                   zIndex: 20,
-                  pointerEvents:
-                    isCreating || isCompletionTransitioning
-                      ? 'none'
-                      : 'auto',
+                  pointerEvents: isCreating ? 'none' : 'auto',
                 }}
               >
                 <TaskCard
@@ -1021,13 +1261,10 @@ const MainApp: React.FC = () => {
         </div>
       </div>
 
-      {detachedCoupon && (
-        <DetachedCompletionCoupon
-          key={detachedCoupon.id}
-          coupon={detachedCoupon}
-          onFlightComplete={handleCouponFlightComplete}
-        />
-      )}
+      <DetachedCompletionCoupon
+        ref={detachedCouponLayerRef}
+        onFlightComplete={handleCouponFlightComplete}
+      />
       </motion.div>
 
       <ArchiveNavigation

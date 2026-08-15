@@ -18,7 +18,7 @@ export interface CompletedStackConfig {
   shadowOpacity: number;
 }
 
-export const COMPLETED_STACK_MAX_LAYERS = 10;
+export const COMPLETED_STACK_MAX_LAYERS = 20;
 
 export const INITIAL_COMPLETED_STACK_CONFIG: CompletedStackConfig = {
   baseX: 54.5,
@@ -33,7 +33,7 @@ export const INITIAL_COMPLETED_STACK_CONFIG: CompletedStackConfig = {
   tailRotation: 8.9,
   scale: 0.995,
   scaleStep: 0,
-  completedCount: 10,
+  completedCount: 20,
   shadowX: 2,
   shadowY: 6,
   shadowBlur: 13.5,
