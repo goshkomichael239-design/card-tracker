@@ -203,6 +203,7 @@ const MainApp: React.FC = () => {
     useRef<DetachedCompletionCouponHandle | null>(null);
   const completedRemovalTimerRef = useRef<number | null>(null);
   const pendingCompletedCardIdRef = useRef<string | null>(null);
+  const pendingCompletedRemovalArmedRef = useRef(false);
   const transientSequenceRef = useRef(0);
   const scenePointerRef = useRef<{ id: number; y: number } | null>(null);
 
@@ -392,6 +393,7 @@ const MainApp: React.FC = () => {
       if (!completedCard) {
         clearCompletedRemovalTimer();
         pendingCompletedCardIdRef.current = null;
+        pendingCompletedRemovalArmedRef.current = false;
         setPendingCompletedCardId(null);
         return;
       }
@@ -418,6 +420,7 @@ const MainApp: React.FC = () => {
 
       clearCompletedRemovalTimer();
       pendingCompletedCardIdRef.current = null;
+      pendingCompletedRemovalArmedRef.current = false;
       setPendingCompletedCardId(null);
       createTransientOutgoing(completedCard, 'switch');
       setCards((previous) =>
@@ -429,12 +432,23 @@ const MainApp: React.FC = () => {
   );
 
   useEffect(() => {
-    if (!pendingCompletedCardId) {
+    const pendingCompletedCard = cards.find(
+      (card) => card.id === pendingCompletedCardId,
+    );
+
+    if (
+      !pendingCompletedCardId ||
+      !pendingCompletedRemovalArmedRef.current ||
+      !pendingCompletedCard?.completedAt
+    ) {
       return;
     }
 
     completedRemovalTimerRef.current = window.setTimeout(() => {
-      if (pendingCompletedCardIdRef.current === pendingCompletedCardId) {
+      if (
+        pendingCompletedRemovalArmedRef.current &&
+        pendingCompletedCardIdRef.current === pendingCompletedCardId
+      ) {
         removePendingCompletedCard();
       }
     }, 30_000);
@@ -442,6 +456,7 @@ const MainApp: React.FC = () => {
     return clearCompletedRemovalTimer;
   }, [
     clearCompletedRemovalTimer,
+    cards,
     pendingCompletedCardId,
     removePendingCompletedCard,
   ]);
@@ -955,6 +970,7 @@ const MainApp: React.FC = () => {
       ),
     );
     pendingCompletedCardIdRef.current = completedCard.id;
+    pendingCompletedRemovalArmedRef.current = true;
     setPendingCompletedCardId(completedCard.id);
     setCompletedAtHistory((previous) => [
       ...previous.filter(
@@ -981,11 +997,7 @@ const MainApp: React.FC = () => {
     <main className="relative h-full w-full overflow-hidden">
       <ArchiveView isOpen={isArchiveOpen} />
 
-      <motion.div
-        className="absolute inset-0 z-20 h-full w-full"
-        animate={{ y: isArchiveOpen ? '-100%' : '0%' }}
-        transition={{ duration: 0.85, ease: [0.32, 0.72, 0, 1] }}
-      >
+      <div className="absolute inset-0 z-20 h-full w-full">
         <TableBackground />
 
         <div className="absolute left-1/2 top-4 z-30 -translate-x-1/2">
@@ -1265,12 +1277,13 @@ const MainApp: React.FC = () => {
         ref={detachedCouponLayerRef}
         onFlightComplete={handleCouponFlightComplete}
       />
-      </motion.div>
+      </div>
 
       <ArchiveNavigation
         isArchiveOpen={isArchiveOpen}
         onToggle={() => setIsArchiveOpen((previous) => !previous)}
       />
+
     </main>
   );
 };
