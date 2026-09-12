@@ -18,6 +18,7 @@ import {
   COUPON_WIDTH,
   type DetachedCoupon,
 } from '../../app/cardTheme';
+import { INITIAL_TASK_CARD_V2_CONFIG } from './taskCardV2Config';
 
 interface DetachedCompletionCouponProps {
   onFlightComplete: () => void;
@@ -70,7 +71,7 @@ export const DetachedCompletionCoupon = forwardRef<
       couponElement.style.transformOrigin = `${originX}% ${originY}%`;
       couponElement.style.transform = 'translate3d(0, 0, 0) rotate(0deg)';
       couponElement.style.visibility = 'visible';
-      paperElement.style.backgroundColor = coupon.palette.paper;
+      paperElement.style.backgroundColor = INITIAL_TASK_CARD_V2_CONFIG.paperTint;
 
       const animation = couponElement.animate(
         [

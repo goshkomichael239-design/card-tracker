@@ -6,6 +6,7 @@ import SandboxMain from './components/sandboxes/SandboxMain';
 import SandboxArchive from './components/sandboxes/SandboxArchive';
 import SandboxStack from './components/sandboxes/SandboxStack';
 import SandboxCompletionCoupon from './components/sandboxes/SandboxCompletionCoupon';
+import SandboxTaskCardV2 from './components/sandboxes/SandboxTaskCardV2';
 
 type AppMode = 'application' | 'sandboxes';
 
@@ -13,7 +14,8 @@ type SandboxId =
   | 'main'
   | 'archive'
   | 'stack'
-  | 'completion-coupon';
+  | 'completion-coupon'
+  | 'task-card-v2';
 
 const ENABLE_SANDBOXES = true;
 
@@ -42,6 +44,15 @@ const SANDBOXES: Array<{
     label: 'Перфорация',
     component: SandboxCompletionCoupon,
   },
+  ...(import.meta.env.DEV
+    ? [
+        {
+          id: 'task-card-v2' as const,
+          label: 'TaskCard V2',
+          component: SandboxTaskCardV2,
+        },
+      ]
+    : []),
 ];
 
 const App: React.FC = () => {

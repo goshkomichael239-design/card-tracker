@@ -35,14 +35,15 @@ import {
 import { DraftCard } from '../components/draft-card/DraftCard';
 import { ArchiveNavigation } from '../components/archive/ArchiveNavigation';
 import { ArchiveView } from '../components/archive/ArchiveView';
+import { CardStack } from '../components/card-stack/CardStack';
 import { CardSwitcher } from '../components/card-switcher/CardSwitcher';
-import { CompletedCardStack } from '../components/completed-stack/CompletedCardStack';
 import {
   DetachedCompletionCoupon,
   type DetachedCompletionCouponHandle,
 } from '../components/task-card/DetachedCompletionCoupon';
 import { TaskCard } from '../components/task-card/TaskCard';
 import { TransientTaskCardOverlay } from '../components/task-card/TransientTaskCardOverlay';
+import { INITIAL_TASK_CARD_V2_CONFIG } from '../components/task-card/taskCardV2Config';
 const createId = (): string => {
   if (
     typeof globalThis.crypto !== 'undefined' &&
@@ -56,6 +57,8 @@ const createId = (): string => {
 
 type TransientOutgoingKind = 'switch' | 'completion';
 
+const ARCHIVE_STORAGE_KEY = 'card-tracker.archive.v1';
+
 interface TransientOutgoingCard {
   key: number;
   card: VisualCard;
@@ -64,6 +67,55 @@ interface TransientOutgoingCard {
 
 const getLocalDayKey = (date: Date): string =>
   `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+
+const isArchivedVisualCard = (value: unknown): value is VisualCard => {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+
+  const card = value as Record<string, unknown>;
+
+  return (
+    typeof card.id === 'string' &&
+    typeof card.title === 'string' &&
+    card.kind === 'single' &&
+    (card.timeMode === 'none' ||
+      card.timeMode === 'deadline' ||
+      card.timeMode === 'reminder') &&
+    typeof card.createdAt === 'string' &&
+    typeof card.completedAt === 'string'
+  );
+};
+
+const loadArchivedCards = (): VisualCard[] => {
+  if (typeof window === 'undefined') {
+    return [];
+  }
+
+  try {
+    const storedCards = window.localStorage.getItem(ARCHIVE_STORAGE_KEY);
+
+    if (!storedCards) {
+      return [];
+    }
+
+    const parsedCards: unknown = JSON.parse(storedCards);
+
+    if (!Array.isArray(parsedCards)) {
+      return [];
+    }
+
+    return parsedCards
+      .filter(isArchivedVisualCard)
+      .sort(
+        (left, right) =>
+          new Date(right.completedAt ?? 0).getTime() -
+          new Date(left.completedAt ?? 0).getTime(),
+      );
+  } catch {
+    return [];
+  }
+};
 
 const isEditableTarget = (target: EventTarget | null): boolean => {
   if (!(target instanceof Element)) {
@@ -155,6 +207,9 @@ const MainApp: React.FC = () => {
       };
     });
   });
+  const [archivedCards, setArchivedCards] = useState<VisualCard[]>(
+    loadArchivedCards,
+  );
   const [activeCardId, setActiveCardId] = useState(() => cards[0]!.id);
 
   const [creationState, setCreationState] =
@@ -189,7 +244,6 @@ const MainApp: React.FC = () => {
   const [isGhostHovered, setIsGhostHovered] = useState(false);
   const [transientOutgoing, setTransientOutgoing] =
     useState<TransientOutgoingCard | null>(null);
-  const [completedAtHistory, setCompletedAtHistory] = useState<string[]>([]);
   const [pendingCompletedCardId, setPendingCompletedCardId] =
     useState<string | null>(null);
   const [currentDayKey, setCurrentDayKey] = useState(() =>
@@ -209,14 +263,41 @@ const MainApp: React.FC = () => {
 
   const isCreating = creationState !== 'idle';
   const activeCard = cards.find((card) => card.id === activeCardId);
+  const firstCardCreatedAt = useMemo(() => {
+    const earliestTimestamp = [...cards, ...archivedCards].reduce<number | null>(
+      (earliest, card) => {
+        const timestamp = new Date(card.createdAt).getTime();
+
+        if (!Number.isFinite(timestamp)) {
+          return earliest;
+        }
+
+        return earliest === null ? timestamp : Math.min(earliest, timestamp);
+      },
+      null,
+    );
+
+    return earliestTimestamp === null
+      ? undefined
+      : new Date(earliestTimestamp).toISOString();
+  }, [archivedCards, cards]);
   const completedTodayCount = useMemo(
     () =>
-      completedAtHistory.filter(
-        (completedAt) =>
-          getLocalDayKey(new Date(completedAt)) === currentDayKey,
+      archivedCards.filter(
+        (card) => {
+          const completedAt = card.completedAt;
+
+          return (
+            completedAt !== undefined &&
+            getLocalDayKey(new Date(completedAt)) === currentDayKey
+          );
+        },
       ).length,
-    [completedAtHistory, currentDayKey],
+    [archivedCards, currentDayKey],
   );
+  // The completed-day count remains part of the archive/completion state, but
+  // V2 deliberately replaces its former card-back rendering with CardStack.
+  void completedTodayCount;
   const currentCardExitX = Math.max(520, viewportWidth * 0.72);
   const draftPalette = PALETTES[timeMode ?? 'none'];
 
@@ -344,6 +425,17 @@ const MainApp: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    try {
+      window.localStorage.setItem(
+        ARCHIVE_STORAGE_KEY,
+        JSON.stringify(archivedCards),
+      );
+    } catch {
+      // The active scene must remain usable when browser storage is unavailable.
+    }
+  }, [archivedCards]);
+
+  useEffect(() => {
     let rolloverTimer: number | null = null;
 
     const scheduleNextRollover = () => {
@@ -422,7 +514,7 @@ const MainApp: React.FC = () => {
       pendingCompletedCardIdRef.current = null;
       pendingCompletedRemovalArmedRef.current = false;
       setPendingCompletedCardId(null);
-      createTransientOutgoing(completedCard, 'switch');
+      createTransientOutgoing(completedCard, 'completion');
       setCards((previous) =>
         previous.filter((card) => card.id !== completedCardId),
       );
@@ -451,7 +543,7 @@ const MainApp: React.FC = () => {
       ) {
         removePendingCompletedCard();
       }
-    }, 30_000);
+    }, 2_500);
 
     return clearCompletedRemovalTimer;
   }, [
@@ -969,17 +1061,13 @@ const MainApp: React.FC = () => {
         card.id === completedCard.id ? completedCard : card,
       ),
     );
+    setArchivedCards((previous) => [
+      completedCard,
+      ...previous.filter((card) => card.id !== completedCard.id),
+    ]);
     pendingCompletedCardIdRef.current = completedCard.id;
     pendingCompletedRemovalArmedRef.current = true;
     setPendingCompletedCardId(completedCard.id);
-    setCompletedAtHistory((previous) => [
-      ...previous.filter(
-        (previousCompletedAt) =>
-          getLocalDayKey(new Date(previousCompletedAt)) ===
-          getLocalDayKey(new Date(completedAt)),
-      ),
-      completedAt,
-    ]);
   };
 
   const handleCouponFlightComplete = useCallback(() => {
@@ -995,7 +1083,11 @@ const MainApp: React.FC = () => {
 
   return (
     <main className="relative h-full w-full overflow-hidden">
-      <ArchiveView isOpen={isArchiveOpen} />
+      <ArchiveView
+        isOpen={isArchiveOpen}
+        archivedCards={archivedCards}
+        firstCardCreatedAt={firstCardCreatedAt}
+      />
 
       <div className="absolute inset-0 z-20 h-full w-full">
         <TableBackground />
@@ -1011,20 +1103,22 @@ const MainApp: React.FC = () => {
         </div>
 
       <div
-        className="relative z-10 flex h-full w-full items-center justify-center px-4 py-8"
+        className="relative z-10 flex h-full w-full items-center justify-center px-4 pb-[80px] pt-[150px]"
         style={{ touchAction: 'pan-x' }}
         onPointerDown={handleScenePointerDown}
         onPointerUp={handleScenePointerEnd}
         onPointerCancel={handleScenePointerCancel}
       >
         <div
-          className="relative w-[280px] max-w-[78vw]"
+          className="relative"
           style={{
-            aspectRatio: '9 / 16',
-            maxHeight: '78vh',
+            width: `min(${INITIAL_TASK_CARD_V2_CONFIG.width}px, 88vw, calc(85vh - 195px))`,
+            aspectRatio: `${INITIAL_TASK_CARD_V2_CONFIG.width} / ${INITIAL_TASK_CARD_V2_CONFIG.height}`,
           }}
         >
-          <CompletedCardStack completedTodayCount={completedTodayCount} />
+          {activeCard && (
+            <CardStack cards={cards} activeCardId={activeCardId} />
+          )}
 
           <AnimatePresence initial={false} mode="popLayout">
             {activeCard && (
@@ -1230,44 +1324,48 @@ const MainApp: React.FC = () => {
                 </button>
               </motion.div>
             ) : (
-              <DraftCard
-                creationCycle={creationCycle}
-                creationState={creationState}
-                palette={draftPalette}
-                draftStep={draftStep}
-                canAdvanceDraft={canAdvanceDraft}
-                titleInputRef={titleInputRef}
-                draftTitle={draftTitle}
-                selectedKind={selectedKind}
-                timeMode={timeMode}
-                selectedDateLabel={selectedDateLabel}
-                selectedDraftDate={selectedDraftDate}
-                isManualCalendarOpen={isManualCalendarOpen}
-                datePresets={datePresets}
-                calendarView={calendarView}
-                calendarCells={calendarCells}
-                currentDraftDay={currentDraftDay}
-                canGoToPreviousYear={canGoToPreviousYear}
-                canGoToPreviousMonth={canGoToPreviousMonth}
-                draftHourInput={draftHourInput}
-                draftMinuteInput={draftMinuteInput}
-                isSelectedDateTimeValid={isSelectedDateTimeValid}
-                onSubmit={handleCreateCard}
-                onCancel={handleCancelCreating}
-                onTitleChange={setDraftTitle}
-                onSelectKind={handleSelectKind}
-                onSelectTimeMode={handleSelectTimeMode}
-                onSelectDate={handleSelectDraftDate}
-                onOpenManualCalendar={handleOpenManualCalendar}
-                onChangeYear={handleChangeCalendarYear}
-                onChangeMonth={handleChangeCalendarMonth}
-                onTimeInputChange={handleDraftTimeInputChange}
-                onCommitTimeInput={handleCommitDraftTimeInput}
-                onAdjustHour={handleAdjustDraftHour}
-                onAdjustMinute={handleAdjustDraftMinute}
-                onBack={handleDraftBack}
-                onNext={handleDraftNext}
-              />
+              <div
+                className="absolute inset-0 z-40"
+              >
+                <DraftCard
+                  creationCycle={creationCycle}
+                  creationState={creationState}
+                  palette={draftPalette}
+                  draftStep={draftStep}
+                  canAdvanceDraft={canAdvanceDraft}
+                  titleInputRef={titleInputRef}
+                  draftTitle={draftTitle}
+                  selectedKind={selectedKind}
+                  timeMode={timeMode}
+                  selectedDateLabel={selectedDateLabel}
+                  selectedDraftDate={selectedDraftDate}
+                  isManualCalendarOpen={isManualCalendarOpen}
+                  datePresets={datePresets}
+                  calendarView={calendarView}
+                  calendarCells={calendarCells}
+                  currentDraftDay={currentDraftDay}
+                  canGoToPreviousYear={canGoToPreviousYear}
+                  canGoToPreviousMonth={canGoToPreviousMonth}
+                  draftHourInput={draftHourInput}
+                  draftMinuteInput={draftMinuteInput}
+                  isSelectedDateTimeValid={isSelectedDateTimeValid}
+                  onSubmit={handleCreateCard}
+                  onCancel={handleCancelCreating}
+                  onTitleChange={setDraftTitle}
+                  onSelectKind={handleSelectKind}
+                  onSelectTimeMode={handleSelectTimeMode}
+                  onSelectDate={handleSelectDraftDate}
+                  onOpenManualCalendar={handleOpenManualCalendar}
+                  onChangeYear={handleChangeCalendarYear}
+                  onChangeMonth={handleChangeCalendarMonth}
+                  onTimeInputChange={handleDraftTimeInputChange}
+                  onCommitTimeInput={handleCommitDraftTimeInput}
+                  onAdjustHour={handleAdjustDraftHour}
+                  onAdjustMinute={handleAdjustDraftMinute}
+                  onBack={handleDraftBack}
+                  onNext={handleDraftNext}
+                />
+              </div>
             )}
           </AnimatePresence>
         </div>

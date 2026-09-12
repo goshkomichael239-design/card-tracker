@@ -3,12 +3,10 @@ import { AnimatePresence, motion } from 'framer-motion';
 
 import cardboardTexture from '../../assets/cardboard.avif';
 import {
-  CARD_RADIUS,
   CARD_SHADOW,
   DRAFT_SHADOW,
   GHOST_SETTINGS,
   GHOST_SHADOW,
-  PALETTES,
   PHYSICAL_SPRING,
   type CardKind,
   type CardPalette,
@@ -16,6 +14,7 @@ import {
   type DraftStep,
   type TimeMode,
 } from '../../app/cardTheme';
+import { INITIAL_TASK_CARD_V2_CONFIG } from '../task-card/taskCardV2Config';
 import { DraftCardHeader } from './DraftCardHeader';
 import { DraftClockStep } from './DraftClockStep';
 import { DraftDateStep } from './DraftDateStep';
@@ -65,6 +64,7 @@ export interface DraftCardProps {
 
 export function DraftCard(props: DraftCardProps) {
   const disabled = props.creationState === 'committing';
+  const config = INITIAL_TASK_CARD_V2_CONFIG;
 
   return (
     <motion.form
@@ -78,7 +78,7 @@ export function DraftCard(props: DraftCardProps) {
         opacity: GHOST_SETTINGS.opacity,
         filter: 'saturate(0.45) brightness(0.96)',
         boxShadow: GHOST_SHADOW,
-        backgroundColor: PALETTES.none.paper,
+        backgroundColor: config.paperTint,
       }}
       animate={
         props.creationState === 'committing'
@@ -90,7 +90,7 @@ export function DraftCard(props: DraftCardProps) {
               opacity: 1,
               filter: 'saturate(1) brightness(1)',
               boxShadow: CARD_SHADOW,
-              backgroundColor: props.palette.paper,
+              backgroundColor: config.paperTint,
             }
           : {
               x: 0,
@@ -100,7 +100,7 @@ export function DraftCard(props: DraftCardProps) {
               opacity: 1,
               filter: 'saturate(1) brightness(1)',
               boxShadow: DRAFT_SHADOW,
-              backgroundColor: props.palette.paper,
+              backgroundColor: config.paperTint,
             }
       }
       exit={{ opacity: 0, scale: 0.985 }}
@@ -108,7 +108,7 @@ export function DraftCard(props: DraftCardProps) {
       className="absolute inset-0 flex flex-col overflow-hidden"
       style={{
         zIndex: 40,
-        borderRadius: `${CARD_RADIUS}px`,
+        borderRadius: `${config.borderRadius}px`,
         padding: '23px 20px 20px',
         backgroundImage: `
           radial-gradient(

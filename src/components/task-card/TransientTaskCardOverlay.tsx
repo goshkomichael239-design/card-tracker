@@ -26,12 +26,15 @@ export const TransientTaskCardOverlay: React.FC<
     let animation: Animation | null = null;
     const frameId = window.requestAnimationFrame(() => {
       const exitDuration = kind === 'completion' ? 320 : 200;
+      const archiveDirectionY = Math.max(
+        96,
+        Math.min(180, window.innerHeight * 0.18),
+      );
 
       const exitFrame =
         kind === 'completion'
           ? {
-              transform:
-                'translate3d(18px, -8px, 0) rotate(1.2deg) scale(0.985)',
+              transform: `translate3d(0, ${archiveDirectionY}px, 0) rotate(0.6deg) scale(0.97)`,
               opacity: 0,
               offset: 1,
             }
