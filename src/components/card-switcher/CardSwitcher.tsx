@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 
-import moleskineTexture from '../../assets/Moleskine.avif';
-import type { VisualCard } from '../../app/cardTheme';
+import cardboardTexture from '../../assets/cardboard.avif';
+import { PALETTES, type VisualCard } from '../../app/cardTheme';
 import { CardSwitcherDebugPanel } from './CardSwitcherDebugPanel';
 import {
   INITIAL_CARD_SWITCHER_CONFIG,
@@ -138,65 +138,63 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
       <div
         ref={switcherRef}
         className="relative"
-        style={{ width: config.width, height: config.height }}
+        style={{
+          width: `min(${config.width}px, calc(100vw - 24px))`,
+          display: cards.length > 0 ? 'block' : 'none',
+          transform: `translate3d(${config.positionX}px, ${config.positionY}px, 0)`,
+        }}
       >
         <div
-          className="relative h-full w-full overflow-hidden"
-          style={{ borderRadius: config.borderRadius }}
+          className="relative w-full overflow-hidden border"
+          style={{
+            borderRadius: config.borderRadius,
+            padding: '7px 9px',
+            backgroundColor: 'rgba(247,242,232,0.84)',
+            borderColor: 'rgba(103,86,65,0.2)',
+            boxShadow:
+              '0 10px 24px rgba(20,17,14,0.18), inset 0 1px 0 rgba(255,255,255,0.72)',
+          }}
         >
           <div
             className="pointer-events-none absolute inset-0"
             style={{
-              backgroundImage: `url(${moleskineTexture})`,
-              backgroundRepeat: 'no-repeat',
-              backgroundSize: `${config.backgroundSize}px auto`,
-              backgroundPosition: `${config.backgroundX}px ${config.backgroundY}px`,
-              opacity: config.textureOpacity,
+              backgroundImage: `url(${cardboardTexture})`,
+              backgroundPosition: 'center',
+              backgroundSize: 'cover',
+              mixBlendMode: 'multiply',
+              opacity: 0.08,
             }}
           />
 
-          <div
-            className="absolute inset-0"
-            style={{
-              paddingLeft: config.paddingLeft,
-              paddingRight: config.paddingRight,
-              paddingTop: config.paddingTop,
-              paddingBottom: config.paddingBottom,
-            }}
-          >
-            <div className="flex flex-col" style={{ gap: config.rowGap }}>
+          <div className="relative">
+            <div className="flex flex-col gap-0.5">
               {visibleCards.map((card) => {
                 const isActive = card.id === activeCardId;
+                const palette = PALETTES[card.timeMode];
 
                 return (
                   <button
                     key={card.id}
                     type="button"
                     onClick={() => onSelectCard(card.id)}
-                    className="relative block w-full border-0 bg-transparent p-0 text-left"
-                    style={{ height: config.rowHeight }}
+                    className="relative flex w-full items-center overflow-hidden border-0 px-3 text-left"
+                    style={{
+                      height: config.rowHeight,
+                      borderRadius: 9,
+                      backgroundColor: isActive
+                        ? `${palette.accent}1f`
+                        : 'transparent',
+                    }}
                     aria-pressed={isActive}
                   >
-                    {isActive && (
-                      <span
-                        className="pointer-events-none absolute left-0 top-1/2"
-                        style={{
-                          left: -10,
-                          right: -(config.paddingRight - 8),
-                          height: config.activeHeight,
-                          borderRadius: config.activeRadius,
-                          backgroundColor: `rgba(46,42,36,${config.activeOpacity})`,
-                          transform: 'translateY(-50%)',
-                        }}
-                      />
-                    )}
                     <span
-                      className="relative z-10 block w-full truncate font-mono font-semibold"
+                      className="relative z-10 block min-w-0 flex-1 truncate font-mono font-semibold"
                       style={{
-                        color: 'rgba(30,28,26,0.78)',
+                        color: isActive
+                          ? palette.accentDark
+                          : 'rgba(40,35,29,0.68)',
                         fontSize: config.fontSize,
                         lineHeight: `${config.rowHeight}px`,
-                        transform: `translateX(${config.textX}px)`,
                       }}
                     >
                       {card.title}
@@ -206,42 +204,6 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
               })}
             </div>
           </div>
-        </div>
-
-        <div
-          className="absolute top-1/2 flex -translate-y-1/2 flex-col"
-          style={{ left: config.dotsX, gap: config.dotGap }}
-        >
-          {Array.from({ length: MAX_VISIBLE_ROWS }, (_, position) => {
-            const card = visibleCards[position];
-            const isActive = card?.id === activeCardId;
-
-            return (
-              <button
-                key={card?.id ?? 'empty-' + position}
-                type="button"
-                onClick={() => card && onSelectCard(card.id)}
-                disabled={!card}
-                className="shrink-0 rounded-full border-0 p-0"
-                style={{
-                  width: config.dotSize,
-                  height: config.dotSize,
-                  backgroundColor: isActive
-                    ? 'rgba(238,224,192,0.96)'
-                    : 'rgba(238,224,192,0.34)',
-                  boxShadow: isActive
-                    ? '0 0 0 1px rgba(25,20,16,0.42)'
-                    : 'none',
-                }}
-                aria-label={
-                  card
-                    ? 'Выбрать карточку ' + card.title
-                    : 'Пустая позиция ' + (position + 1)
-                }
-                aria-pressed={isActive}
-              />
-            );
-          })}
         </div>
       </div>
 

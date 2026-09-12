@@ -20,6 +20,8 @@ interface ControlDefinition {
 
 const CONTROLS: ControlDefinition[] = [
   { key: 'width', label: 'Width', min: 180, max: 480 },
+  { key: 'positionX', label: 'Position X', min: -240, max: 240 },
+  { key: 'positionY', label: 'Position Y', min: -120, max: 240 },
   { key: 'height', label: 'Height', min: 70, max: 260 },
   { key: 'borderRadius', label: 'Radius', min: 0, max: 48 },
   { key: 'backgroundSize', label: 'Texture size', min: 150, max: 1200 },
@@ -53,6 +55,12 @@ const CONTROLS: ControlDefinition[] = [
     max: 1,
     step: 0.01,
   },
+];
+
+const VISIBLE_CONTROL_KEYS: Array<keyof CardSwitcherConfig> = [
+  'width',
+  'positionX',
+  'positionY',
 ];
 
 export const CardSwitcherDebugPanel: React.FC<
@@ -107,7 +115,9 @@ export const CardSwitcherDebugPanel: React.FC<
       </div>
 
       <div className="space-y-2">
-        {CONTROLS.map((control) => (
+        {CONTROLS.filter((control) =>
+          VISIBLE_CONTROL_KEYS.includes(control.key),
+        ).map((control) => (
           <label key={control.key} className="block">
             <span className="mb-1 flex items-center justify-between gap-2 font-mono text-[9px]">
               <span>{control.label}</span>
