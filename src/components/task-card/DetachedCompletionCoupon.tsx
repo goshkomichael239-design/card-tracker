@@ -38,6 +38,7 @@ export const DetachedCompletionCoupon = forwardRef<
   const rectRadius = Math.max(1, COUPON_RADIUS - COUPON_STROKE_INSET / 2);
   const couponRef = useRef<HTMLDivElement | null>(null);
   const paperRef = useRef<HTMLDivElement | null>(null);
+  const labelRef = useRef<HTMLSpanElement | null>(null);
   const animationRef = useRef<Animation | null>(null);
   const onFlightCompleteRef = useRef(onFlightComplete);
 
@@ -72,6 +73,9 @@ export const DetachedCompletionCoupon = forwardRef<
       couponElement.style.transform = 'translate3d(0, 0, 0) rotate(0deg)';
       couponElement.style.visibility = 'visible';
       paperElement.style.backgroundColor = INITIAL_TASK_CARD_V2_CONFIG.paperTint;
+      if (labelRef.current) {
+        labelRef.current.textContent = coupon.label ?? 'Завершить';
+      }
 
       const animation = couponElement.animate(
         [
@@ -187,6 +191,7 @@ export const DetachedCompletionCoupon = forwardRef<
       </svg>
 
       <span
+        ref={labelRef}
         className="absolute inset-0 flex select-none items-center justify-center pt-[1px] font-mono text-[9px] font-semibold uppercase tracking-[0.18em]"
         style={{
           color: 'rgba(36,30,26,0.55)',

@@ -14,6 +14,7 @@ import {
   CARD_RADIUS,
   GHOST_SETTINGS,
   GHOST_SHADOW,
+  getCardPalette,
   PALETTES,
   PHYSICAL_SPRING,
   type CardKind,
@@ -21,7 +22,10 @@ import {
   type DraftStep,
   type TimeMode,
   type VisualCard,
+  type TaskListData,
+  type TaskListItem,
 } from './cardTheme';
+import type { SeriesData } from './cardTheme';
 import {
   addLocalDays,
   createLocalDateTimeValue,
@@ -42,6 +46,7 @@ import {
   type DetachedCompletionCouponHandle,
 } from '../components/task-card/DetachedCompletionCoupon';
 import { TaskCard } from '../components/task-card/TaskCard';
+import { FullListSheet } from '../components/task-card/FullListSheet';
 import { TransientTaskCardOverlay } from '../components/task-card/TransientTaskCardOverlay';
 import { INITIAL_TASK_CARD_V2_CONFIG } from '../components/task-card/taskCardV2Config';
 const createId = (): string => {
@@ -58,6 +63,7 @@ const createId = (): string => {
 type TransientOutgoingKind = 'switch' | 'completion';
 
 const ARCHIVE_STORAGE_KEY = 'card-tracker.archive.v1';
+const ACTIVE_CARDS_STORAGE_KEY = 'card-tracker.active-cards.v1';
 
 interface TransientOutgoingCard {
   key: number;
@@ -68,7 +74,41 @@ interface TransientOutgoingCard {
 const getLocalDayKey = (date: Date): string =>
   `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
 
-const isArchivedVisualCard = (value: unknown): value is VisualCard => {
+const isSeriesData = (value: unknown): value is SeriesData => {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+
+  const series = value as Record<string, unknown>;
+  return (
+    typeof series.targetCount === 'number' &&
+    Number.isInteger(series.targetCount) &&
+    series.targetCount >= 1 &&
+    Array.isArray(series.entries) &&
+    series.entries.every(
+      (entry) =>
+        entry &&
+        typeof entry === 'object' &&
+        typeof (entry as Record<string, unknown>).completedAt === 'string' &&
+        typeof (entry as Record<string, unknown>).durationMs === 'number',
+    ) &&
+    typeof series.startedAt === 'string' &&
+    typeof series.timingAnchorAt === 'string'
+  );
+};
+
+const isTaskListData = (value: unknown): value is TaskListData =>
+  Boolean(value) &&
+  typeof value === 'object' &&
+  Array.isArray((value as TaskListData).items) &&
+  (value as TaskListData).items.every(
+    (item) =>
+      typeof item.id === 'string' &&
+      typeof item.text === 'string' &&
+      (item.completedAt === undefined || typeof item.completedAt === 'string'),
+  );
+
+const isStoredVisualCard = (value: unknown): value is VisualCard => {
   if (!value || typeof value !== 'object') {
     return false;
   }
@@ -78,12 +118,13 @@ const isArchivedVisualCard = (value: unknown): value is VisualCard => {
   return (
     typeof card.id === 'string' &&
     typeof card.title === 'string' &&
-    card.kind === 'single' &&
+    (card.kind === 'single' || card.kind === 'series' || card.kind === 'list') &&
     (card.timeMode === 'none' ||
       card.timeMode === 'deadline' ||
       card.timeMode === 'reminder') &&
     typeof card.createdAt === 'string' &&
-    typeof card.completedAt === 'string'
+    (card.kind !== 'series' || isSeriesData(card.series)) &&
+    (card.kind !== 'list' || isTaskListData(card.list))
   );
 };
 
@@ -106,7 +147,7 @@ const loadArchivedCards = (): VisualCard[] => {
     }
 
     return parsedCards
-      .filter(isArchivedVisualCard)
+      .filter(isStoredVisualCard)
       .sort(
         (left, right) =>
           new Date(right.completedAt ?? 0).getTime() -
@@ -114,6 +155,26 @@ const loadArchivedCards = (): VisualCard[] => {
       );
   } catch {
     return [];
+  }
+};
+
+const loadActiveCards = (): VisualCard[] | null => {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  try {
+    const storedCards = window.localStorage.getItem(ACTIVE_CARDS_STORAGE_KEY);
+    if (!storedCards) {
+      return null;
+    }
+
+    const parsedCards: unknown = JSON.parse(storedCards);
+    return Array.isArray(parsedCards)
+      ? parsedCards.filter(isStoredVisualCard).filter((card) => !card.completedAt)
+      : null;
+  } catch {
+    return null;
   }
 };
 
@@ -161,6 +222,11 @@ const MainApp: React.FC = () => {
   const [isArchiveOpen, setIsArchiveOpen] = useState(false);
 
   const [cards, setCards] = useState<VisualCard[]>(() => {
+    const storedCards = loadActiveCards();
+    if (storedCards !== null) {
+      return storedCards;
+    }
+
     if (!import.meta.env.DEV) {
       return [
         {
@@ -210,13 +276,16 @@ const MainApp: React.FC = () => {
   const [archivedCards, setArchivedCards] = useState<VisualCard[]>(
     loadArchivedCards,
   );
-  const [activeCardId, setActiveCardId] = useState(() => cards[0]!.id);
+  const [activeCardId, setActiveCardId] = useState(() => cards[0]?.id ?? '');
 
   const [creationState, setCreationState] =
     useState<CreationState>('idle');
   const [draftTitle, setDraftTitle] = useState('');
+  const [seriesTargetInput, setSeriesTargetInput] = useState('');
+  const [draftListItems, setDraftListItems] = useState<TaskListItem[]>([]);
+  const [draftListInput, setDraftListInput] = useState('');
   const [selectedKind, setSelectedKind] = useState<CardKind | null>(null);
-  const [draftStep, setDraftStep] = useState<DraftStep>('title');
+  const [draftStep, setDraftStep] = useState<DraftStep>('kind');
   const [timeMode, setTimeMode] = useState<TimeMode | null>(null);
   const [dateTimeValue, setDateTimeValue] = useState('');
   const [selectedDraftDate, setSelectedDraftDate] = useState(() =>
@@ -246,6 +315,9 @@ const MainApp: React.FC = () => {
     useState<TransientOutgoingCard | null>(null);
   const [pendingCompletedCardId, setPendingCompletedCardId] =
     useState<string | null>(null);
+  const [expandedListCardId, setExpandedListCardId] = useState<string | null>(
+    null,
+  );
   const [currentDayKey, setCurrentDayKey] = useState(() =>
     getLocalDayKey(new Date()),
   );
@@ -255,6 +327,7 @@ const MainApp: React.FC = () => {
   const couponFlightInProgressRef = useRef(false);
   const detachedCouponLayerRef =
     useRef<DetachedCompletionCouponHandle | null>(null);
+  const cardsRef = useRef(cards);
   const completedRemovalTimerRef = useRef<number | null>(null);
   const pendingCompletedCardIdRef = useRef<string | null>(null);
   const pendingCompletedRemovalArmedRef = useRef(false);
@@ -263,6 +336,10 @@ const MainApp: React.FC = () => {
 
   const isCreating = creationState !== 'idle';
   const activeCard = cards.find((card) => card.id === activeCardId);
+  const expandedListCard = cards.find(
+    (card) => card.id === expandedListCardId && card.kind === 'list',
+  );
+  const isListSheetOpen = Boolean(expandedListCard);
   const firstCardCreatedAt = useMemo(() => {
     const earliestTimestamp = [...cards, ...archivedCards].reduce<number | null>(
       (earliest, card) => {
@@ -353,6 +430,10 @@ const MainApp: React.FC = () => {
     calendarView.getTime() > currentDraftMonth.getTime();
   const canAdvanceDraft =
     (draftStep === 'title' && Boolean(draftTitle.trim())) ||
+    (draftStep === 'series-target' &&
+      Number.isInteger(Number(seriesTargetInput)) &&
+      Number(seriesTargetInput) >= 1) ||
+    (draftStep === 'list-items' && draftListItems.length >= 1) ||
     draftStep === 'date' ||
     (draftStep === 'clock' && isSelectedDateTimeValid);
 
@@ -361,8 +442,11 @@ const MainApp: React.FC = () => {
     const initialDate = startOfLocalDay(initialSlot);
 
     setDraftTitle('');
+    setSeriesTargetInput('');
+    setDraftListItems([]);
+    setDraftListInput('');
     setSelectedKind(null);
-    setDraftStep('title');
+    setDraftStep('kind');
     setTimeMode(null);
     setDateTimeValue('');
     setSelectedDraftDate(initialDate);
@@ -387,6 +471,21 @@ const MainApp: React.FC = () => {
     },
     [],
   );
+
+  useEffect(() => {
+    cardsRef.current = cards;
+  }, [cards]);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(
+        ACTIVE_CARDS_STORAGE_KEY,
+        JSON.stringify(cards.filter((card) => !card.completedAt)),
+      );
+    } catch {
+      // The active scene must remain usable when browser storage is unavailable.
+    }
+  }, [cards]);
 
   useEffect(() => {
     if (creationState !== 'editing' || draftStep !== 'title') {
@@ -423,6 +522,12 @@ const MainApp: React.FC = () => {
       }
     };
   }, []);
+
+  useEffect(() => {
+    if (expandedListCardId && !expandedListCard) {
+      setExpandedListCardId(null);
+    }
+  }, [expandedListCard, expandedListCardId]);
 
   useEffect(() => {
     try {
@@ -604,6 +709,7 @@ const MainApp: React.FC = () => {
   const handleScenePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
     if (
       isArchiveOpen ||
+      isListSheetOpen ||
       isCreating ||
       (event.pointerType === 'mouse' && event.button !== 0) ||
       !isSceneGestureTarget(event.target)
@@ -643,6 +749,15 @@ const MainApp: React.FC = () => {
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (
+        isListSheetOpen
+      ) {
+        if (event.key === 'Escape' && isListSheetOpen) {
+          setExpandedListCardId(null);
+        }
+        return;
+      }
+
+      if (
         isArchiveOpen ||
         isCreating ||
         isEditableTarget(event.target)
@@ -661,7 +776,13 @@ const MainApp: React.FC = () => {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleNextCard, handlePreviousCard, isArchiveOpen, isCreating]);
+  }, [
+    handleNextCard,
+    handlePreviousCard,
+    isArchiveOpen,
+    isCreating,
+    isListSheetOpen,
+  ]);
 
   const handleStartCreating = () => {
     if (
@@ -686,14 +807,28 @@ const MainApp: React.FC = () => {
   };
 
   const handleSelectKind = (kind: CardKind) => {
+    if (kind === 'series') {
+      setSelectedKind('series');
+      setTimeMode('none');
+      setDateTimeValue('');
+      setDraftStep('title');
+      return;
+    }
+
     if (kind !== 'single') {
+      if (kind === 'list') {
+        setSelectedKind('list');
+        setTimeMode(null);
+        setDateTimeValue('');
+        setDraftStep('list-items');
+      }
       return;
     }
 
     setSelectedKind('single');
     setTimeMode(null);
     setDateTimeValue('');
-    setDraftStep('time');
+    setDraftStep('title');
   };
 
   const handleCreateCard = (
@@ -705,15 +840,23 @@ const MainApp: React.FC = () => {
     const creationTimeMode = forcedTimeMode ?? timeMode;
     const creationDateTimeValue =
       forcedDateTimeValue ?? dateTimeValue;
+    const seriesTargetCount = Number(seriesTargetInput);
+    const isValidSeriesTarget =
+      Number.isInteger(seriesTargetCount) && seriesTargetCount >= 1;
+    const isList = selectedKind === 'list';
+    const listTitle = draftListItems[0]?.text.trim() || 'Список';
     const isReadyToCreate =
       creationState === 'editing' &&
-      Boolean(draftTitle.trim()) &&
-      selectedKind === 'single' &&
-      Boolean(creationTimeMode) &&
-      (creationTimeMode === 'none' ||
-        Boolean(creationDateTimeValue));
+      ((selectedKind === 'series' &&
+        Boolean(draftTitle.trim()) &&
+        isValidSeriesTarget) ||
+        (isList && draftListItems.length >= 1) ||
+        (selectedKind === 'single' &&
+          Boolean(draftTitle.trim()) &&
+          Boolean(creationTimeMode) &&
+          (creationTimeMode === 'none' || Boolean(creationDateTimeValue))));
 
-    if (!isReadyToCreate || !creationTimeMode) {
+    if (!isReadyToCreate) {
       return;
     }
 
@@ -724,16 +867,27 @@ const MainApp: React.FC = () => {
         ? new Date(creationDateTimeValue).toISOString()
         : undefined;
 
+      const now = new Date().toISOString();
+      const isSeries = selectedKind === 'series';
       const newCard: VisualCard = {
         id: createId(),
-        title: draftTitle.trim(),
-        kind: 'single',
-        timeMode: creationTimeMode,
+        title: isList ? listTitle : draftTitle.trim(),
+        kind: isSeries ? 'series' : isList ? 'list' : 'single',
+        timeMode: isSeries ? 'none' : creationTimeMode!,
         deadlineAt:
-          creationTimeMode === 'deadline' ? storedDate : undefined,
+          !isSeries && creationTimeMode === 'deadline' ? storedDate : undefined,
         reminderAt:
-          creationTimeMode === 'reminder' ? storedDate : undefined,
-        createdAt: new Date().toISOString(),
+          !isSeries && creationTimeMode === 'reminder' ? storedDate : undefined,
+        createdAt: now,
+        series: isSeries
+          ? {
+              targetCount: seriesTargetCount,
+              entries: [],
+              startedAt: now,
+              timingAnchorAt: now,
+            }
+          : undefined,
+        list: isList ? { items: draftListItems } : undefined,
       };
 
       setCards((previous) => [...previous, newCard]);
@@ -963,16 +1117,44 @@ const MainApp: React.FC = () => {
     );
   };
 
+  const handleAddDraftListItem = () => {
+    const text = draftListInput.trim();
+    if (!text) {
+      return;
+    }
+    setDraftListItems((previous) => [...previous, { id: createId(), text }]);
+    setDraftListInput('');
+  };
+
+  const handleRemoveDraftListItem = (itemId: string) => {
+    setDraftListItems((previous) =>
+      previous.filter((item) => item.id !== itemId),
+    );
+  };
+
   const handleDraftBack = () => {
-    if (draftStep === 'kind') {
-      setDraftStep('title');
+    if (draftStep === 'title') {
+      setSelectedKind(null);
+      setSeriesTargetInput('');
+      setDraftStep('kind');
       return;
     }
 
     if (draftStep === 'time') {
-      setSelectedKind(null);
       setTimeMode(null);
       setDateTimeValue('');
+      setDraftStep(selectedKind === 'list' ? 'list-items' : 'title');
+      return;
+    }
+
+    if (draftStep === 'series-target') {
+      setSeriesTargetInput('');
+      setDraftStep('title');
+      return;
+    }
+
+    if (draftStep === 'list-items') {
+      setSelectedKind(null);
       setDraftStep('kind');
       return;
     }
@@ -990,7 +1172,18 @@ const MainApp: React.FC = () => {
 
   const handleDraftNext = () => {
     if (draftStep === 'title' && draftTitle.trim()) {
-      setDraftStep('kind');
+      setDraftStep(
+        selectedKind === 'series'
+          ? 'series-target'
+          : selectedKind === 'list'
+            ? 'list-items'
+            : 'time',
+      );
+      return;
+    }
+
+    if (draftStep === 'list-items' && draftListItems.length >= 1) {
+      handleCreateCard(undefined, 'none');
       return;
     }
 
@@ -1003,6 +1196,19 @@ const MainApp: React.FC = () => {
         ),
       );
       setDraftStep('clock');
+      return;
+    }
+
+    if (
+      draftStep === 'series-target' &&
+      selectedKind === 'series' &&
+      Number.isInteger(Number(seriesTargetInput)) &&
+      Number(seriesTargetInput) >= 1
+    ) {
+      setDraftStep('confirm');
+      commitTimerRef.current = window.setTimeout(() => {
+        handleCreateCard();
+      }, 110);
       return;
     }
 
@@ -1032,10 +1238,13 @@ const MainApp: React.FC = () => {
     }, 110);
   };
 
-  const handleCompleteCard = (couponBounds: DOMRect) => {
+  const handleCompleteCard = (
+    couponBounds: DOMRect,
+    cardToComplete: VisualCard | undefined = activeCard,
+  ) => {
     if (
-      !activeCard ||
-      activeCard.completedAt ||
+      !cardToComplete ||
+      cardToComplete.completedAt ||
       couponFlightInProgressRef.current
     ) {
       return;
@@ -1045,22 +1254,23 @@ const MainApp: React.FC = () => {
     const completedAt = new Date().toISOString();
 
     const completedCard: VisualCard = {
-      ...activeCard,
+      ...cardToComplete,
       completedAt,
     };
     detachedCouponLayerRef.current?.launch({
-      id: activeCard.id,
+      id: completedCard.id,
       left: couponBounds.left,
       top: couponBounds.top,
       width: couponBounds.width,
       height: couponBounds.height,
-      palette: PALETTES[activeCard.timeMode],
+      palette: getCardPalette(completedCard),
+      label: completedCard.kind === 'series' ? 'Засчитать +1' : undefined,
     });
-    setCards((previous) =>
-      previous.map((card) =>
+    const nextCards = cardsRef.current.map((card) =>
         card.id === completedCard.id ? completedCard : card,
-      ),
-    );
+      );
+    cardsRef.current = nextCards;
+    setCards(nextCards);
     setArchivedCards((previous) => [
       completedCard,
       ...previous.filter((card) => card.id !== completedCard.id),
@@ -1068,6 +1278,133 @@ const MainApp: React.FC = () => {
     pendingCompletedCardIdRef.current = completedCard.id;
     pendingCompletedRemovalArmedRef.current = true;
     setPendingCompletedCardId(completedCard.id);
+  };
+
+  const recordSeriesStep = (couponBounds: DOMRect) => {
+    const currentCard = cardsRef.current.find(
+      (card) => card.id === activeCardId,
+    );
+    const series = currentCard?.kind === 'series' ? currentCard.series : undefined;
+
+    if (!currentCard || !series || currentCard.completedAt || couponFlightInProgressRef.current) {
+      return;
+    }
+
+    const completedCount = series.entries.length;
+    if (completedCount >= series.targetCount) {
+      return;
+    }
+
+    const now = new Date();
+    const nowIso = now.toISOString();
+    const anchorTime = new Date(series.timingAnchorAt).getTime();
+    const durationMs = Number.isFinite(anchorTime)
+      ? Math.max(0, now.getTime() - anchorTime)
+      : 0;
+    const entries = [
+      ...series.entries,
+      { completedAt: nowIso, durationMs },
+    ];
+    const isFinished = entries.length >= series.targetCount;
+    const updatedCard: VisualCard = {
+      ...currentCard,
+      series: {
+        ...series,
+        entries,
+        timingAnchorAt: nowIso,
+        ...(isFinished
+          ? { finishedAt: nowIso, finishReason: 'completed' as const }
+          : {}),
+      },
+    };
+    const nextCards = cardsRef.current.map((card) =>
+      card.id === updatedCard.id ? updatedCard : card,
+    );
+    cardsRef.current = nextCards;
+    setCards(nextCards);
+
+    if (isFinished) {
+      handleCompleteCard(couponBounds, updatedCard);
+    }
+  };
+
+  const finishSeries = (couponBounds: DOMRect) => {
+    const currentCard = cardsRef.current.find(
+      (card) => card.id === activeCardId,
+    );
+    const series = currentCard?.kind === 'series' ? currentCard.series : undefined;
+
+    if (!currentCard || !series || currentCard.completedAt || couponFlightInProgressRef.current) {
+      return;
+    }
+
+    const nowIso = new Date().toISOString();
+    const completedCard: VisualCard = {
+      ...currentCard,
+      series: {
+        ...series,
+        finishedAt: nowIso,
+        finishReason: 'manual',
+      },
+    };
+    handleCompleteCard(couponBounds, completedCard);
+  };
+
+  const toggleListItem = (itemId: string) => {
+    setCards((previous) =>
+      previous.map((card) => {
+        if (card.id !== activeCardId || card.kind !== 'list' || !card.list || card.completedAt) {
+          return card;
+        }
+        return {
+          ...card,
+          list: {
+            items: card.list.items.map((item) =>
+              item.id === itemId
+                ? {
+                    ...item,
+                    completedAt: item.completedAt
+                      ? undefined
+                      : new Date().toISOString(),
+                  }
+                : item,
+            ),
+          },
+        };
+      }),
+    );
+  };
+
+  const addListItem = (cardId: string, rawText: string) => {
+    const text = rawText.trim();
+
+    if (
+      !text ||
+      cardId !== activeCardId ||
+      pendingCompletedCardIdRef.current === cardId
+    ) {
+      return;
+    }
+
+    setCards((previous) =>
+      previous.map((card) => {
+        if (
+          card.id !== cardId ||
+          card.kind !== 'list' ||
+          !card.list ||
+          card.completedAt
+        ) {
+          return card;
+        }
+
+        return {
+          ...card,
+          list: {
+            items: [...card.list.items, { id: createId(), text }],
+          },
+        };
+      }),
+    );
   };
 
   const handleCouponFlightComplete = useCallback(() => {
@@ -1171,6 +1508,14 @@ const MainApp: React.FC = () => {
                 <TaskCard
                   card={activeCard}
                   onComplete={handleCompleteCard}
+                  onRecordSeriesStep={recordSeriesStep}
+                  onFinishSeries={finishSeries}
+                  onToggleListItem={toggleListItem}
+                  onOpenList={
+                    activeCard.kind === 'list'
+                      ? () => setExpandedListCardId(activeCard.id)
+                      : undefined
+                  }
                 />
               </motion.div>
             )}
@@ -1335,6 +1680,9 @@ const MainApp: React.FC = () => {
                   canAdvanceDraft={canAdvanceDraft}
                   titleInputRef={titleInputRef}
                   draftTitle={draftTitle}
+                  seriesTargetInput={seriesTargetInput}
+                  draftListItems={draftListItems}
+                  draftListInput={draftListInput}
                   selectedKind={selectedKind}
                   timeMode={timeMode}
                   selectedDateLabel={selectedDateLabel}
@@ -1352,6 +1700,10 @@ const MainApp: React.FC = () => {
                   onSubmit={handleCreateCard}
                   onCancel={handleCancelCreating}
                   onTitleChange={setDraftTitle}
+                  onSeriesTargetChange={setSeriesTargetInput}
+                  onListInputChange={setDraftListInput}
+                  onAddListItem={handleAddDraftListItem}
+                  onRemoveListItem={handleRemoveDraftListItem}
                   onSelectKind={handleSelectKind}
                   onSelectTimeMode={handleSelectTimeMode}
                   onSelectDate={handleSelectDraftDate}
@@ -1375,6 +1727,15 @@ const MainApp: React.FC = () => {
         ref={detachedCouponLayerRef}
         onFlightComplete={handleCouponFlightComplete}
       />
+
+      {expandedListCard && (
+        <FullListSheet
+          card={expandedListCard}
+          onToggleItem={toggleListItem}
+          onAddItem={addListItem}
+          onClose={() => setExpandedListCardId(null)}
+        />
+      )}
       </div>
 
       <ArchiveNavigation

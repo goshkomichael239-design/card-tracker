@@ -21,8 +21,8 @@ export function DraftKindStep({ selectedKind, palette, onSelectKind }: DraftKind
       </span>
       <div className="mt-5 grid grid-cols-3 gap-3">
         <TypeOption index={0} lines={['Одна', 'задача']} selected={selectedKind === 'single'} palette={palette} onClick={() => onSelectKind('single')} />
-        <TypeOption index={1} lines={['Рутина', '']} hint="Скоро" selected={false} disabled palette={palette} onClick={() => undefined} />
-        <TypeOption index={2} lines={['Список', '']} hint="Скоро" selected={false} disabled palette={palette} onClick={() => undefined} />
+        <TypeOption index={1} lines={['Серия', '']} selected={selectedKind === 'series'} palette={palette} onClick={() => onSelectKind('series')} />
+        <TypeOption index={2} lines={['Список', '']} selected={selectedKind === 'list'} palette={palette} onClick={() => onSelectKind('list')} />
       </div>
     </div>
   );

@@ -20,6 +20,9 @@ import { DraftClockStep } from './DraftClockStep';
 import { DraftDateStep } from './DraftDateStep';
 import { DraftKindStep } from './DraftKindStep';
 import { DraftNavigation } from './DraftNavigation';
+import { DraftSeriesTargetStep } from './DraftSeriesTargetStep';
+import { DraftListItemsStep } from './DraftListItemsStep';
+import type { TaskListItem } from '../../app/cardTheme';
 import { DraftTimeModeStep } from './DraftTimeModeStep';
 import { DraftTitleStep } from './DraftTitleStep';
 
@@ -31,6 +34,9 @@ export interface DraftCardProps {
   canAdvanceDraft: boolean;
   titleInputRef: RefObject<HTMLTextAreaElement | null>;
   draftTitle: string;
+  seriesTargetInput: string;
+  draftListItems: TaskListItem[];
+  draftListInput: string;
   selectedKind: CardKind | null;
   timeMode: TimeMode | null;
   selectedDateLabel: string;
@@ -48,6 +54,10 @@ export interface DraftCardProps {
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
   onCancel: () => void;
   onTitleChange: (value: string) => void;
+  onSeriesTargetChange: (value: string) => void;
+  onListInputChange: (value: string) => void;
+  onAddListItem: () => void;
+  onRemoveListItem: (id: string) => void;
   onSelectKind: (kind: CardKind) => void;
   onSelectTimeMode: (mode: TimeMode) => void;
   onSelectDate: (date: Date) => void;
@@ -150,6 +160,25 @@ export function DraftCard(props: DraftCardProps) {
             {props.draftStep === 'kind' && (
               <DraftKindStep selectedKind={props.selectedKind} palette={props.palette} onSelectKind={props.onSelectKind} />
             )}
+            {props.draftStep === 'series-target' && (
+              <DraftSeriesTargetStep
+                value={props.seriesTargetInput}
+                disabled={disabled}
+                palette={props.palette}
+                onChange={props.onSeriesTargetChange}
+              />
+            )}
+            {props.draftStep === 'list-items' && (
+              <DraftListItemsStep
+                items={props.draftListItems}
+                input={props.draftListInput}
+                disabled={disabled}
+                palette={props.palette}
+                onInputChange={props.onListInputChange}
+                onAdd={props.onAddListItem}
+                onRemove={props.onRemoveListItem}
+              />
+            )}
             {props.draftStep === 'time' && (
               <DraftTimeModeStep timeMode={props.timeMode} onSelectTimeMode={props.onSelectTimeMode} />
             )}
@@ -183,7 +212,19 @@ export function DraftCard(props: DraftCardProps) {
                 onAdjustMinute={props.onAdjustMinute}
               />
             )}
-            <DraftNavigation draftStep={props.draftStep} canAdvanceDraft={props.canAdvanceDraft} disabled={disabled} onBack={props.onBack} onNext={props.onNext} />
+            <DraftNavigation
+              draftStep={props.draftStep}
+              canAdvanceDraft={props.canAdvanceDraft}
+              disabled={disabled}
+              nextLabel={
+                props.draftStep === 'list-items' &&
+                props.selectedKind === 'list'
+                  ? 'Создать'
+                  : undefined
+              }
+              onBack={props.onBack}
+              onNext={props.onNext}
+            />
           </motion.div>
         </AnimatePresence>
       </div>

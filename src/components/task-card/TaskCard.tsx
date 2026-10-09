@@ -1,15 +1,22 @@
 import React from 'react';
 
 import cardboardTexture from '../../assets/cardboard.avif';
-import { PALETTES, type VisualCard } from '../../app/cardTheme';
+import { getCardPalette, type VisualCard } from '../../app/cardTheme';
 import { formatHumanDate, formatShortDate } from '../../app/dateTimeUtils';
+import { getListCompletedCount, getListProgress } from '../../app/listUtils';
+import { formatSeriesDuration } from '../../app/seriesUtils';
 import { CompletionCoupon } from './CompletionCoupon';
 import { CountdownPanel } from './CountdownPanel';
 import { INITIAL_TASK_CARD_V2_CONFIG } from './taskCardV2Config';
+import { TaskListContent } from './TaskListContent';
 
 interface TaskCardProps {
   card: VisualCard;
   onComplete: (couponBounds: DOMRect) => void;
+  onRecordSeriesStep?: (couponBounds: DOMRect) => void;
+  onFinishSeries?: (couponBounds: DOMRect) => void;
+  onToggleListItem?: (itemId: string) => void;
+  onOpenList?: () => void;
   isStatic?: boolean;
   hideCoupon?: boolean;
 }
@@ -17,10 +24,14 @@ interface TaskCardProps {
 export const TaskCard: React.FC<TaskCardProps> = ({
   card,
   onComplete,
+  onRecordSeriesStep,
+  onFinishSeries,
+  onToggleListItem,
+  onOpenList,
   isStatic = false,
   hideCoupon = false,
 }) => {
-  const palette = PALETTES[card.timeMode];
+  const palette = getCardPalette(card);
   const config = INITIAL_TASK_CARD_V2_CONFIG;
   const targetAt =
     card.timeMode === 'deadline'
@@ -29,6 +40,28 @@ export const TaskCard: React.FC<TaskCardProps> = ({
         ? card.reminderAt
         : undefined;
   const timeLabel = card.timeMode === 'deadline' ? 'Срок' : 'Напоминание';
+  const series = card.kind === 'series' ? card.series : undefined;
+  const lastSeriesEntry = series?.entries.at(-1);
+  const list = card.kind === 'list' ? card.list : undefined;
+  const listCompletedCount = list ? getListCompletedCount(list) : 0;
+  const listReady = Boolean(list && list.items.length > 0 && listCompletedCount === list.items.length);
+  const seriesAction = (couponBounds: DOMRect) => {
+    onRecordSeriesStep?.(couponBounds);
+  };
+
+  const handleManualSeriesFinish = () => {
+    if (!series || !onFinishSeries) {
+      return;
+    }
+
+    if (window.confirm(`Завершить серию на ${series.entries.length} из ${series.targetCount}?`)) {
+      const coupon = document.querySelector<HTMLButtonElement>('[data-series-coupon="true"]');
+      const bounds = coupon?.getBoundingClientRect();
+      if (bounds) {
+        onFinishSeries(bounds);
+      }
+    }
+  };
 
   return (
     <article
@@ -61,7 +94,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
               backgroundColor: `${palette.accent}1d`,
             }}
           >
-            Одна задача
+            {series ? 'Серия' : list ? 'Список' : 'Одна задача'}
           </span>
           <span
             className="flex h-8 w-8 items-center justify-center rounded-full text-sm"
@@ -75,19 +108,73 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           </span>
         </div>
 
-        <h2
-          className="shrink-0 font-semibold leading-[1.08]"
-          style={{
-            marginTop: config.titleGap,
-            fontSize: config.titleSize,
-            color: '#28231D',
-            letterSpacing: '-0.025em',
-          }}
-        >
-          {card.title}
-        </h2>
+        {!list && (
+          <h2
+            className="shrink-0 font-semibold leading-[1.08]"
+            style={{
+              marginTop: config.titleGap,
+              fontSize: config.titleSize,
+              color: '#28231D',
+              letterSpacing: '-0.025em',
+            }}
+          >
+            {card.title}
+          </h2>
+        )}
 
-        {targetAt ? (
+        {list ? (
+          <div
+            className="mt-5 flex min-h-0 flex-1 flex-col"
+            style={{
+              paddingBottom:
+                config.couponBottom + config.couponHeight + 4,
+            }}
+          >
+            <TaskListContent
+              list={list}
+              palette={palette}
+              disabled={Boolean(card.completedAt)}
+              onToggle={(itemId) => onToggleListItem?.(itemId)}
+              maxItems={5}
+              onOpenList={onOpenList}
+            />
+          </div>
+        ) : series ? (
+          <div
+            className="shrink-0 border-t pt-4"
+            style={{
+              marginTop: config.infoGap,
+              borderColor: 'rgba(69,57,44,0.13)',
+            }}
+          >
+            <p className="font-mono text-[9px] uppercase tracking-[0.12em] text-[#6B6258]">
+              Выполнено
+            </p>
+            <p className="mt-2 font-mono text-[25px] font-semibold tracking-[-0.04em] text-[#28231D]">
+              {series.entries.length} / {series.targetCount}
+            </p>
+            {lastSeriesEntry ? (
+              <div className="mt-3 font-mono text-[10px] leading-relaxed text-[#776E63]">
+                <p>Последняя · {new Date(lastSeriesEntry.completedAt).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}</p>
+                <p>За · {formatSeriesDuration(lastSeriesEntry.durationMs)}</p>
+              </div>
+            ) : (
+              <p className="mt-3 font-mono text-[10px] text-[#776E63]">
+                Начато · {new Date(series.startedAt).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
+              </p>
+            )}
+            {!card.completedAt && onFinishSeries && (
+              <button
+                type="button"
+                onClick={handleManualSeriesFinish}
+                className="mt-3 border-0 bg-transparent p-0 font-mono text-[8px] uppercase tracking-[0.12em]"
+                style={{ color: palette.accentDark }}
+              >
+                Завершить серию
+              </button>
+            )}
+          </div>
+        ) : targetAt ? (
           <div
             className="shrink-0 border-t pt-4"
             style={{
@@ -134,7 +221,12 @@ export const TaskCard: React.FC<TaskCardProps> = ({
             <CompletionCoupon
               completedAt={card.completedAt}
               palette={palette}
-              onComplete={onComplete}
+              onComplete={series && !card.completedAt ? seriesAction : onComplete}
+              actionLabel={series ? 'Засчитать +1' : list && !card.completedAt && !listReady ? `${listCompletedCount} / ${list.items.length}` : undefined}
+              series={series}
+              progress={list ? getListProgress(list) : undefined}
+              isReady={list && !card.completedAt ? listReady : true}
+              completedLabel={list ? `${listCompletedCount} / ${list.items.length}` : undefined}
               height={config.couponHeight}
               paperTint={config.paperTint}
             />

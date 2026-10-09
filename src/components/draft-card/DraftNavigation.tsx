@@ -7,6 +7,7 @@ export interface DraftNavigationProps {
   draftStep: DraftStep;
   canAdvanceDraft: boolean;
   disabled: boolean;
+  nextLabel?: string;
   onBack: () => void;
   onNext: () => void;
 }
@@ -36,13 +37,14 @@ export function DraftNavigation({
   draftStep,
   canAdvanceDraft,
   disabled,
+  nextLabel = 'Дальше →',
   onBack,
   onNext,
 }: DraftNavigationProps) {
   return (
     <div className="mt-auto flex min-h-[58px] shrink-0 items-end justify-between gap-3 pt-4">
       <div className="w-[108px]">
-        {draftStep !== 'title' && draftStep !== 'confirm' && (
+        {draftStep !== 'kind' && draftStep !== 'confirm' && (
           <motion.button
             type="button"
             onClick={onBack}
@@ -72,7 +74,7 @@ export function DraftNavigation({
               className="min-h-[46px] w-full rounded-[11px] border-0 px-4 py-3 font-mono text-[9px] font-semibold uppercase tracking-[0.13em]"
               style={buttonStyle}
             >
-              Дальше →
+              {nextLabel}
             </motion.button>
           )}
         </AnimatePresence>

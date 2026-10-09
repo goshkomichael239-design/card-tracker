@@ -3,6 +3,8 @@ import React, { useRef } from 'react';
 import cardboardTexture from '../../assets/cardboard.avif';
 import type { CardPalette } from '../../app/cardTheme';
 import { formatCompletedDate } from '../../app/dateTimeUtils';
+import { getSeriesProgress } from '../../app/seriesUtils';
+import type { SeriesData } from '../../app/cardTheme';
 
 interface CompletionCouponProps {
   completedAt?: string;
@@ -10,6 +12,11 @@ interface CompletionCouponProps {
   onComplete: (couponBounds: DOMRect) => void;
   height: number;
   paperTint: string;
+  actionLabel?: string;
+  series?: SeriesData;
+  progress?: number;
+  isReady?: boolean;
+  completedLabel?: string;
 }
 
 export const CompletionCoupon: React.FC<CompletionCouponProps> = ({
@@ -18,6 +25,11 @@ export const CompletionCoupon: React.FC<CompletionCouponProps> = ({
   onComplete,
   height,
   paperTint,
+  actionLabel = 'Завершить',
+  series,
+  progress,
+  isReady = true,
+  completedLabel,
 }) => {
   const couponRef = useRef<HTMLButtonElement | null>(null);
 
@@ -47,9 +59,22 @@ export const CompletionCoupon: React.FC<CompletionCouponProps> = ({
           `,
         }}
       >
+        {completedAt && series && (
+          <div
+            className="pointer-events-none absolute inset-0 origin-right"
+            style={{
+              transform: `scaleX(${1 - getSeriesProgress(series)})`,
+              backgroundColor: paperTint,
+              opacity: 0.5,
+            }}
+            aria-hidden="true"
+          />
+        )}
         {completedAt && (
           <span className="px-3 text-center font-mono text-[9px] font-bold uppercase tracking-[0.13em]">
-            Завершено · {formatCompletedDate(completedAt)}
+            {series
+              ? `${series.entries.length} / ${series.targetCount}`
+              : completedLabel ?? `Завершено · ${formatCompletedDate(completedAt)}`}
           </span>
         )}
       </div>
@@ -58,7 +83,9 @@ export const CompletionCoupon: React.FC<CompletionCouponProps> = ({
         <button
           type="button"
           ref={couponRef}
+          data-series-coupon={series ? 'true' : undefined}
           onClick={handleComplete}
+          disabled={!isReady}
           className="absolute inset-0 cursor-pointer border-0 bg-transparent p-0"
           style={{ borderRadius: '8px' }}
           aria-label="Завершить задачу"
@@ -74,6 +101,23 @@ export const CompletionCoupon: React.FC<CompletionCouponProps> = ({
               boxShadow: 'inset 0 1px rgba(255,255,255,0.78)',
             }}
           />
+          {(series || progress !== undefined) && (
+            <div
+              className="pointer-events-none absolute inset-0 overflow-hidden rounded-[8px]"
+              aria-hidden="true"
+            >
+              <div
+                className="absolute inset-0 origin-left"
+                style={{
+                  transform: `scaleX(${progress ?? getSeriesProgress(series!)})`,
+                  backgroundColor: palette.accent,
+                  opacity: 0.24,
+                  transition: 'transform 180ms ease-out',
+                  willChange: 'transform',
+                }}
+              />
+            </div>
+          )}
           <div
             className="pointer-events-none absolute rounded-[6px] border border-dashed"
             style={{
@@ -85,7 +129,7 @@ export const CompletionCoupon: React.FC<CompletionCouponProps> = ({
             className="absolute inset-0 flex select-none items-center justify-center font-mono text-[10px] font-bold uppercase tracking-[0.16em]"
             style={{ color: palette.accent }}
           >
-            Завершить
+            {actionLabel}
           </span>
         </button>
       )}

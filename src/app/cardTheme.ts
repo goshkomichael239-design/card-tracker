@@ -1,7 +1,7 @@
 export type CreationState = 'idle' | 'editing' | 'committing';
-export type CardKind = 'single' | 'routine' | 'list';
+export type CardKind = 'single' | 'series' | 'list';
 export type TimeMode = 'none' | 'deadline' | 'reminder';
-export type DraftStep = 'title' | 'kind' | 'time' | 'date' | 'clock' | 'confirm';
+export type DraftStep = 'title' | 'kind' | 'series-target' | 'list-items' | 'time' | 'date' | 'clock' | 'confirm';
 
 export interface GhostSettings {
   x: number;
@@ -21,12 +21,38 @@ export interface CardPalette {
 export interface VisualCard {
   id: string;
   title: string;
-  kind: 'single';
+  kind: 'single' | 'series' | 'list';
   timeMode: TimeMode;
   deadlineAt?: string;
   reminderAt?: string;
   createdAt: string;
   completedAt?: string;
+  series?: SeriesData;
+  list?: TaskListData;
+}
+
+export interface SeriesEntry {
+  completedAt: string;
+  durationMs: number;
+}
+
+export interface SeriesData {
+  targetCount: number;
+  entries: SeriesEntry[];
+  startedAt: string;
+  timingAnchorAt: string;
+  finishedAt?: string;
+  finishReason?: 'completed' | 'manual';
+}
+
+export interface TaskListItem {
+  id: string;
+  text: string;
+  completedAt?: string;
+}
+
+export interface TaskListData {
+  items: TaskListItem[];
 }
 
 export interface DetachedCoupon {
@@ -36,6 +62,7 @@ export interface DetachedCoupon {
   width: number;
   height: number;
   palette: CardPalette;
+  label?: string;
 }
 
 export const CARD_RADIUS = 32;
@@ -68,6 +95,16 @@ export const PALETTES: Record<TimeMode, CardPalette> = {
     ink: '#1D251D',
   },
 };
+
+export const LIST_PALETTE: CardPalette = {
+  paper: '#F7F2E8',
+  accent: '#7B6D9C',
+  accentDark: '#584B76',
+  ink: '#28231D',
+};
+
+export const getCardPalette = (card: VisualCard): CardPalette =>
+  card.kind === 'list' ? LIST_PALETTE : PALETTES[card.timeMode];
 
 export const CARD_SHADOW = `
   18px 28px 50px -8px rgba(0,0,0,0.72),

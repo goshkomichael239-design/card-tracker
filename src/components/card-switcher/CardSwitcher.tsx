@@ -14,6 +14,7 @@ interface CardSwitcherProps {
   onSelectCard: (cardId: string) => void;
   onNextCard: () => void;
   onPreviousCard: () => void;
+  mode?: 'main' | 'archive';
 }
 
 const MAX_VISIBLE_ROWS = 4;
@@ -21,12 +22,26 @@ const WHEEL_INTENT_THRESHOLD = 6;
 const WHEEL_GESTURE_END_MS = 90;
 const SHOW_CARD_SWITCHER_DEBUG = false;
 
+const getCardDisplayLabel = (card: VisualCard) => {
+  if (card.kind !== 'list' || !card.list?.items.length) {
+    return card.title;
+  }
+
+  const [firstItem] = card.list.items;
+  const remainingCount = card.list.items.length - 1;
+
+  return remainingCount > 0
+    ? `${firstItem.text} · +${remainingCount}`
+    : firstItem.text;
+};
+
 export const CardSwitcher: React.FC<CardSwitcherProps> = ({
   cards,
   activeCardId,
   onSelectCard,
   onNextCard,
   onPreviousCard,
+  mode = 'main',
 }) => {
   const [config, setConfig] = useState<CardSwitcherConfig>(() => ({
     ...INITIAL_CARD_SWITCHER_CONFIG,
@@ -141,7 +156,10 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
         style={{
           width: `min(${config.width}px, calc(100vw - 24px))`,
           display: cards.length > 0 ? 'block' : 'none',
-          transform: `translate3d(${config.positionX}px, ${config.positionY}px, 0)`,
+          transform:
+            mode === 'archive'
+              ? 'translate3d(0, 0, 0)'
+              : `translate3d(${config.positionX}px, ${config.positionY}px, 0)`,
         }}
       >
         <div
@@ -197,7 +215,7 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
                         lineHeight: `${config.rowHeight}px`,
                       }}
                     >
-                      {card.title}
+                      {getCardDisplayLabel(card)}
                     </span>
                   </button>
                 );
