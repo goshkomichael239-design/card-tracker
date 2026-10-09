@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import type { CardPalette, TimeMode } from '../../app/cardTheme';
-import { formatRemainingTime } from '../../app/dateTimeUtils';
+import { PALETTES, type CardPalette, type TimeMode } from '../../app/cardTheme';
+import {
+  formatOverdueTime,
+  formatRemainingTime,
+} from '../../app/dateTimeUtils';
 
 interface CountdownPanelProps {
   targetAt: string;
@@ -17,7 +20,7 @@ export const CountdownPanel: React.FC<CountdownPanelProps> = ({
   palette,
   isStatic = false,
 }) => {
-  const [now, setNow] = useState(Date.now());
+  const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
     if (completedAt || isStatic) {
@@ -29,6 +32,17 @@ export const CountdownPanel: React.FC<CountdownPanelProps> = ({
   }, [completedAt, isStatic]);
 
   const remaining = new Date(targetAt).getTime() - now;
+  const isPast = !completedAt && Number.isFinite(remaining) && remaining <= 0;
+  // A passed deadline or reminder switches to the warm "alert" paper tone.
+  const tone = isPast ? PALETTES.none : palette;
+
+  const label = completedAt
+    ? 'Выполнено'
+    : isPast
+      ? mode === 'deadline'
+        ? `Просрочено · ${formatOverdueTime(-remaining)}`
+        : `Пора · ${formatOverdueTime(-remaining)} назад`
+      : formatRemainingTime(remaining);
 
   return (
     <div
@@ -36,19 +50,23 @@ export const CountdownPanel: React.FC<CountdownPanelProps> = ({
       aria-label={
         completedAt
           ? 'Задача завершена'
-          : mode === 'deadline'
-            ? 'Осталось для выполнения'
-            : 'Осталось до напоминания'
+          : isPast
+            ? mode === 'deadline'
+              ? 'Срок вышел'
+              : 'Время напоминания наступило'
+            : mode === 'deadline'
+              ? 'Осталось для выполнения'
+              : 'Осталось до напоминания'
       }
       style={{
-        color: palette.accentDark,
-        backgroundColor: `${palette.accent}16`,
-        borderColor: `${palette.accent}38`,
+        color: tone.accentDark,
+        backgroundColor: `${tone.accent}${isPast ? '24' : '16'}`,
+        borderColor: `${tone.accent}${isPast ? '5c' : '38'}`,
         boxShadow: 'inset 0 1px rgba(255,255,255,0.7)',
       }}
     >
       <div className="font-mono text-[15px] font-semibold tracking-[-0.02em]">
-        {completedAt ? 'Выполнено' : formatRemainingTime(remaining)}
+        {label}
       </div>
     </div>
   );

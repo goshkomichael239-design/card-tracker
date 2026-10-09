@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 
 import cardboardTexture from '../../assets/cardboard.avif';
-import { PALETTES, type VisualCard } from '../../app/cardTheme';
+import { getCardPalette, type VisualCard } from '../../app/cardTheme';
 import { CardSwitcherDebugPanel } from './CardSwitcherDebugPanel';
 import {
   INITIAL_CARD_SWITCHER_CONFIG,
@@ -188,7 +188,7 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
             <div className="flex flex-col gap-0.5">
               {visibleCards.map((card) => {
                 const isActive = card.id === activeCardId;
-                const palette = PALETTES[card.timeMode];
+                const palette = getCardPalette(card);
 
                 return (
                   <button

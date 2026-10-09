@@ -22,10 +22,16 @@ import {
   type DraftStep,
   type TimeMode,
   type VisualCard,
-  type TaskListData,
   type TaskListItem,
 } from './cardTheme';
-import type { SeriesData } from './cardTheme';
+import {
+  downloadTextFile,
+  getBackupFilename,
+  parseBackup,
+  serializeBackup,
+  type BackupImportResult,
+} from './backupUtils';
+import { isStoredVisualCard } from './cardValidation';
 import {
   addLocalDays,
   createLocalDateTimeValue,
@@ -60,7 +66,7 @@ const createId = (): string => {
   return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 };
 
-type TransientOutgoingKind = 'switch' | 'completion';
+type TransientOutgoingKind = 'switch' | 'completion' | 'discard';
 
 const ARCHIVE_STORAGE_KEY = 'card-tracker.archive.v1';
 const ACTIVE_CARDS_STORAGE_KEY = 'card-tracker.active-cards.v1';
@@ -73,60 +79,6 @@ interface TransientOutgoingCard {
 
 const getLocalDayKey = (date: Date): string =>
   `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
-
-const isSeriesData = (value: unknown): value is SeriesData => {
-  if (!value || typeof value !== 'object') {
-    return false;
-  }
-
-  const series = value as Record<string, unknown>;
-  return (
-    typeof series.targetCount === 'number' &&
-    Number.isInteger(series.targetCount) &&
-    series.targetCount >= 1 &&
-    Array.isArray(series.entries) &&
-    series.entries.every(
-      (entry) =>
-        entry &&
-        typeof entry === 'object' &&
-        typeof (entry as Record<string, unknown>).completedAt === 'string' &&
-        typeof (entry as Record<string, unknown>).durationMs === 'number',
-    ) &&
-    typeof series.startedAt === 'string' &&
-    typeof series.timingAnchorAt === 'string'
-  );
-};
-
-const isTaskListData = (value: unknown): value is TaskListData =>
-  Boolean(value) &&
-  typeof value === 'object' &&
-  Array.isArray((value as TaskListData).items) &&
-  (value as TaskListData).items.every(
-    (item) =>
-      typeof item.id === 'string' &&
-      typeof item.text === 'string' &&
-      (item.completedAt === undefined || typeof item.completedAt === 'string'),
-  );
-
-const isStoredVisualCard = (value: unknown): value is VisualCard => {
-  if (!value || typeof value !== 'object') {
-    return false;
-  }
-
-  const card = value as Record<string, unknown>;
-
-  return (
-    typeof card.id === 'string' &&
-    typeof card.title === 'string' &&
-    (card.kind === 'single' || card.kind === 'series' || card.kind === 'list') &&
-    (card.timeMode === 'none' ||
-      card.timeMode === 'deadline' ||
-      card.timeMode === 'reminder') &&
-    typeof card.createdAt === 'string' &&
-    (card.kind !== 'series' || isSeriesData(card.series)) &&
-    (card.kind !== 'list' || isTaskListData(card.list))
-  );
-};
 
 const loadArchivedCards = (): VisualCard[] => {
   if (typeof window === 'undefined') {
@@ -1407,6 +1359,107 @@ const MainApp: React.FC = () => {
     );
   };
 
+  const handleDeleteCard = (cardId: string) => {
+    const currentCards = cardsRef.current;
+    const index = currentCards.findIndex((card) => card.id === cardId);
+    const cardToDelete = currentCards[index];
+
+    if (
+      !cardToDelete ||
+      cardToDelete.completedAt ||
+      isCreating ||
+      pendingCompletedCardIdRef.current !== null ||
+      couponFlightInProgressRef.current
+    ) {
+      return;
+    }
+
+    const nextCard =
+      currentCards.length > 1
+        ? currentCards[(index + 1) % currentCards.length]
+        : undefined;
+
+    createTransientOutgoing(cardToDelete, 'discard');
+    setCards((previous) => previous.filter((card) => card.id !== cardId));
+    setActiveCardId(nextCard?.id ?? '');
+  };
+
+  const handleRenameCard = (cardId: string, rawTitle: string) => {
+    const title = rawTitle.trim();
+
+    if (!title) {
+      return;
+    }
+
+    setCards((previous) =>
+      previous.map((card) =>
+        card.id === cardId && card.kind !== 'list' && !card.completedAt
+          ? { ...card, title }
+          : card,
+      ),
+    );
+  };
+
+  const handleExportBackup = () => {
+    downloadTextFile(
+      getBackupFilename(),
+      serializeBackup(cardsRef.current, archivedCards),
+    );
+  };
+
+  // Import only adds cards whose ids are not present yet, so it never
+  // overwrites or removes anything that already exists on this device.
+  const handleImportBackup = (text: string): BackupImportResult => {
+    const backup = parseBackup(text);
+
+    if (!backup) {
+      return { ok: false, message: 'Файл не похож на копию Card Tracker' };
+    }
+
+    const knownIds = new Set(
+      [...cardsRef.current, ...archivedCards].map((card) => card.id),
+    );
+    const takeNew = (incoming: VisualCard[]) =>
+      incoming.filter((card) => {
+        if (knownIds.has(card.id)) {
+          return false;
+        }
+
+        knownIds.add(card.id);
+        return true;
+      });
+    const newActive = takeNew(backup.cards);
+    const newArchive = takeNew(backup.archive);
+
+    if (newActive.length > 0) {
+      const hasActiveCard = cardsRef.current.some(
+        (card) => card.id === activeCardId,
+      );
+
+      setCards((previous) => [...previous, ...newActive]);
+
+      if (!hasActiveCard) {
+        setActiveCardId(newActive[0]!.id);
+      }
+    }
+
+    if (newArchive.length > 0) {
+      setArchivedCards((previous) =>
+        [...previous, ...newArchive].sort(
+          (left, right) =>
+            new Date(right.completedAt ?? 0).getTime() -
+            new Date(left.completedAt ?? 0).getTime(),
+        ),
+      );
+    }
+
+    return {
+      ok: true,
+      addedActive: newActive.length,
+      addedArchive: newArchive.length,
+    };
+  };
+
   const handleCouponFlightComplete = useCallback(() => {
     couponFlightInProgressRef.current = false;
   }, []);
@@ -1424,6 +1477,8 @@ const MainApp: React.FC = () => {
         isOpen={isArchiveOpen}
         archivedCards={archivedCards}
         firstCardCreatedAt={firstCardCreatedAt}
+        onExportBackup={handleExportBackup}
+        onImportBackup={handleImportBackup}
       />
 
       <div className="absolute inset-0 z-20 h-full w-full">
@@ -1511,6 +1566,10 @@ const MainApp: React.FC = () => {
                   onRecordSeriesStep={recordSeriesStep}
                   onFinishSeries={finishSeries}
                   onToggleListItem={toggleListItem}
+                  onRename={(title) =>
+                    handleRenameCard(activeCard.id, title)
+                  }
+                  onDelete={() => handleDeleteCard(activeCard.id)}
                   onOpenList={
                     activeCard.kind === 'list'
                       ? () => setExpandedListCardId(activeCard.id)

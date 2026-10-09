@@ -67,6 +67,23 @@ export const formatRemainingTime = (milliseconds: number): string => {
   return `${minutes} мин ${seconds} с`;
 };
 
+export const formatOverdueTime = (milliseconds: number): string => {
+  const totalMinutes = Math.max(0, Math.floor(milliseconds / 60_000));
+  const days = Math.floor(totalMinutes / 1440);
+  const hours = Math.floor((totalMinutes % 1440) / 60);
+  const minutes = totalMinutes % 60;
+
+  if (days > 0) {
+    return `${days} д ${hours} ч`;
+  }
+
+  if (hours > 0) {
+    return `${hours} ч ${minutes} мин`;
+  }
+
+  return `${Math.max(1, minutes)} мин`;
+};
+
 const FIVE_MINUTES_MS = 5 * 60 * 1000;
 
 export const MONTH_NAMES_RU = [

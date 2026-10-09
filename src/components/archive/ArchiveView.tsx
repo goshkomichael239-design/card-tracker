@@ -5,9 +5,11 @@ import whiteMarbleTexture from '../../assets/white_marble.png';
 import type { VisualCard } from '../../app/cardTheme';
 import { MONTH_NAMES_RU, startOfLocalDay } from '../../app/dateTimeUtils';
 import { CardSwitcher } from '../card-switcher/CardSwitcher';
+import type { BackupImportResult } from '../../app/backupUtils';
 import { ArchiveCard } from './ArchiveCard';
+import { BackupControls } from './BackupControls';
 
-interface ArchiveViewProps { isOpen: boolean; archivedCards: VisualCard[]; firstCardCreatedAt?: string; }
+interface ArchiveViewProps { isOpen: boolean; archivedCards: VisualCard[]; firstCardCreatedAt?: string; onExportBackup: () => void; onImportBackup: (text: string) => BackupImportResult; }
 const CUBIC_EASE: [number, number, number, number] = [0.32, 0.72, 0, 1];
 const dayKey = (date: Date) => `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
 const daysInMonth = (year: number, month: number) => new Date(year, month + 1, 0).getDate();
@@ -15,7 +17,7 @@ const clampDate = (candidate: Date, minimum: Date, maximum: Date) => { const val
 const shiftMonth = (date: Date, direction: -1 | 1) => { const start = new Date(date.getFullYear(), date.getMonth() + direction, 1); return new Date(start.getFullYear(), start.getMonth(), Math.min(date.getDate(), daysInMonth(start.getFullYear(), start.getMonth()))); };
 const shiftYear = (date: Date, direction: -1 | 1) => { const year = date.getFullYear() + direction; return new Date(year, date.getMonth(), Math.min(date.getDate(), daysInMonth(year, date.getMonth()))); };
 
-export const ArchiveView: React.FC<ArchiveViewProps> = ({ isOpen, archivedCards, firstCardCreatedAt }) => {
+export const ArchiveView: React.FC<ArchiveViewProps> = ({ isOpen, archivedCards, firstCardCreatedAt, onExportBackup, onImportBackup }) => {
   const [selectedDate, setSelectedDate] = useState(() => startOfLocalDay(new Date()));
   const [activeId, setActiveId] = useState<string | null>(null);
   const pointerRef = useRef<number | null>(null);
@@ -50,6 +52,7 @@ export const ArchiveView: React.FC<ArchiveViewProps> = ({ isOpen, archivedCards,
         <h2 className="mt-[5vh] shrink-0 font-mono text-[clamp(24px,4vw,40px)] font-bold uppercase tracking-[0.2em]" style={{ color: 'rgba(174,143,75,0.78)', textShadow: '0 1px 0 rgba(255,255,255,0.72), 0 -1px 0 rgba(105,82,42,0.42), 0 2px 5px rgba(76,59,29,0.22)' }}>ЖУРНАЛ КАРТОЧЕК</h2>
         <ArchiveCalendar date={selectedDate} onChangeYear={(d) => selectDate(shiftYear(selectedDate, d))} onChangeMonth={(d) => selectDate(shiftMonth(selectedDate, d))} onChangeDay={(d) => selectDate(new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate() + d))} canChangeYear={(d) => canChange(shiftYear(selectedDate, d))} canChangeMonth={(d) => canChange(shiftMonth(selectedDate, d))} canChangeDay={(d) => canChange(new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate() + d))} />
         {activeCard ? <><ArchiveCard cards={dayCards} activeCardId={activeCard.id} />{dayCards.length > 1 && <CardSwitcher cards={dayCards} activeCardId={activeCard.id} onSelectCard={setActiveId} onNextCard={() => moveCard(1)} onPreviousCard={() => moveCard(-1)} mode="archive" />}</> : <div className="mt-8 flex h-[260px] w-[min(396px,88vw)] shrink-0 items-center justify-center rounded-[25px] border border-black/10 px-10" style={{ backgroundColor: 'rgba(247,242,232,0.68)', backgroundImage: `url(${cardboardTexture})`, backgroundBlendMode: 'soft-light', boxShadow: '0 16px 28px rgba(54,42,31,0.16), inset 0 1px rgba(255,255,255,0.7)' }}><p className="font-mono text-[11px] uppercase tracking-[0.12em]" style={{ color: 'rgba(63,57,50,0.62)' }}>В этот день завершённых карточек нет</p></div>}
+        <BackupControls onExport={onExportBackup} onImport={onImportBackup} />
       </motion.section>}</AnimatePresence>
     </motion.div>
   </div>;

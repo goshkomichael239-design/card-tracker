@@ -3,7 +3,7 @@ import React, { useEffect, useRef } from 'react';
 import type { VisualCard } from '../../app/cardTheme';
 import { TaskCard } from './TaskCard';
 
-type TransientCardKind = 'switch' | 'completion';
+type TransientCardKind = 'switch' | 'completion' | 'discard';
 
 interface TransientTaskCardOverlayProps {
   card: VisualCard;
@@ -25,7 +25,8 @@ export const TransientTaskCardOverlay: React.FC<
 
     let animation: Animation | null = null;
     const frameId = window.requestAnimationFrame(() => {
-      const exitDuration = kind === 'completion' ? 320 : 200;
+      const exitDuration =
+        kind === 'completion' ? 320 : kind === 'discard' ? 300 : 200;
       const archiveDirectionY = Math.max(
         96,
         Math.min(180, window.innerHeight * 0.18),
@@ -38,11 +39,17 @@ export const TransientTaskCardOverlay: React.FC<
               opacity: 0,
               offset: 1,
             }
-          : {
-              transform:
-                'translate3d(-10px, -2px, 0) rotate(-0.45deg) scale(0.995)',
-              opacity: 0,
-            };
+          : kind === 'discard'
+            ? {
+                transform:
+                  'translate3d(-46px, 84px, 0) rotate(-9deg) scale(0.9)',
+                opacity: 0,
+              }
+            : {
+                transform:
+                  'translate3d(-10px, -2px, 0) rotate(-0.45deg) scale(0.995)',
+                opacity: 0,
+              };
 
       animation = overlay.animate(
         [
@@ -57,7 +64,9 @@ export const TransientTaskCardOverlay: React.FC<
           easing:
             kind === 'completion'
               ? 'cubic-bezier(0.32, 0.72, 0, 1)'
-              : 'ease-out',
+              : kind === 'discard'
+                ? 'cubic-bezier(0.4, 0, 1, 1)'
+                : 'ease-out',
           fill: 'forwards',
         },
       );

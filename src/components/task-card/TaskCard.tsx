@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 import cardboardTexture from '../../assets/cardboard.avif';
-import { getCardPalette, type VisualCard } from '../../app/cardTheme';
+import { getCardPalette, PALETTES, type VisualCard } from '../../app/cardTheme';
 import { formatHumanDate, formatShortDate } from '../../app/dateTimeUtils';
 import { getListCompletedCount, getListProgress } from '../../app/listUtils';
 import { formatSeriesDuration } from '../../app/seriesUtils';
@@ -17,6 +17,8 @@ interface TaskCardProps {
   onFinishSeries?: (couponBounds: DOMRect) => void;
   onToggleListItem?: (itemId: string) => void;
   onOpenList?: () => void;
+  onRename?: (title: string) => void;
+  onDelete?: () => void;
   isStatic?: boolean;
   hideCoupon?: boolean;
 }
@@ -28,11 +30,96 @@ export const TaskCard: React.FC<TaskCardProps> = ({
   onFinishSeries,
   onToggleListItem,
   onOpenList,
+  onRename,
+  onDelete,
   isStatic = false,
   hideCoupon = false,
 }) => {
   const palette = getCardPalette(card);
   const config = INITIAL_TASK_CARD_V2_CONFIG;
+  // The same TaskCard instance is reused while the active card changes, so the
+  // menu/edit/confirm state is keyed by card id instead of plain booleans.
+  const [menuForId, setMenuForId] = useState<string | null>(null);
+  const [editingForId, setEditingForId] = useState<string | null>(null);
+  const [confirmDeleteForId, setConfirmDeleteForId] = useState<string | null>(
+    null,
+  );
+  const [titleDraft, setTitleDraft] = useState('');
+  const menuRef = useRef<HTMLDivElement | null>(null);
+  const titleInputRef = useRef<HTMLTextAreaElement | null>(null);
+  const titleEditCancelledRef = useRef(false);
+  const isMenuOpen = menuForId === card.id;
+  const isEditingTitle = editingForId === card.id;
+  const isConfirmingDelete = confirmDeleteForId === card.id;
+  const canRename = Boolean(onRename) && card.kind !== 'list';
+  const hasMenu = canRename || Boolean(onDelete);
+
+  useEffect(() => {
+    if (!isMenuOpen) {
+      return;
+    }
+
+    const closeMenu = () => {
+      setMenuForId(null);
+      setConfirmDeleteForId(null);
+    };
+    const handlePointerDown = (event: PointerEvent) => {
+      if (!menuRef.current?.contains(event.target as Node)) {
+        closeMenu();
+      }
+    };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        closeMenu();
+      }
+    };
+
+    document.addEventListener('pointerdown', handlePointerDown);
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isMenuOpen]);
+
+  useEffect(() => {
+    if (!isEditingTitle) {
+      return;
+    }
+
+    const input = titleInputRef.current;
+    input?.focus({ preventScroll: true });
+    input?.setSelectionRange(input.value.length, input.value.length);
+  }, [isEditingTitle]);
+
+  const startEditingTitle = () => {
+    titleEditCancelledRef.current = false;
+    setTitleDraft(card.title);
+    setEditingForId(card.id);
+    setMenuForId(null);
+  };
+
+  const commitTitle = () => {
+    const nextTitle = titleDraft.trim();
+
+    setEditingForId(null);
+
+    if (!titleEditCancelledRef.current && nextTitle && nextTitle !== card.title) {
+      onRename?.(nextTitle);
+    }
+  };
+
+  const handleDeleteClick = () => {
+    if (!isConfirmingDelete) {
+      setConfirmDeleteForId(card.id);
+      return;
+    }
+
+    setMenuForId(null);
+    setConfirmDeleteForId(null);
+    onDelete?.();
+  };
   const targetAt =
     card.timeMode === 'deadline'
       ? card.deadlineAt
@@ -96,31 +183,133 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           >
             {series ? 'Серия' : list ? 'Список' : 'Одна задача'}
           </span>
-          <span
-            className="flex h-8 w-8 items-center justify-center rounded-full text-sm"
-            style={{
-              color: palette.accentDark,
-              backgroundColor: `${palette.accent}18`,
-            }}
-            aria-hidden="true"
-          >
-            ◔
-          </span>
+          <div ref={menuRef} className="relative">
+            {hasMenu && !card.completedAt ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setMenuForId(isMenuOpen ? null : card.id);
+                  setConfirmDeleteForId(null);
+                }}
+                aria-haspopup="menu"
+                aria-expanded={isMenuOpen}
+                aria-label="Действия с карточкой"
+                className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border-0 text-sm"
+                style={{
+                  color: palette.accentDark,
+                  backgroundColor: `${palette.accent}${isMenuOpen ? '30' : '18'}`,
+                }}
+              >
+                ⋯
+              </button>
+            ) : (
+              <span
+                className="flex h-8 w-8 items-center justify-center rounded-full text-sm"
+                style={{
+                  color: palette.accentDark,
+                  backgroundColor: `${palette.accent}18`,
+                }}
+                aria-hidden="true"
+              >
+                ⋯
+              </span>
+            )}
+
+            {isMenuOpen && (
+              <div
+                role="menu"
+                className="absolute right-0 top-10 z-30 w-[196px] overflow-hidden rounded-[12px] border"
+                style={{
+                  backgroundColor: config.paperTint,
+                  backgroundImage: `url(${cardboardTexture})`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                  backgroundBlendMode: 'multiply',
+                  borderColor: 'rgba(91,76,59,0.26)',
+                  boxShadow:
+                    '0 10px 22px rgba(20,17,14,0.3), inset 0 1px 0 rgba(255,255,255,0.82)',
+                }}
+              >
+                {canRename && (
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={startEditingTitle}
+                    className="block w-full cursor-pointer border-0 bg-transparent px-4 py-3 text-left font-mono text-[10px] font-bold uppercase tracking-[0.12em]"
+                    style={{ color: palette.accentDark }}
+                  >
+                    Править название
+                  </button>
+                )}
+                {onDelete && (
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={handleDeleteClick}
+                    className="block w-full cursor-pointer border-0 bg-transparent px-4 py-3 text-left font-mono text-[10px] font-bold uppercase tracking-[0.12em]"
+                    style={{
+                      color: isConfirmingDelete
+                        ? PALETTES.none.accentDark
+                        : 'rgba(40,35,29,0.68)',
+                      borderTop: canRename
+                        ? '1px dashed rgba(70,59,46,0.3)'
+                        : undefined,
+                    }}
+                  >
+                    {isConfirmingDelete ? 'Точно выбросить?' : 'Выбросить'}
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
         </div>
 
-        {!list && (
-          <h2
-            className="shrink-0 font-semibold leading-[1.08]"
-            style={{
-              marginTop: config.titleGap,
-              fontSize: config.titleSize,
-              color: '#28231D',
-              letterSpacing: '-0.025em',
-            }}
-          >
-            {card.title}
-          </h2>
-        )}
+        {!list &&
+          (isEditingTitle ? (
+            <textarea
+              ref={titleInputRef}
+              value={titleDraft}
+              rows={1}
+              maxLength={120}
+              onChange={(event) => setTitleDraft(event.target.value)}
+              onBlur={commitTitle}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' && !event.shiftKey) {
+                  event.preventDefault();
+                  event.currentTarget.blur();
+                } else if (event.key === 'Escape') {
+                  titleEditCancelledRef.current = true;
+                  event.currentTarget.blur();
+                }
+              }}
+              aria-label="Название карточки"
+              className="block w-full shrink-0 resize-none border-0 bg-transparent p-0 font-semibold leading-[1.08] outline-none"
+              style={
+                {
+                  marginTop: config.titleGap,
+                  fontSize: config.titleSize,
+                  color: '#28231D',
+                  letterSpacing: '-0.025em',
+                  fieldSizing: 'content',
+                  maxHeight: config.titleSize * 1.08 * 4,
+                  borderBottom: '1px dashed rgba(69,57,44,0.42)',
+                  fontFamily: 'inherit',
+                } as React.CSSProperties
+              }
+            />
+          ) : (
+            <h2
+              className="shrink-0 font-semibold leading-[1.08]"
+              style={{
+                marginTop: config.titleGap,
+                fontSize: config.titleSize,
+                color: '#28231D',
+                letterSpacing: '-0.025em',
+              }}
+            >
+              {card.title}
+            </h2>
+          ))}
 
         {list ? (
           <div
