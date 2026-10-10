@@ -79,6 +79,23 @@
   animation-delay: var(--draw-delay, 0ms);
 }
 
+/* Lettering on a completion coupon: the same letterpress deboss as the card's
+   action words (muted ink, light edge below, dark edge above). One class for
+   the coupon on the card and for the one that tears off. */
+.coupon-label {
+  font-family: inherit;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(48, 40, 31, 0.72);
+  font-variant-numeric: lining-nums tabular-nums;
+  text-shadow:
+    0 1.2px 0 rgba(255, 255, 255, 0.92),
+    0 -1px 0 rgba(30, 20, 10, 0.5),
+    0 0 1px rgba(0, 0, 0, 0.16);
+}
+
 /* Card actions: lettering pressed into the paper and set into a shallow,
    rounded recess of its own. On hover (mouse) or press (finger) the recess
    "lights up" with the card's second accent (--etched-glow). */

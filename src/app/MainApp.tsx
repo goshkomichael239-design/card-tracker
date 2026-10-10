@@ -34,6 +34,7 @@ import {
 } from './backupUtils';
 import { isStoredVisualCard } from './cardValidation';
 import { DEBUG_CARD_ID_PREFIX } from './debugCards';
+import { getListProgress } from './listUtils';
 import { DebugCardsPanel } from '../components/DebugCardsPanel';
 import {
   addLocalDays,
@@ -1245,6 +1246,20 @@ const MainApp: React.FC = () => {
       height: couponBounds.height,
       palette: getCardPalette(completedCard),
       label: completedCard.kind === 'series' ? 'Засчитать +1' : undefined,
+      // The fill the on-card coupon was showing when it was pressed: a series
+      // shows the share before this step counted (unless it is finished by
+      // hand), a list its checked share.
+      progress: completedCard.series
+        ? Math.min(
+            1,
+            (completedCard.series.finishReason === 'manual'
+              ? completedCard.series.entries.length
+              : Math.max(0, completedCard.series.entries.length - 1)) /
+              completedCard.series.targetCount,
+          )
+        : completedCard.list
+          ? getListProgress(completedCard.list)
+          : undefined,
     });
     const nextCards = cardsRef.current.map((card) =>
         card.id === completedCard.id ? completedCard : card,

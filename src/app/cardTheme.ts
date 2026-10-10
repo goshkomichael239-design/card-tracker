@@ -74,6 +74,11 @@ export interface DetachedCoupon {
   height: number;
   palette: CardPalette;
   label?: string;
+  /**
+   * 0..1 share shown as the fill the coupon had on the card; undefined for a
+   * coupon that had none. Must match what the on-card coupon displayed.
+   */
+  progress?: number;
 }
 
 export const CARD_RADIUS = 32;

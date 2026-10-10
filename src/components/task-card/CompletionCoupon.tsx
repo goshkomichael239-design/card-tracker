@@ -1,60 +1,12 @@
 import React, { useRef } from 'react';
 
 import cardboardTexture from '../../assets/cardboard.avif';
-import {
-  COUPON_CORE_THICKNESS,
-  COUPON_DASH_GAP,
-  COUPON_DASH_LENGTH,
-  COUPON_RADIUS,
-  COUPON_SHOULDER_OPACITY,
-  COUPON_SHOULDER_THICKNESS,
-  COUPON_STROKE_INSET,
-  type CardPalette,
-} from '../../app/cardTheme';
+import type { CardPalette } from '../../app/cardTheme';
 import { formatCompletedDate } from '../../app/dateTimeUtils';
 import { getSeriesProgress } from '../../app/seriesUtils';
 import type { SeriesData } from '../../app/cardTheme';
-
-/**
- * Dashed cut line running along the coupon's own edge. It uses the same dash
- * pattern and strokes as DetachedCompletionCoupon so the coupon looks identical
- * before and after it tears off.
- */
-export const CouponPerforation: React.FC = () => {
-  const dashPattern = `${COUPON_DASH_LENGTH} ${COUPON_DASH_GAP}`;
-  const geometry = {
-    x: COUPON_STROKE_INSET,
-    y: COUPON_STROKE_INSET,
-    width: `calc(100% - ${COUPON_STROKE_INSET * 2}px)`,
-    height: `calc(100% - ${COUPON_STROKE_INSET * 2}px)`,
-    rx: COUPON_RADIUS,
-  } as React.CSSProperties;
-
-  return (
-    <svg
-      className="pointer-events-none absolute inset-0 h-full w-full"
-      aria-hidden="true"
-      shapeRendering="geometricPrecision"
-    >
-      <rect
-        style={geometry}
-        fill="none"
-        stroke={`rgba(104,104,104,${COUPON_SHOULDER_OPACITY})`}
-        strokeWidth={COUPON_SHOULDER_THICKNESS}
-        strokeDasharray={dashPattern}
-        strokeLinecap="butt"
-      />
-      <rect
-        style={geometry}
-        fill="none"
-        stroke="rgba(30,24,18,0.72)"
-        strokeWidth={COUPON_CORE_THICKNESS}
-        strokeDasharray={dashPattern}
-        strokeLinecap="butt"
-      />
-    </svg>
-  );
-};
+import { CouponFace } from './CouponFace';
+import { CouponPerforation } from './CouponPerforation';
 
 interface CompletionCouponProps {
   completedAt?: string;
@@ -189,49 +141,18 @@ export const CompletionCoupon: React.FC<CompletionCouponProps> = ({
           style={{ borderRadius: '8px' }}
           aria-label="Завершить задачу"
         >
-          <div
-            className="absolute inset-0 overflow-hidden rounded-[8px]"
-            style={{
-              backgroundColor: paperTint,
-              backgroundImage: `url(${cardboardTexture})`,
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
-              backgroundBlendMode: 'multiply',
-              boxShadow: 'inset 0 1px rgba(255,255,255,0.78)',
-            }}
+          {/* The same face the coupon wears while flying away. */}
+          <CouponFace
+            paper={paperTint}
+            glow={palette.glow}
+            progress={
+              series || progress !== undefined
+                ? (progress ?? getSeriesProgress(series!))
+                : undefined
+            }
+            label={actionLabel}
+            animateProgress
           />
-          {(series || progress !== undefined) && (
-            <div
-              className="pointer-events-none absolute inset-0 overflow-hidden rounded-[8px]"
-              aria-hidden="true"
-            >
-              <div
-                className="absolute inset-0 origin-left"
-                style={{
-                  transform: `scaleX(${progress ?? getSeriesProgress(series!)})`,
-                  backgroundColor: palette.glow,
-                  opacity: 0.7,
-                  transition: 'transform 180ms ease-out',
-                  willChange: 'transform',
-                }}
-              />
-            </div>
-          )}
-          <CouponPerforation />
-          {/* Same lettering as on the slot left behind: dark ink, large and
-              clear. Words are a little smaller than a bare counter. */}
-          <span
-            className="absolute inset-0 flex select-none items-center justify-center px-3 font-mono font-bold uppercase"
-            style={{
-              color: palette.ink,
-              fontSize: /^\d+\s*\/\s*\d+$/.test(actionLabel) ? 20 : 17,
-              letterSpacing: '0.1em',
-              lineHeight: 1.1,
-              fontVariantNumeric: 'lining-nums tabular-nums',
-            }}
-          >
-            {actionLabel}
-          </span>
         </button>
       )}
     </div>

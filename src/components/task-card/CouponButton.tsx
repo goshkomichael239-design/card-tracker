@@ -1,7 +1,7 @@
 import React from 'react';
 
 import cardboardTexture from '../../assets/cardboard.avif';
-import { CouponPerforation } from './CompletionCoupon';
+import { CouponPerforation } from './CouponPerforation';
 
 interface CouponButtonProps {
   label: string;
