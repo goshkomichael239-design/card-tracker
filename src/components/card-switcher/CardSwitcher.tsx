@@ -222,25 +222,29 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
                     }}
                     aria-pressed={isActive}
                   >
-                    {isOverdue && (
-                      <span
-                        className="absolute bottom-1 left-0 top-1 w-[3px] rounded-r-[2px]"
-                        style={{ backgroundColor: '#B8483A' }}
-                        aria-hidden="true"
-                      />
-                    )}
                     <span
                       className="relative z-10 block min-w-0 flex-1 truncate font-mono font-semibold"
                       style={{
                         color: isActive
                           ? palette.accentDark
-                          : isOverdue
-                            ? '#8F3025'
-                            : 'rgba(40,35,29,0.68)',
+                          : 'rgba(40,35,29,0.68)',
                         fontSize: config.fontSize,
                         lineHeight: `${config.rowHeight}px`,
                       }}
                     >
+                      {/* Overdue: a red dot in front of the name. */}
+                      {isOverdue && (
+                        <span
+                          className="mr-2 inline-block h-[9px] w-[9px] rounded-full align-middle"
+                          style={{
+                            background:
+                              'radial-gradient(circle at 32% 28%, #E0705F 0%, #B8483A 55%, #8F3025 100%)',
+                            boxShadow: '0 1px 2px rgba(40,12,8,0.4)',
+                          }}
+                          role="img"
+                          aria-label="Просрочено"
+                        />
+                      )}
                       {getCardDisplayLabel(card)}
                     </span>
                   </button>
