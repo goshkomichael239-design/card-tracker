@@ -349,12 +349,13 @@
 /* Index tabs hanging from the bottom edge of the card list. */
 .deck-tab {
   position: relative;
+  z-index: 0;
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  height: 26px;
-  margin-top: -1px;
-  padding: 0 10px 1px;
+  height: 34px;
+  margin-top: -12px;
+  padding: 8px 10px 0;
   border: 1px solid rgba(103, 86, 65, 0.2);
   border-top: 0;
   border-radius: 0 0 9px 9px;
