@@ -9,6 +9,7 @@ import {
   type ArchiveKindFilter,
 } from '../../app/archiveUtils';
 import { getCardPalette, type VisualCard } from '../../app/cardTheme';
+import { getListCompletedCount, getListProgress } from '../../app/listUtils';
 import { getSeriesProgress } from '../../app/seriesUtils';
 
 interface ArchiveCatalogProps {
@@ -32,15 +33,19 @@ const anchorId = (monthKey: string) => `archive-month-${monthKey}`;
 
 /**
  * The stub left of a torn-off coupon, in miniature: filled with the card's
- * accent as far as the work got (series), fully for everything else.
+ * accent as far as the work got (series, list), fully for a single task.
  */
 const CouponStub: React.FC<{ card: VisualCard }> = ({ card }) => {
   const palette = getCardPalette(card);
-  const share = card.series ? getSeriesProgress(card.series) : 1;
+  const share = card.series
+    ? getSeriesProgress(card.series)
+    : card.list
+      ? getListProgress(card.list)
+      : 1;
   const label = card.series
     ? `${card.series.entries.length}/${card.series.targetCount}`
     : card.list
-      ? `${card.list.items.length}/${card.list.items.length}`
+      ? `${getListCompletedCount(card.list)}/${card.list.items.length}`
       : '✓';
 
   return (

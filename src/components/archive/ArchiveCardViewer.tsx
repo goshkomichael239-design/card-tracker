@@ -4,6 +4,7 @@ import { getCardPalette, type VisualCard } from '../../app/cardTheme';
 import { getCardScale, useViewportSize } from '../../app/viewportScale';
 import { TaskCard } from '../task-card/TaskCard';
 import { INITIAL_TASK_CARD_V2_CONFIG } from '../task-card/taskCardV2Config';
+import { ListItemsSheet } from './ListItemsSheet';
 import { SeriesHistorySheet } from './SeriesHistorySheet';
 
 interface ArchiveCardViewerProps {
@@ -38,9 +39,12 @@ export const ArchiveCardViewer: React.FC<ArchiveCardViewerProps> = ({
     height,
   );
   const [isConfirmingTrash, setIsConfirmingTrash] = useState(false);
-  // A series can be turned over to read the log of its steps.
+  // A series can be turned over to read the log of its steps, a list to read
+  // every item (the face only fits the first few).
   const [isShowingHistory, setIsShowingHistory] = useState(false);
-  const hasHistory = card.kind === 'series' && Boolean(card.series);
+  const isList = card.kind === 'list' && Boolean(card.list);
+  const hasHistory = (card.kind === 'series' && Boolean(card.series)) || isList;
+  const historyLabel = isList ? 'Все пункты' : 'История шагов';
 
   useEffect(() => {
     if (!isConfirmingTrash) {
@@ -109,7 +113,11 @@ export const ArchiveCardViewer: React.FC<ArchiveCardViewerProps> = ({
           }}
         >
           {isShowingHistory ? (
-            <SeriesHistorySheet card={card} />
+            isList ? (
+              <ListItemsSheet card={card} />
+            ) : (
+              <SeriesHistorySheet card={card} />
+            )
           ) : (
             <TaskCard card={card} onComplete={() => undefined} isStatic />
           )}
@@ -131,7 +139,7 @@ export const ArchiveCardViewer: React.FC<ArchiveCardViewerProps> = ({
               } as React.CSSProperties
             }
           >
-            {isShowingHistory ? 'Карточка' : 'История шагов'}
+            {isShowingHistory ? 'Карточка' : historyLabel}
           </button>
         )}
         <button

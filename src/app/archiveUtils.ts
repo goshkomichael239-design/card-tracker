@@ -231,9 +231,13 @@ export const formatArchiveMoment = (iso: string): string => {
 
 /**
  * A completed card made live again (to go back on the table or into the bin):
- * the completion mark goes, and a series loses its "finished" mark.
+ * the completion mark goes, and a series loses its "finished" mark and times
+ * its next step from now rather than from its last step long ago.
  */
-export const reviveCard = (card: VisualCard): VisualCard => {
+export const reviveCard = (
+  card: VisualCard,
+  now: Date = new Date(),
+): VisualCard => {
   const revived: VisualCard = { ...card, completedAt: undefined };
 
   if (revived.series) {
@@ -241,6 +245,7 @@ export const reviveCard = (card: VisualCard): VisualCard => {
       ...revived.series,
       finishedAt: undefined,
       finishReason: undefined,
+      timingAnchorAt: now.toISOString(),
     };
   }
 

@@ -1438,14 +1438,11 @@ const MainApp: React.FC = () => {
       palette: getCardPalette(completedCard),
       label: completedCard.kind === 'series' ? 'Засчитать +1' : undefined,
       // The fill the on-card coupon was showing when it was pressed: a series
-      // shows the share before this step counted (unless it is finished by
-      // hand), a list its checked share.
+      // shows the share counted before this press, a list its checked share.
       progress: completedCard.series
         ? Math.min(
             1,
-            (completedCard.series.finishReason === 'manual'
-              ? completedCard.series.entries.length
-              : Math.max(0, completedCard.series.entries.length - 1)) /
+            (cardBefore?.series ?? completedCard.series).entries.length /
               completedCard.series.targetCount,
           )
         : completedCard.list
@@ -1478,6 +1475,20 @@ const MainApp: React.FC = () => {
 
     const completedCount = series.entries.length;
     if (completedCount >= series.targetCount) {
+      // Every step is already counted (a finished series put back on the
+      // table from the archive): the coupon simply closes it again.
+      handleCompleteCard(
+        couponBounds,
+        {
+          ...currentCard,
+          series: {
+            ...series,
+            finishedAt: new Date().toISOString(),
+            finishReason: 'completed',
+          },
+        },
+        currentCard,
+      );
       return;
     }
 
