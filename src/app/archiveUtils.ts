@@ -61,10 +61,10 @@ export const groupArchiveByMonth = (cards: VisualCard[]): ArchiveMonth[] => {
 // Heights of the catalogue pieces, as drawn in App.css (.archive-edge,
 // .archive-divider): the first edge of a month is whole, the next ones overlap.
 const EDGES_PADDING = 6;
-const FIRST_EDGE_HEIGHT = 58;
-const NEXT_EDGE_PITCH = 46;
-const DIVIDER_FIRST_ON_PAGE = 56;
-const DIVIDER_HEIGHT = 64;
+const FIRST_EDGE_HEIGHT = 52;
+const NEXT_EDGE_PITCH = 41;
+const DIVIDER_FIRST_ON_PAGE = 48;
+const DIVIDER_HEIGHT = 56;
 const MIN_CARDS_PER_PAGE = 2;
 
 /**

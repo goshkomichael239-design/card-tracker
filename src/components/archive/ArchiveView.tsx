@@ -55,7 +55,7 @@ const ArchiveContents: React.FC<Omit<ArchiveViewProps, 'isOpen'>> = ({
   return (
     <>
       <h2
-        className="mt-[5vh] shrink-0 font-mono text-[clamp(24px,4vw,40px)] font-bold uppercase tracking-[0.2em]"
+        className="mt-[2.5vh] shrink-0 font-mono text-[clamp(24px,4vw,40px)] font-bold uppercase tracking-[0.2em]"
         style={TITLE_STYLE}
       >
         Журнал карточек
@@ -63,7 +63,7 @@ const ArchiveContents: React.FC<Omit<ArchiveViewProps, 'isOpen'>> = ({
 
       {/* Summary pressed into the marble, under the title. */}
       <p
-        className="mt-2 shrink-0 font-mono text-[12.5px] font-bold uppercase tracking-[0.12em]"
+        className="mt-1 shrink-0 font-mono text-[12px] font-bold uppercase tracking-[0.12em]"
         style={{ ...TITLE_STYLE, color: 'rgba(120,96,52,0.75)' }}
       >
         За неделю {summary.week} · В {summary.monthName} {summary.month} · Всего{' '}
@@ -73,7 +73,7 @@ const ArchiveContents: React.FC<Omit<ArchiveViewProps, 'isOpen'>> = ({
       {/* The run of active days, only once it is a run (two days or more). */}
       {summary.streak >= 2 && (
         <p
-          className="mt-1.5 shrink-0 font-mono text-[12.5px] font-bold uppercase tracking-[0.12em]"
+          className="mt-0.5 shrink-0 font-mono text-[12px] font-bold uppercase tracking-[0.12em]"
           style={{ ...TITLE_STYLE, color: 'rgba(150,104,40,0.85)' }}
         >
           {summary.streak} {pluralDays(summary.streak)} подряд

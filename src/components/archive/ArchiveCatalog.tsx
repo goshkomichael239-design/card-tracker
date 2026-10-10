@@ -33,8 +33,8 @@ const kindLabel = (card: VisualCard): string =>
 
 // Room under the box that is not for cards: the pager, and the page's own
 // bottom padding (the archive scroll area keeps 110px free for the nav bar).
-const PAGER_RESERVE = 48;
-const BOX_PADDING = 30;
+const PAGER_RESERVE = 62;
+const BOX_PADDING = 26;
 const SCROLL_BOTTOM_RESERVE = 110;
 const FALLBACK_BUDGET = 360;
 
@@ -57,7 +57,7 @@ const CouponStub: React.FC<{ card: VisualCard }> = ({ card }) => {
 
   return (
     <span
-      className="relative flex h-[22px] w-[52px] shrink-0 items-center justify-center overflow-hidden rounded-[5px]"
+      className="relative flex h-[20px] w-[47px] shrink-0 items-center justify-center overflow-hidden rounded-[5px]"
       style={{
         backgroundColor: palette.paper,
         boxShadow:
@@ -104,19 +104,19 @@ const CardEdge: React.FC<{ card: VisualCard; onOpen: () => void }> = ({
       aria-label={`${card.title}, ${kindLabel(card)}, ${formatArchiveDay(card.completedAt)}`}
     >
       <span
-        className="h-2.5 w-2.5 shrink-0 rounded-full"
+        className="h-2 w-2 shrink-0 rounded-full"
         style={{ backgroundColor: palette.accent }}
         aria-hidden="true"
       />
       <span className="min-w-0 flex-1">
         <span
-          className="block truncate text-[16px] font-semibold leading-[1.2]"
+          className="block truncate text-[14.5px] font-semibold leading-[1.2]"
           style={{ color: '#28231D' }}
         >
           {card.title}
         </span>
         <span
-          className="block truncate font-mono text-[11px] uppercase tracking-[0.1em]"
+          className="block truncate font-mono text-[10px] uppercase tracking-[0.1em]"
           style={{ color: 'rgba(40,35,29,0.5)' }}
         >
           {kindLabel(card)} · {formatArchiveDay(card.completedAt)}
@@ -259,7 +259,7 @@ export const ArchiveCatalog: React.FC<ArchiveCatalogProps> = ({
   };
 
   return (
-    <div ref={rootRef} className="mt-6 flex w-[min(560px,100%)] shrink-0 flex-col">
+    <div ref={rootRef} className="mt-3 flex w-[min(560px,100%)] shrink-0 flex-col">
       {/* Search strip and kind tabs */}
       <div className="engraved flex flex-col gap-3 sm:flex-row sm:items-center">
         <label
@@ -285,7 +285,7 @@ export const ArchiveCatalog: React.FC<ArchiveCatalogProps> = ({
             }}
             placeholder="Найти карточку"
             aria-label="Поиск по архиву"
-            className="h-[44px] min-w-0 flex-1 border-0 bg-transparent p-0 text-[16px] outline-none placeholder:text-black/35"
+            className="h-[40px] min-w-0 flex-1 border-0 bg-transparent p-0 text-[16px] outline-none placeholder:text-black/35"
             style={{ color: '#28231D', fontFamily: 'inherit' }}
           />
           {query && (
@@ -340,7 +340,7 @@ export const ArchiveCatalog: React.FC<ArchiveCatalogProps> = ({
 
       {/* Month index: tabs that jump to their divider */}
       {months.length > 1 && (
-        <div className="mt-4 flex gap-1.5 overflow-x-auto pb-1" aria-label="Месяцы">
+        <div className="mt-3 flex gap-1.5 overflow-x-auto pb-1" aria-label="Месяцы">
           {months.map((month) => (
             <button
               key={month.key}
@@ -358,7 +358,7 @@ export const ArchiveCatalog: React.FC<ArchiveCatalogProps> = ({
       {/* The box itself */}
       <div
         ref={boxRef}
-        className="mt-4 overflow-hidden rounded-[18px] px-3 pb-4 pt-3 sm:px-4"
+        className="mt-3 overflow-hidden rounded-[18px] px-3 pb-3 pt-3 sm:px-4"
         style={{
           backgroundColor: 'rgba(120,96,70,0.22)',
           backgroundImage: `url(${cardboardTexture})`,
@@ -437,9 +437,13 @@ export const ArchiveCatalog: React.FC<ArchiveCatalogProps> = ({
             className="pill-action disabled:cursor-default disabled:opacity-40"
             style={
               {
-                padding: '10px 18px',
-                ['--pill-bg' as string]: 'rgba(247,242,232,0.9)',
-                ['--pill-ink' as string]: '#5f554a',
+                padding: '11px 30px',
+                fontSize: 26,
+                lineHeight: 1,
+                boxShadow:
+                  'inset 0 2px 0 rgba(255,255,255,0.7), inset 0 -2px 3px rgba(90,60,20,0.18), 0 2px 5px rgba(40,28,16,0.28)',
+                ['--pill-bg' as string]: 'rgba(222,196,140,0.6)',
+                ['--pill-ink' as string]: '#5a4520',
                 ['--pill-glow' as string]: 'rgba(222,196,140,0.75)',
               } as React.CSSProperties
             }
@@ -447,7 +451,7 @@ export const ArchiveCatalog: React.FC<ArchiveCatalogProps> = ({
             ←
           </button>
           <span
-            className="min-w-[132px] text-center font-mono text-[12px] font-bold uppercase tracking-[0.12em]"
+            className="min-w-[140px] text-center font-mono text-[13px] font-bold uppercase tracking-[0.12em]"
             style={{ color: 'rgba(70,52,28,0.75)' }}
             aria-live="polite"
           >
@@ -465,9 +469,13 @@ export const ArchiveCatalog: React.FC<ArchiveCatalogProps> = ({
             className="pill-action disabled:cursor-default disabled:opacity-40"
             style={
               {
-                padding: '10px 18px',
-                ['--pill-bg' as string]: 'rgba(247,242,232,0.9)',
-                ['--pill-ink' as string]: '#5f554a',
+                padding: '11px 30px',
+                fontSize: 26,
+                lineHeight: 1,
+                boxShadow:
+                  'inset 0 2px 0 rgba(255,255,255,0.7), inset 0 -2px 3px rgba(90,60,20,0.18), 0 2px 5px rgba(40,28,16,0.28)',
+                ['--pill-bg' as string]: 'rgba(222,196,140,0.6)',
+                ['--pill-ink' as string]: '#5a4520',
                 ['--pill-glow' as string]: 'rgba(222,196,140,0.75)',
               } as React.CSSProperties
             }
