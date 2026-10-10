@@ -58,6 +58,73 @@ export const groupArchiveByMonth = (cards: VisualCard[]): ArchiveMonth[] => {
   return [...groups.values()];
 };
 
+// Heights of the catalogue pieces, as drawn in App.css (.archive-edge,
+// .archive-divider): the first edge of a month is whole, the next ones overlap.
+const EDGES_PADDING = 6;
+const FIRST_EDGE_HEIGHT = 58;
+const NEXT_EDGE_PITCH = 46;
+const DIVIDER_FIRST_ON_PAGE = 56;
+const DIVIDER_HEIGHT = 64;
+const MIN_CARDS_PER_PAGE = 2;
+
+/**
+ * Cuts the months into pages that each fit `budget` pixels without scrolling.
+ * A month that runs over the page edge carries on, under its divider again, on
+ * the next page. A page always holds at least a few cards, whatever the budget.
+ */
+export const paginateArchive = (
+  months: ArchiveMonth[],
+  budget: number,
+): ArchiveMonth[][] => {
+  const pages: ArchiveMonth[][] = [];
+  let page: ArchiveMonth[] = [];
+  let height = 0;
+  let count = 0;
+
+  const flush = () => {
+    if (page.length > 0) {
+      pages.push(page);
+    }
+    page = [];
+    height = 0;
+    count = 0;
+  };
+
+  for (const month of months) {
+    let group: ArchiveMonth | null = null;
+
+    for (const card of month.cards) {
+      const startsGroup = group === null;
+      const cost = startsGroup
+        ? (page.length === 0 ? DIVIDER_FIRST_ON_PAGE : DIVIDER_HEIGHT) +
+          FIRST_EDGE_HEIGHT
+        : NEXT_EDGE_PITCH;
+
+      if (count >= MIN_CARDS_PER_PAGE && height + cost > budget) {
+        flush();
+        group = null;
+      }
+
+      if (group === null) {
+        group = { ...month, cards: [] };
+        page.push(group);
+        height += (page.length === 1 ? DIVIDER_FIRST_ON_PAGE : DIVIDER_HEIGHT) +
+          FIRST_EDGE_HEIGHT +
+          (height === 0 ? EDGES_PADDING : 0);
+      } else {
+        height += NEXT_EDGE_PITCH;
+      }
+
+      group.cards.push(card);
+      count += 1;
+    }
+  }
+
+  flush();
+
+  return pages;
+};
+
 /** The text a card is found by: its title, and the items of a list. */
 const searchableText = (card: VisualCard): string =>
   [card.title, ...(card.list?.items.map((item) => item.text) ?? [])]

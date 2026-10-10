@@ -55,7 +55,7 @@ export const BackupControls: React.FC<BackupControlsProps> = ({
   };
 
   return (
-    <div className="mt-8 flex shrink-0 flex-col items-center gap-2">
+    <div className="mt-4 flex shrink-0 flex-col items-center gap-2">
       <div className="flex gap-2">
         <button
           type="button"

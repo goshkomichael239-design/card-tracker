@@ -1,10 +1,12 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 
 import cardboardTexture from '../../assets/cardboard.avif';
 import {
   filterArchive,
   formatArchiveDay,
   groupArchiveByMonth,
+  paginateArchive,
   pluralCards,
   type ArchiveKindFilter,
 } from '../../app/archiveUtils';
@@ -29,7 +31,12 @@ const KRAFT = '#D2BE97';
 const kindLabel = (card: VisualCard): string =>
   card.kind === 'series' ? 'Серия' : card.kind === 'list' ? 'Список' : 'Задача';
 
-const anchorId = (monthKey: string) => `archive-month-${monthKey}`;
+// Room under the box that is not for cards: the pager, and the page's own
+// bottom padding (the archive scroll area keeps 110px free for the nav bar).
+const PAGER_RESERVE = 48;
+const BOX_PADDING = 30;
+const SCROLL_BOTTOM_RESERVE = 110;
+const FALLBACK_BUDGET = 360;
 
 /**
  * The stub left of a torn-off coupon, in miniature: filled with the card's
@@ -131,24 +138,132 @@ export const ArchiveCatalog: React.FC<ArchiveCatalogProps> = ({
 }) => {
   const [query, setQuery] = useState('');
   const [kind, setKind] = useState<ArchiveKindFilter>('all');
+  const [page, setPage] = useState(0);
+  const [budget, setBudget] = useState(FALLBACK_BUDGET);
+  // Which way the last page turn went, for the direction of the slide.
+  const [direction, setDirection] = useState<1 | -1>(1);
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  const boxRef = useRef<HTMLDivElement | null>(null);
   const months = useMemo(
     () => groupArchiveByMonth(filterArchive(cards, query, kind)),
     [cards, query, kind],
   );
+  const pages = useMemo(
+    () => paginateArchive(months, budget),
+    [months, budget],
+  );
+  const pageCount = Math.max(1, pages.length);
+  const currentPage = Math.min(page, pageCount - 1);
+  const pageMonths = pages[currentPage] ?? [];
   const isFiltered = query.trim().length > 0 || kind !== 'all';
+  const totalCards = months.reduce((sum, month) => sum + month.cards.length, 0);
+
+  // The page holds as many cards as fit under the box without scrolling: what
+  // is left of the window below the box's top edge, minus the pager.
+  useEffect(() => {
+    const root = rootRef.current;
+    const scroller = root?.closest<HTMLElement>('.overflow-y-auto');
+
+    if (!root || !scroller) {
+      return;
+    }
+
+    const measure = () => {
+      const box = boxRef.current;
+
+      if (!box) {
+        return;
+      }
+
+      const top =
+        box.getBoundingClientRect().top -
+        scroller.getBoundingClientRect().top +
+        scroller.scrollTop;
+      // What follows the catalogue (the backup strip) keeps its own room.
+      const after = root.nextElementSibling as HTMLElement | null;
+      const afterHeight = after
+        ? after.getBoundingClientRect().height +
+          parseFloat(getComputedStyle(after).marginTop || '0')
+        : 0;
+      const available =
+        scroller.clientHeight -
+        top -
+        PAGER_RESERVE -
+        BOX_PADDING -
+        afterHeight -
+        SCROLL_BOTTOM_RESERVE;
+
+      setBudget(Math.max(160, Math.round(available)));
+    };
+    const observer = new ResizeObserver(measure);
+
+    // Everything above the box moves it: the window, the title block, the
+    // summary lines — so every block of the page is watched.
+    observer.observe(scroller);
+    for (const child of Array.from(scroller.children)) {
+      observer.observe(child);
+    }
+    for (const child of Array.from(root.parentElement?.children ?? [])) {
+      observer.observe(child);
+    }
+    void document.fonts?.ready.then(measure);
+
+    return () => observer.disconnect();
+  }, []);
+
+  const turnTo = (next: number) => {
+    const clamped = Math.min(Math.max(0, next), pageCount - 1);
+
+    if (clamped === currentPage) {
+      return;
+    }
+
+    setDirection(clamped > currentPage ? 1 : -1);
+    setPage(clamped);
+  };
+
+  // ← / → turn the page, unless a card is open or a field has the keys.
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+
+      if (
+        (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') ||
+        target?.tagName === 'INPUT' ||
+        document.querySelector('[role="dialog"]')
+      ) {
+        return;
+      }
+
+      const next = currentPage + (event.key === 'ArrowRight' ? 1 : -1);
+      const clamped = Math.min(Math.max(0, next), pageCount - 1);
+
+      if (clamped !== currentPage) {
+        setDirection(clamped > currentPage ? 1 : -1);
+        setPage(clamped);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [currentPage, pageCount]);
 
   const jumpTo = (monthKey: string) => {
-    document
-      .getElementById(anchorId(monthKey))
-      ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    const index = pages.findIndex((entries) =>
+      entries.some((month) => month.key === monthKey),
+    );
+
+    if (index >= 0) {
+      turnTo(index);
+    }
   };
 
   return (
-    <div className="mt-6 flex w-[min(560px,100%)] shrink-0 flex-col">
+    <div ref={rootRef} className="mt-6 flex w-[min(560px,100%)] shrink-0 flex-col">
       {/* Search strip and kind tabs */}
-      <div className="engraved flex flex-col gap-3">
+      <div className="engraved flex flex-col gap-3 sm:flex-row sm:items-center">
         <label
-          className="flex items-center gap-2.5 rounded-[12px] border px-4"
+          className="flex items-center gap-2.5 rounded-[12px] border px-4 sm:min-w-0 sm:flex-1"
           style={{
             borderColor: 'rgba(82,69,56,0.22)',
             backgroundColor: 'rgba(247,242,232,0.9)',
@@ -164,7 +279,10 @@ export const ArchiveCatalog: React.FC<ArchiveCatalogProps> = ({
           </span>
           <input
             value={query}
-            onChange={(event) => setQuery(event.target.value)}
+            onChange={(event) => {
+              setQuery(event.target.value);
+              setPage(0);
+            }}
             placeholder="Найти карточку"
             aria-label="Поиск по архиву"
             className="h-[44px] min-w-0 flex-1 border-0 bg-transparent p-0 text-[16px] outline-none placeholder:text-black/35"
@@ -173,7 +291,10 @@ export const ArchiveCatalog: React.FC<ArchiveCatalogProps> = ({
           {query && (
             <button
               type="button"
-              onClick={() => setQuery('')}
+              onClick={() => {
+                setQuery('');
+                setPage(0);
+              }}
               aria-label="Очистить поиск"
               className="h-8 w-8 cursor-pointer border-0 bg-transparent text-[16px]"
               style={{ color: 'rgba(63,57,50,0.6)' }}
@@ -183,7 +304,7 @@ export const ArchiveCatalog: React.FC<ArchiveCatalogProps> = ({
           )}
         </label>
 
-        <div className="flex flex-wrap gap-2" role="tablist" aria-label="Тип карточек">
+        <div className="flex flex-wrap gap-2 sm:shrink-0 sm:flex-nowrap" role="tablist" aria-label="Тип карточек">
           {KIND_FILTERS.map((filter) => {
             const isActive = kind === filter.id;
 
@@ -193,7 +314,10 @@ export const ArchiveCatalog: React.FC<ArchiveCatalogProps> = ({
                 type="button"
                 role="tab"
                 aria-selected={isActive}
-                onClick={() => setKind(filter.id)}
+                onClick={() => {
+                  setKind(filter.id);
+                  setPage(0);
+                }}
                 onTouchStart={() => undefined}
                 className="pill-action"
                 style={
@@ -233,7 +357,8 @@ export const ArchiveCatalog: React.FC<ArchiveCatalogProps> = ({
 
       {/* The box itself */}
       <div
-        className="mt-4 rounded-[18px] px-3 pb-4 pt-3 sm:px-4"
+        ref={boxRef}
+        className="mt-4 overflow-hidden rounded-[18px] px-3 pb-4 pt-3 sm:px-4"
         style={{
           backgroundColor: 'rgba(120,96,70,0.22)',
           backgroundImage: `url(${cardboardTexture})`,
@@ -254,33 +379,103 @@ export const ArchiveCatalog: React.FC<ArchiveCatalogProps> = ({
             </p>
           </div>
         ) : (
-          months.map((month) => (
-            <section key={month.key} aria-label={month.label}>
-              {/* Scroll target that does not stick, unlike the divider. */}
-              <span id={anchorId(month.key)} className="block scroll-mt-2" />
-              <div
-                className="archive-divider engraved"
-                style={{ backgroundColor: KRAFT, backgroundImage: `url(${cardboardTexture})` }}
-              >
-                <span
-                  className="archive-divider__tab"
-                  style={{ backgroundColor: KRAFT, backgroundImage: `url(${cardboardTexture})` }}
-                >
-                  {month.label}
-                </span>
-                <span className="ml-auto font-mono text-[11.5px] font-bold uppercase tracking-[0.1em]" style={{ color: 'rgba(70,52,28,0.7)' }}>
-                  {month.cards.length} {pluralCards(month.cards.length)}
-                </span>
-              </div>
-              <div className="archive-edges">
-                {month.cards.map((card) => (
-                  <CardEdge key={card.id} card={card} onOpen={() => onOpenCard(card.id)} />
-                ))}
-              </div>
-            </section>
-          ))
+          <AnimatePresence mode="wait" initial={false} custom={direction}>
+            <motion.div
+              key={currentPage}
+              custom={direction}
+              variants={{
+                enter: (dir: number) => ({ opacity: 0, x: dir * 36, rotate: dir * 1.4 }),
+                center: { opacity: 1, x: 0, rotate: 0 },
+                exit: (dir: number) => ({ opacity: 0, x: dir * -36, rotate: dir * -1.4 }),
+              }}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              transition={{ duration: 0.2, ease: [0.32, 0.72, 0, 1] }}
+              style={{ transformOrigin: '50% 100%' }}
+            >
+              {pageMonths.map((month) => (
+                <section key={month.key} aria-label={month.label}>
+                  <div
+                    className="archive-divider engraved"
+                    style={{ backgroundColor: KRAFT, backgroundImage: `url(${cardboardTexture})` }}
+                  >
+                    <span
+                      className="archive-divider__tab"
+                      style={{ backgroundColor: KRAFT, backgroundImage: `url(${cardboardTexture})` }}
+                    >
+                      {month.label}
+                    </span>
+                    <span className="ml-auto font-mono text-[11.5px] font-bold uppercase tracking-[0.1em]" style={{ color: 'rgba(70,52,28,0.7)' }}>
+                      {month.cards.length} {pluralCards(month.cards.length)}
+                    </span>
+                  </div>
+                  <div className="archive-edges">
+                    {month.cards.map((card) => (
+                      <CardEdge key={card.id} card={card} onOpen={() => onOpenCard(card.id)} />
+                    ))}
+                  </div>
+                </section>
+              ))}
+            </motion.div>
+          </AnimatePresence>
         )}
       </div>
+
+      {/* Pager: thumb through the box, a page of cards at a time. */}
+      {pageCount > 1 && (
+        <nav
+          className="engraved mt-3 flex items-center justify-center gap-3"
+          aria-label="Страницы архива"
+        >
+          <button
+            type="button"
+            onClick={() => turnTo(currentPage - 1)}
+            onTouchStart={() => undefined}
+            disabled={currentPage === 0}
+            aria-label="Предыдущая страница"
+            className="pill-action disabled:cursor-default disabled:opacity-40"
+            style={
+              {
+                padding: '10px 18px',
+                ['--pill-bg' as string]: 'rgba(247,242,232,0.9)',
+                ['--pill-ink' as string]: '#5f554a',
+                ['--pill-glow' as string]: 'rgba(222,196,140,0.75)',
+              } as React.CSSProperties
+            }
+          >
+            ←
+          </button>
+          <span
+            className="min-w-[132px] text-center font-mono text-[12px] font-bold uppercase tracking-[0.12em]"
+            style={{ color: 'rgba(70,52,28,0.75)' }}
+            aria-live="polite"
+          >
+            Лист {currentPage + 1} из {pageCount}
+            <span className="block text-[10.5px] font-semibold opacity-70">
+              {totalCards} {pluralCards(totalCards)}
+            </span>
+          </span>
+          <button
+            type="button"
+            onClick={() => turnTo(currentPage + 1)}
+            onTouchStart={() => undefined}
+            disabled={currentPage >= pageCount - 1}
+            aria-label="Следующая страница"
+            className="pill-action disabled:cursor-default disabled:opacity-40"
+            style={
+              {
+                padding: '10px 18px',
+                ['--pill-bg' as string]: 'rgba(247,242,232,0.9)',
+                ['--pill-ink' as string]: '#5f554a',
+                ['--pill-glow' as string]: 'rgba(222,196,140,0.75)',
+              } as React.CSSProperties
+            }
+          >
+            →
+          </button>
+        </nav>
+      )}
     </div>
   );
 };
