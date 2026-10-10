@@ -353,13 +353,13 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  height: 34px;
-  margin-top: -12px;
-  padding: 8px 10px 0;
+  height: 26px;
+  margin-top: -1px;
+  padding: 0 10px 1px;
   border: 1px solid rgba(103, 86, 65, 0.2);
   border-top: 0;
   border-radius: 0 0 9px 9px;
-  background-color: rgba(247, 242, 232, 0.86);
+  background-color: #ebe5d6;
   background-size: cover;
   background-blend-mode: multiply;
   font-family: inherit;
@@ -391,7 +391,7 @@
 
 .deck-tab--active {
   transform: translateY(3px);
-  background-color: rgba(243, 217, 168, 0.95);
+  background-color: #f1d9a8;
   box-shadow:
     0 7px 12px rgba(20, 17, 14, 0.26),
     inset 0 2px 4px rgba(90, 60, 20, 0.18);
