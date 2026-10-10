@@ -23,6 +23,7 @@ import {
   type DraftStep,
   type TimeMode,
   type VisualCard,
+  type RecurrenceRule,
   type TaskListItem,
 } from './cardTheme';
 import {
@@ -42,6 +43,11 @@ import { DEBUG_CARD_ID_PREFIX } from './debugCards';
 import { getListProgress } from './listUtils';
 import { reviveCard } from './archiveUtils';
 import { formatPostponeMoment, postponeCard } from './timeOps';
+import {
+  advanceRecurringCard,
+  firstOccurrence,
+  isRecurrenceComplete,
+} from './recurrence';
 import {
   loadTrash,
   purgeExpiredTrash,
@@ -100,7 +106,13 @@ type TransientOutgoingKind =
 /** The last destructive action, which the undo ticket can take back. */
 type UndoAction =
   | { kind: 'trash'; cardId: string }
-  | { kind: 'complete'; before: VisualCard; index: number }
+  | {
+      kind: 'complete';
+      before: VisualCard;
+      index: number;
+      /** Id of the card that went to the archive (a copy for a repeating card). */
+      archivedId: string;
+    }
   /** A card thrown away from the archive; undo files it back there. */
   | { kind: 'trash-archived'; card: VisualCard }
   /** A card put off; undo returns it as it was, to its old place. */
@@ -265,6 +277,9 @@ const MainApp: React.FC = () => {
   const [selectedKind, setSelectedKind] = useState<CardKind | null>(null);
   const [draftStep, setDraftStep] = useState<DraftStep>('kind');
   const [timeMode, setTimeMode] = useState<TimeMode | null>(null);
+  // Set while creating a repeating card ("Регулярно" in the time step).
+  const [draftRecurrence, setDraftRecurrence] =
+    useState<RecurrenceRule | null>(null);
   const [dateTimeValue, setDateTimeValue] = useState('');
   const [selectedDraftDate, setSelectedDraftDate] = useState(() =>
     startOfLocalDay(getNextFiveMinuteSlot()),
@@ -411,7 +426,11 @@ const MainApp: React.FC = () => {
       Number(seriesTargetInput) >= 1) ||
     (draftStep === 'list-items' && draftListItems.length >= 1) ||
     draftStep === 'date' ||
-    (draftStep === 'clock' && isSelectedDateTimeValid);
+    (draftStep === 'repeat' && isRecurrenceComplete(draftRecurrence)) ||
+    // Any time of day is fine for a repeating card: its first sheet is
+    // simply the next day that time is still ahead.
+    (draftStep === 'clock' &&
+      (isSelectedDateTimeValid || draftRecurrence !== null));
 
   const resetDraft = useCallback(() => {
     const initialSlot = getNextFiveMinuteSlot();
@@ -424,6 +443,7 @@ const MainApp: React.FC = () => {
     setSelectedKind(null);
     setDraftStep('kind');
     setTimeMode(null);
+    setDraftRecurrence(null);
     setDateTimeValue('');
     setSelectedDraftDate(initialDate);
     setDraftHour(initialSlot.getHours());
@@ -862,6 +882,10 @@ const MainApp: React.FC = () => {
             }
           : undefined,
         list: isList ? { items: draftListItems } : undefined,
+        recurrence:
+          !isSeries && !isList && creationTimeMode === 'reminder' && draftRecurrence
+            ? draftRecurrence
+            : undefined,
       };
 
       setCards((previous) => [...previous, newCard]);
@@ -873,8 +897,18 @@ const MainApp: React.FC = () => {
     }, 340);
   };
 
+  // "Регулярно": a repeating card is a reminder whose time moves on to the
+  // next sheet each time it is torn off. First choose how often.
+  const handleSelectRepeat = () => {
+    setTimeMode('reminder');
+    setDateTimeValue('');
+    setDraftRecurrence((current) => current ?? { kind: 'daily' });
+    setDraftStep('repeat');
+  };
+
   const handleSelectTimeMode = (mode: TimeMode) => {
     setTimeMode(mode);
+    setDraftRecurrence(null);
 
     if (mode === 'none') {
       setDateTimeValue('');
@@ -1139,8 +1173,15 @@ const MainApp: React.FC = () => {
       return;
     }
 
+    if (draftStep === 'repeat') {
+      setTimeMode(null);
+      setDraftRecurrence(null);
+      setDraftStep('time');
+      return;
+    }
+
     if (draftStep === 'clock') {
-      setDraftStep('date');
+      setDraftStep(draftRecurrence ? 'repeat' : 'date');
     }
   };
 
@@ -1158,6 +1199,36 @@ const MainApp: React.FC = () => {
 
     if (draftStep === 'list-items' && draftListItems.length >= 1) {
       handleCreateCard(undefined, 'none');
+      return;
+    }
+
+    if (draftStep === 'repeat' && isRecurrenceComplete(draftRecurrence)) {
+      // The clock works on tomorrow's date so every time of day is allowed;
+      // the real first sheet is worked out when the card is created.
+      const tomorrow = addLocalDays(startOfLocalDay(new Date()), 1);
+
+      setSelectedDraftDate(tomorrow);
+      setDraftHour(9);
+      setDraftMinute(0);
+      setDraftHourInput(padNumber(9));
+      setDraftMinuteInput(padNumber(0));
+      setDraftStep('clock');
+      return;
+    }
+
+    if (draftStep === 'clock' && draftRecurrence) {
+      const first = firstOccurrence(draftRecurrence, draftHour, draftMinute);
+      const firstValue = createLocalDateTimeValue(
+        first,
+        first.getHours(),
+        first.getMinutes(),
+      );
+
+      setDateTimeValue(firstValue);
+      setDraftStep('confirm');
+      commitTimerRef.current = window.setTimeout(() => {
+        handleCreateCard(undefined, 'reminder', firstValue);
+      }, 110);
       return;
     }
 
@@ -1228,6 +1299,20 @@ const MainApp: React.FC = () => {
       return;
     }
 
+    // A repeating card is a tear-off pad: today's sheet goes to the archive as
+    // its own card, the pad stays on the table showing the next sheet.
+    const isRepeating = Boolean(cardToComplete.recurrence);
+    const completedAt = new Date().toISOString();
+    const completedCard: VisualCard = isRepeating
+      ? {
+          ...cardToComplete,
+          id: createId(),
+          completedAt,
+          recurrence: undefined,
+          postponements: undefined,
+        }
+      : { ...cardToComplete, completedAt };
+
     showUndo(
       cardToComplete.kind === 'series' ? 'Серия завершена' : 'Выполнено',
       {
@@ -1236,15 +1321,34 @@ const MainApp: React.FC = () => {
         index: cardsRef.current.findIndex(
           (card) => card.id === cardToComplete.id,
         ),
+        archivedId: completedCard.id,
       },
     );
     couponFlightInProgressRef.current = true;
-    const completedAt = new Date().toISOString();
 
-    const completedCard: VisualCard = {
-      ...cardToComplete,
-      completedAt,
-    };
+    if (isRepeating) {
+      detachedCouponLayerRef.current?.launch({
+        id: completedCard.id,
+        left: couponBounds.left,
+        top: couponBounds.top,
+        width: couponBounds.width,
+        height: couponBounds.height,
+        palette: getCardPalette(cardToComplete),
+      });
+
+      const advanced = advanceRecurringCard(cardToComplete);
+      const nextCards = cardsRef.current.map((card) =>
+        card.id === advanced.id ? advanced : card,
+      );
+
+      cardsRef.current = nextCards;
+      setCards(nextCards);
+      setArchivedCards((previous) => [completedCard, ...previous]);
+      // The torn sheet slides away and uncovers the next one underneath.
+      createTransientOutgoing(cardToComplete, 'completion');
+      return;
+    }
+
     detachedCouponLayerRef.current?.launch({
       id: completedCard.id,
       left: couponBounds.left,
@@ -1506,7 +1610,11 @@ const MainApp: React.FC = () => {
 
   // Takes a completion back: the coupon is taken out of the air, the card
   // leaves the archive and returns to the deck exactly as it was before.
-  const undoCompletion = (before: VisualCard, index: number) => {
+  const undoCompletion = (
+    before: VisualCard,
+    index: number,
+    archivedId: string,
+  ) => {
     clearCompletedRemovalTimer();
     pendingCompletedCardIdRef.current = null;
     pendingCompletedRemovalArmedRef.current = false;
@@ -1515,7 +1623,7 @@ const MainApp: React.FC = () => {
     couponFlightInProgressRef.current = false;
 
     setArchivedCards((previous) =>
-      previous.filter((card) => card.id !== before.id),
+      previous.filter((card) => card.id !== archivedId),
     );
     setTransientOutgoing((current) =>
       current?.card.id === before.id ? null : current,
@@ -1581,7 +1689,11 @@ const MainApp: React.FC = () => {
           : sortArchive([archived, ...previous]),
       );
     } else {
-      undoCompletion(entry.action.before, entry.action.index);
+      undoCompletion(
+        entry.action.before,
+        entry.action.index,
+        entry.action.archivedId,
+      );
     }
   };
 
@@ -2152,6 +2264,9 @@ const MainApp: React.FC = () => {
                   onRemoveListItem={handleRemoveDraftListItem}
                   onSelectKind={handleSelectKind}
                   onSelectTimeMode={handleSelectTimeMode}
+                  onSelectRepeat={handleSelectRepeat}
+                  onRecurrenceChange={setDraftRecurrence}
+                  draftRecurrence={draftRecurrence}
                   onSelectDate={handleSelectDraftDate}
                   onOpenManualCalendar={handleOpenManualCalendar}
                   onChangeYear={handleChangeCalendarYear}

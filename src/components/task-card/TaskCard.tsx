@@ -18,6 +18,11 @@ import { CornerHint } from './CornerHint';
 import { CardPostponeFace } from './CardPostponeFace';
 import { PostponeStamps } from './PostponeStamps';
 import { getCardTargetAt } from '../../app/timeOps';
+import {
+  describeNextSheet,
+  describeRecurrence,
+  isOccurrenceAvailable,
+} from '../../app/recurrence';
 
 /** A custom "put off" date starts at the card's own time if it is ahead, else tomorrow 9:00. */
 const getCustomPostponeStart = (card: VisualCard): Date => {
@@ -143,13 +148,26 @@ export const TaskCard: React.FC<TaskCardProps> = ({
       : card.timeMode === 'reminder'
         ? card.reminderAt
         : undefined;
-  const timeLabel = card.timeMode === 'deadline' ? 'Срок' : 'Напоминание';
+  const recurrence = card.recurrence;
+  // A repeating sheet can only be torn off on its day (or later, if missed).
+  const isSheetAvailable = isOccurrenceAvailable(card);
+  const timeLabel = recurrence
+    ? 'Следующий раз'
+    : card.timeMode === 'deadline'
+      ? 'Срок'
+      : 'Напоминание';
   const series = card.kind === 'series' ? card.series : undefined;
   const lastSeriesEntry = series?.entries.at(-1);
   const list = card.kind === 'list' ? card.list : undefined;
   const listCompletedCount = list ? getListCompletedCount(list) : 0;
   const listReady = Boolean(list && list.items.length > 0 && listCompletedCount === list.items.length);
-  const kindLabel = series ? 'Серия' : list ? 'Список' : 'Одна задача';
+  const kindLabel = series
+    ? 'Серия'
+    : list
+      ? 'Список'
+      : recurrence
+        ? describeRecurrence(recurrence)
+        : 'Одна задача';
   const seriesAction = (couponBounds: DOMRect) => {
     onRecordSeriesStep?.(couponBounds);
   };
@@ -322,10 +340,10 @@ export const TaskCard: React.FC<TaskCardProps> = ({
             completedAt={card.completedAt}
             palette={palette}
             onComplete={series && !card.completedAt ? seriesAction : onComplete}
-            actionLabel={series ? 'Засчитать +1' : list && !card.completedAt && !listReady ? `${listCompletedCount} / ${list.items.length}` : undefined}
+            actionLabel={series ? 'Засчитать +1' : list && !card.completedAt && !listReady ? `${listCompletedCount} / ${list.items.length}` : recurrence && !isSheetAvailable && card.reminderAt ? describeNextSheet(card.reminderAt) : undefined}
             series={series}
             progress={list ? getListProgress(list) : undefined}
-            isReady={list && !card.completedAt ? listReady : true}
+            isReady={list && !card.completedAt ? listReady : isSheetAvailable}
             completedLabel={list ? `${listCompletedCount} / ${list.items.length}` : undefined}
             height={config.couponHeight}
             paperTint={palette.paper}
@@ -342,6 +360,30 @@ export const TaskCard: React.FC<TaskCardProps> = ({
 
   return (
     <div className="engraved absolute inset-0">
+      {/* A repeating card is a tear-off pad: the next sheets peek out below. */}
+      {recurrence && !card.completedAt && (
+        <>
+          {[2, 1].map((depth) => (
+            <div
+              key={depth}
+              className="pointer-events-none absolute"
+              style={{
+                left: 6 + depth * 4,
+                right: 6 + depth * 4,
+                bottom: -4 * depth,
+                height: 40,
+                borderRadius: `0 0 ${config.borderRadius}px ${config.borderRadius}px`,
+                backgroundColor: palette.paper,
+                backgroundImage: `linear-gradient(180deg, rgba(60,40,20,${0.06 + depth * 0.05}), rgba(60,40,20,${0.1 + depth * 0.06})), url(${cardboardTexture})`,
+                backgroundSize: '100% 100%, cover',
+                backgroundBlendMode: 'normal, multiply',
+                boxShadow: '0 2px 3px rgba(20,17,14,0.25)',
+              }}
+              aria-hidden="true"
+            />
+          ))}
+        </>
+      )}
       {/* Cast shadow lives on its own layer: the article below is clipped to
           cut the folded corner, which would otherwise clip the shadow too. */}
       <div

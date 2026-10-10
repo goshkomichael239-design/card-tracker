@@ -25,6 +25,8 @@ import { DraftListItemsStep } from './DraftListItemsStep';
 import type { TaskListItem } from '../../app/cardTheme';
 import { DraftTimeModeStep } from './DraftTimeModeStep';
 import { DraftTitleStep } from './DraftTitleStep';
+import { DraftRepeatStep } from './DraftRepeatStep';
+import type { RecurrenceRule } from '../../app/cardTheme';
 
 export interface DraftCardProps {
   creationCycle: number;
@@ -39,6 +41,7 @@ export interface DraftCardProps {
   draftListInput: string;
   selectedKind: CardKind | null;
   timeMode: TimeMode | null;
+  draftRecurrence: RecurrenceRule | null;
   selectedDateLabel: string;
   selectedDraftDate: Date;
   isManualCalendarOpen: boolean;
@@ -60,6 +63,8 @@ export interface DraftCardProps {
   onRemoveListItem: (id: string) => void;
   onSelectKind: (kind: CardKind) => void;
   onSelectTimeMode: (mode: TimeMode) => void;
+  onSelectRepeat: () => void;
+  onRecurrenceChange: (rule: RecurrenceRule) => void;
   onSelectDate: (date: Date) => void;
   onOpenManualCalendar: () => void;
   onChangeYear: (direction: -1 | 1) => void;
@@ -180,7 +185,7 @@ export function DraftCard(props: DraftCardProps) {
               />
             )}
             {props.draftStep === 'time' && (
-              <DraftTimeModeStep timeMode={props.timeMode} onSelectTimeMode={props.onSelectTimeMode} />
+              <DraftTimeModeStep timeMode={props.timeMode} isRepeating={props.draftRecurrence !== null} onSelectTimeMode={props.onSelectTimeMode} onSelectRepeat={props.onSelectRepeat} />
             )}
             {props.draftStep === 'date' && (
               <DraftDateStep
@@ -198,6 +203,13 @@ export function DraftCard(props: DraftCardProps) {
                 onOpenManualCalendar={props.onOpenManualCalendar}
                 onChangeYear={props.onChangeYear}
                 onChangeMonth={props.onChangeMonth}
+              />
+            )}
+            {props.draftStep === 'repeat' && props.draftRecurrence && (
+              <DraftRepeatStep
+                rule={props.draftRecurrence}
+                palette={props.palette}
+                onChange={props.onRecurrenceChange}
               />
             )}
             {props.draftStep === 'clock' && (

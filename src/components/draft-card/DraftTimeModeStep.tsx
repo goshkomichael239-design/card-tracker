@@ -1,12 +1,24 @@
-import { PALETTES, type TimeMode } from '../../app/cardTheme';
+import { CARD_COLOR_SCHEMES, PALETTES, type TimeMode } from '../../app/cardTheme';
 import { TimeOption } from '../shared/TimeOption';
 
 export interface DraftTimeModeStepProps {
   timeMode: TimeMode | null;
+  /** True once "Регулярно" was chosen (a repeating card is a reminder). */
+  isRepeating: boolean;
   onSelectTimeMode: (mode: TimeMode) => void;
+  onSelectRepeat: () => void;
 }
 
-export function DraftTimeModeStep({ timeMode, onSelectTimeMode }: DraftTimeModeStepProps) {
+// "Регулярно" gets its own colour so it is not mistaken for a reminder.
+const REPEAT_PALETTE =
+  CARD_COLOR_SCHEMES.find((scheme) => scheme.id === 'lavender') ?? PALETTES.reminder;
+
+export function DraftTimeModeStep({
+  timeMode,
+  isRepeating,
+  onSelectTimeMode,
+  onSelectRepeat,
+}: DraftTimeModeStepProps) {
   return (
     <div>
       <span
@@ -18,10 +30,11 @@ export function DraftTimeModeStep({ timeMode, onSelectTimeMode }: DraftTimeModeS
       >
         Когда?
       </span>
-      <div className="mt-5 grid grid-cols-3 gap-2">
+      <div className="mt-4 grid grid-cols-2 gap-2">
         <TimeOption index={0} lines={['Без', 'времени']} selected={timeMode === 'none'} palette={PALETTES.none} onClick={() => onSelectTimeMode('none')} />
         <TimeOption index={1} lines={['Выполнить', 'до:']} selected={timeMode === 'deadline'} palette={PALETTES.deadline} onClick={() => onSelectTimeMode('deadline')} />
-        <TimeOption index={2} lines={['Напоминание', '']} selected={timeMode === 'reminder'} palette={PALETTES.reminder} onClick={() => onSelectTimeMode('reminder')} />
+        <TimeOption index={2} lines={['Напоминание', '']} selected={timeMode === 'reminder' && !isRepeating} palette={PALETTES.reminder} onClick={() => onSelectTimeMode('reminder')} />
+        <TimeOption index={3} lines={['Регулярно', '']} selected={isRepeating} palette={REPEAT_PALETTE} onClick={onSelectRepeat} />
       </div>
     </div>
   );

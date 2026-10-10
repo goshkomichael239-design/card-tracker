@@ -1,7 +1,7 @@
 export type CreationState = 'idle' | 'editing' | 'committing';
 export type CardKind = 'single' | 'series' | 'list';
 export type TimeMode = 'none' | 'deadline' | 'reminder';
-export type DraftStep = 'title' | 'kind' | 'series-target' | 'list-items' | 'time' | 'date' | 'clock' | 'confirm';
+export type DraftStep = 'title' | 'kind' | 'series-target' | 'list-items' | 'time' | 'repeat' | 'date' | 'clock' | 'confirm';
 
 export interface GhostSettings {
   x: number;
