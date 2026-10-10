@@ -2,6 +2,7 @@ import React, { useRef, useState } from 'react';
 
 import cardboardTexture from '../../assets/cardboard.avif';
 import type { BackupImportResult } from '../../app/backupUtils';
+import { AutoBackupSheet } from './AutoBackupSheet';
 
 interface BackupControlsProps {
   onExport: () => void;
@@ -36,6 +37,7 @@ export const BackupControls: React.FC<BackupControlsProps> = ({
 }) => {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [status, setStatus] = useState('');
+  const [isAutoOpen, setIsAutoOpen] = useState(false);
 
   const handleFileChange = async (
     event: React.ChangeEvent<HTMLInputElement>,
@@ -56,7 +58,7 @@ export const BackupControls: React.FC<BackupControlsProps> = ({
 
   return (
     <div className="mt-4 flex shrink-0 flex-col items-center gap-2">
-      <div className="flex gap-2">
+      <div className="flex flex-wrap justify-center gap-2">
         <button
           type="button"
           onClick={() => {
@@ -76,6 +78,14 @@ export const BackupControls: React.FC<BackupControlsProps> = ({
         >
           Загрузить копию
         </button>
+        <button
+          type="button"
+          onClick={() => setIsAutoOpen(true)}
+          className="cursor-pointer rounded-[10px] border px-4 py-2 font-mono text-[12.5px] font-bold uppercase tracking-[0.12em]"
+          style={BUTTON_STYLE}
+        >
+          Автокопии
+        </button>
         <input
           ref={fileInputRef}
           type="file"
@@ -91,6 +101,16 @@ export const BackupControls: React.FC<BackupControlsProps> = ({
       >
         {status}
       </p>
+
+      {isAutoOpen && (
+        <AutoBackupSheet
+          onRestore={(text) => {
+            setStatus(describeResult(onImport(text)));
+            setIsAutoOpen(false);
+          }}
+          onClose={() => setIsAutoOpen(false)}
+        />
+      )}
     </div>
   );
 };
