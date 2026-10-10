@@ -222,6 +222,16 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
                         lineHeight: `${config.rowHeight}px`,
                       }}
                     >
+                      {card.pinned && (
+                        <span
+                          className="mr-1.5"
+                          style={{ color: '#C9972A' }}
+                          role="img"
+                          aria-label="Закреплена"
+                        >
+                          ★
+                        </span>
+                      )}
                       {/* Overdue: a red dot in front of the name. */}
                       {isOverdue && (
                         <span

@@ -49,6 +49,8 @@ export interface VisualCard {
   postponedUntil?: string;
   /** Repeats on a schedule; the next occurrence is kept in `reminderAt`. */
   recurrence?: RecurrenceRule;
+  /** Pinned cards always lead the deck. */
+  pinned?: boolean;
 }
 
 export interface Postponement {

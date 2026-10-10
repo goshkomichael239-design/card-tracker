@@ -26,6 +26,31 @@ export const insertAt = <T,>(items: T[], item: T, index: number): T[] => {
 const completionTime = (card: VisualCard): number =>
   new Date(card.completedAt ?? 0).getTime();
 
+/**
+ * Pinned cards lead the deck, in the order they already had; the rest follow.
+ * Returns the same array when it already is in that order.
+ */
+export const pinnedFirst = (cards: VisualCard[]): VisualCard[] => {
+  let seenUnpinned = false;
+  let isOrdered = true;
+
+  for (const card of cards) {
+    if (!card.pinned) {
+      seenUnpinned = true;
+    } else if (seenUnpinned) {
+      isOrdered = false;
+      break;
+    }
+  }
+
+  return isOrdered
+    ? cards
+    : [
+        ...cards.filter((card) => card.pinned),
+        ...cards.filter((card) => !card.pinned),
+      ];
+};
+
 /** Newest completion first. */
 export const sortArchive = (cards: VisualCard[]): VisualCard[] =>
   [...cards].sort((left, right) => completionTime(right) - completionTime(left));

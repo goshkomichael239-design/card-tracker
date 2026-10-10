@@ -60,6 +60,7 @@ export const sanitizeStoredCard = (card: VisualCard): VisualCard => {
   clean.postponedUntil = isDateString(card.postponedUntil)
     ? card.postponedUntil
     : undefined;
+  clean.pinned = card.pinned === true ? true : undefined;
   // A repeating card keeps its next occurrence in reminderAt.
   clean.recurrence =
     isRecurrenceRule(card.recurrence) &&

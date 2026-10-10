@@ -2,7 +2,7 @@ import { create } from 'zustand';
 
 import { createAutoBackup } from './storage/autoBackup';
 import type { TimeMode, VisualCard } from './cardTheme';
-import { createId } from './cardOps';
+import { createId, pinnedFirst } from './cardOps';
 import {
   loadActiveCards,
   loadArchivedCards,
@@ -84,9 +84,10 @@ export const useDeckStore = create<DeckState>((set) => ({
   cards: loadActiveCards() ?? createFirstRunCards(),
   archivedCards: loadArchivedCards(),
   trash: loadTrash(),
+  // Whatever changes the deck, pinned cards stay at its head.
   setCards: (next) =>
     set((state) => {
-      const cards = resolve(next, state.cards);
+      const cards = pinnedFirst(resolve(next, state.cards));
       return cards === state.cards ? state : { cards };
     }),
   setArchivedCards: (next) =>

@@ -37,6 +37,7 @@ const getCustomPostponeStart = (card: VisualCard): Date => {
   return new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 9, 0);
 };
 import { CardListFace } from './CardListFace';
+import { PinStar } from './PinStar';
 import { FOLD_CUT_PATH, FOLD_SIZE, FoldedFlap } from './FoldedCorner';
 import { CountdownPanel } from './CountdownPanel';
 import { INITIAL_TASK_CARD_V2_CONFIG } from './taskCardV2Config';
@@ -55,6 +56,8 @@ interface TaskCardProps {
   /** Puts the card off until the given moment. */
   onPostpone?: (until: Date) => void;
   onDelete?: () => void;
+  /** Pins the card to the head of the deck, or takes the pin out. */
+  onTogglePin?: () => void;
   /** Shows the first-run arrow pointing at the folded corner. */
   showCornerHint?: boolean;
   /** Fired the first time the folded corner is used. */
@@ -81,6 +84,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
   onSave,
   onPostpone,
   onDelete,
+  onTogglePin,
   showCornerHint = false,
   onCornerOpened,
   isStatic = false,
@@ -551,7 +555,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
               onEdit={() => goToFace('edit', 1)}
               // A series is a run of steps, not a dated task; it is not put off.
               onPostpone={
-                onPostpone && card.kind !== 'series'
+                onPostpone && card.kind !== 'series' && !card.pinned
                   ? () => goToFace('postpone', 1)
                   : undefined
               }
@@ -574,6 +578,16 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           )}
         </CardFaceStage>
       </article>
+
+      {/* The favourite star, left of the folded corner; pressed it becomes a
+          gold pin with the star for a head. */}
+      {onTogglePin && canOpenMenu && (
+        <PinStar
+          pinned={Boolean(card.pinned)}
+          showStar={face === 'view'}
+          onToggle={onTogglePin}
+        />
+      )}
 
       {showCornerHint && face === 'view' && canOpenMenu && (
         <CornerHint

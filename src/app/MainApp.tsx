@@ -680,6 +680,17 @@ const MainApp: React.FC = () => {
     );
   };
 
+  // Pins or unpins a card; the data layer keeps pinned cards at the head.
+  const handleTogglePin = (cardId: string) => {
+    setCards((previous) =>
+      previous.map((card) =>
+        card.id === cardId && !card.completedAt
+          ? { ...card, pinned: card.pinned ? undefined : true }
+          : card,
+      ),
+    );
+  };
+
   const handleDeleteCard = (cardId: string) => {
     const currentCards = getDeckState().cards;
     const index = currentCards.findIndex((card) => card.id === cardId);
@@ -1212,6 +1223,7 @@ const MainApp: React.FC = () => {
                     handlePostponeCard(activeCard.id, until)
                   }
                   onDelete={() => handleDeleteCard(activeCard.id)}
+                  onTogglePin={() => handleTogglePin(activeCard.id)}
                   showCornerHint={
                     !isCornerHintDismissed &&
                     activeCard.id === cards[0]?.id
