@@ -73,9 +73,11 @@ export const CardActionsFace: React.FC<CardActionsFaceProps> = ({
         {title}
       </p>
 
+      {/* The two slots sit around the card's middle, a little above centre, so
+          they read as the card's content and not as a list under the title. */}
       <div
-        className="mt-5 flex shrink-0 flex-col gap-3 border-t pt-5"
-        style={{ borderColor: 'rgba(69,57,44,0.13)' }}
+        className="absolute left-0 right-0 flex flex-col gap-3"
+        style={{ top: '43%', transform: 'translateY(-50%)' }}
       >
         <button
           type="button"

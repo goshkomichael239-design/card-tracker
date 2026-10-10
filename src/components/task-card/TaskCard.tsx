@@ -65,6 +65,8 @@ export const TaskCard: React.FC<TaskCardProps> = ({
     face: 'view',
     direction: 1,
   });
+  const [isCornerKeyboardFocused, setIsCornerKeyboardFocused] =
+    useState(false);
   const canOpenMenu =
     Boolean(onSave || onDelete) && !card.completedAt && !isStatic;
   const face: CardFace =
@@ -365,9 +367,20 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                 ? 'Действия с карточкой'
                 : 'Вернуть карточку'
             }
-            className="absolute inset-0 cursor-pointer border-0 bg-transparent p-0"
+            // The flap is a drawn object, so the browser's rectangular focus
+            // ring would look wrong around it; keyboard focus lifts the flap.
+            onFocus={(event) =>
+              setIsCornerKeyboardFocused(
+                event.currentTarget.matches(':focus-visible'),
+              )
+            }
+            onBlur={() => setIsCornerKeyboardFocused(false)}
+            className="absolute inset-0 cursor-pointer border-0 bg-transparent p-0 outline-none"
           >
-            <FoldedFlap lifted={face !== 'view'} paperTint={palette.paper} />
+            <FoldedFlap
+              lifted={face !== 'view' || isCornerKeyboardFocused}
+              paperTint={palette.paper}
+            />
           </button>
         ) : (
           <div className="pointer-events-none absolute inset-0" aria-hidden="true">
