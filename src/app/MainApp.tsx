@@ -53,7 +53,6 @@ import { DEBUG_CARD_ID_PREFIX } from './debugCards';
 import { getListProgress } from './listUtils';
 import { reviveCard } from './archiveUtils';
 import { formatPostponeMoment, getDueBucket, postponeCard } from './timeOps';
-import { OverdueBadge } from '../components/card-switcher/OverdueBadge';
 import { advanceRecurringCard } from './recurrence';
 import { useCardDraft } from './useCardDraft';
 import { purgeExpiredTrash } from './trash';
@@ -1141,13 +1140,7 @@ const MainApp: React.FC = () => {
             height: INITIAL_TASK_CARD_V2_CONFIG.height * sceneScale,
           }}
         >
-        {/* Overdue: the same red dot on the corner of the deck. */}
-        <OverdueBadge
-          count={overdueIds.size}
-          label="просрочено"
-          className="absolute -left-2.5 -top-2.5 z-40"
-        />
-        <div
+<div
           className="absolute left-0 top-0"
           style={{
             width: INITIAL_TASK_CARD_V2_CONFIG.width,

@@ -1,12 +1,51 @@
 import React from 'react';
 
-import baizeTexture from '../../assets/baize.webp';
+/**
+ * The cloth is drawn by the browser itself from two vector noise tiles
+ * (SVG turbulence), not from a picture: it is re-drawn at the screen's own
+ * density, so it never shows pixels or compression blocks at any scale.
+ *
+ * - grain: fine, slightly stretched pile, a quiet green with small variation;
+ * - mottle: broad, soft, uneven tone laid over it.
+ */
+const svgUrl = (markup: string): string =>
+  `url("data:image/svg+xml,${encodeURIComponent(markup)}")`;
 
-/** The cloth itself: a seamless tile drawn at twice its size (1024 px shown at 512), so it stays fine-grained on dense screens. */
+const GRAIN_TILE = 400;
+const MOTTLE_TILE = 1100;
+
+const GRAIN = svgUrl(
+  `<svg xmlns="http://www.w3.org/2000/svg" width="${GRAIN_TILE}" height="${GRAIN_TILE}">
+    <filter id="g" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB">
+      <feTurbulence type="fractalNoise" baseFrequency="0.1 0.065" numOctaves="4" seed="7" stitchTiles="stitch"/>
+      <feColorMatrix type="matrix" values="
+        0.08 0 0 0 0.08
+        0.095 0 0 0 0.1925
+        0.075 0 0 0 0.1525
+        0 0 0 0 1"/>
+    </filter>
+    <rect width="100%" height="100%" filter="url(#g)"/>
+  </svg>`,
+);
+
+const MOTTLE = svgUrl(
+  `<svg xmlns="http://www.w3.org/2000/svg" width="${MOTTLE_TILE}" height="${MOTTLE_TILE}">
+    <filter id="m" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB">
+      <feTurbulence type="fractalNoise" baseFrequency="0.0045" numOctaves="3" seed="21" stitchTiles="stitch"/>
+      <feColorMatrix type="matrix" values="
+        0 0 0 0 0
+        0 0 0 0 0.04
+        0 0 0 0 0.02
+        0.55 0 0 0 -0.2"/>
+    </filter>
+    <rect width="100%" height="100%" filter="url(#m)"/>
+  </svg>`,
+);
+
 const BAIZE_STYLE: React.CSSProperties = {
   backgroundColor: '#1f3e30',
-  backgroundImage: `url(${baizeTexture})`,
-  backgroundSize: '512px 512px',
+  backgroundImage: `${MOTTLE}, ${GRAIN}`,
+  backgroundSize: `${MOTTLE_TILE}px ${MOTTLE_TILE}px, ${GRAIN_TILE}px ${GRAIN_TILE}px`,
   backgroundRepeat: 'repeat',
 };
 
