@@ -43,11 +43,7 @@ import { DEBUG_CARD_ID_PREFIX } from './debugCards';
 import { getListProgress } from './listUtils';
 import { reviveCard } from './archiveUtils';
 import { formatPostponeMoment, getDueBucket, postponeCard } from './timeOps';
-import {
-  buildSwitcherItems,
-  DIVIDER_HEIGHT,
-  type DeckFilter,
-} from '../components/card-switcher/switcherItems';
+import { OverdueBadge } from '../components/card-switcher/OverdueBadge';
 import {
   advanceRecurringCard,
   firstOccurrence,
@@ -203,6 +199,26 @@ const SWITCHER_TOP = 16;
 const SWITCHER_CHROME = 14;
 const SWITCHER_ROW_GAP = 2;
 
+/**
+ * The card that comes forward after one leaves the deck at `fromIndex`: the
+ * next one in order that is not done.
+ */
+const pickNeighbourId = (
+  list: VisualCard[],
+  fromIndex: number,
+  excludeId: string,
+): string => {
+  for (let offset = 1; offset <= list.length; offset += 1) {
+    const candidate = list[(fromIndex + offset) % list.length];
+
+    if (candidate && candidate.id !== excludeId && !candidate.completedAt) {
+      return candidate.id;
+    }
+  }
+
+  return '';
+};
+
 const MainApp: React.FC = () => {
   const { width: viewportWidth, height: viewportHeight } = useViewportSize();
   const [isArchiveOpen, setIsArchiveOpen] = useState(false);
@@ -210,7 +226,6 @@ const MainApp: React.FC = () => {
   const [isTrashOpen, setIsTrashOpen] = useState(false);
   const [trashBumpKey, setTrashBumpKey] = useState(0);
   const [spikeBumpKey, setSpikeBumpKey] = useState(0);
-  const [deckFilter, setDeckFilter] = useState<DeckFilter>('all');
   // Coarse clock for the overview: deadlines become overdue as time passes.
   const [clockNow, setClockNow] = useState(() => Date.now());
 
@@ -359,75 +374,24 @@ const MainApp: React.FC = () => {
     viewportWidth < 640 ? NARROW_SCENE_SIDE_OVERHANG : SCENE_SIDE_OVERHANG;
   const currentCardExitX = Math.max(520, viewportWidth * 0.72);
 
-  // Overview: where each live card stands in time, and the deck narrowed to
-  // one bucket while its tab is pressed. A filter that no longer contains the
-  // active card (or anything at all) falls back to the whole deck.
-  const dueBuckets = useMemo(
-    () => new Map(cards.map((card) => [card.id, getDueBucket(card, clockNow)])),
+  // Overdue cards: marked red in the list, and counted on the deck.
+  const overdueIds = useMemo(
+    () =>
+      new Set(
+        cards
+          .filter((card) => getDueBucket(card, clockNow) === 'overdue')
+          .map((card) => card.id),
+      ),
     [cards, clockNow],
   );
-  const dueCounts = useMemo(() => {
-    const counts = { overdue: 0, today: 0, soon: 0 };
 
-    for (const bucket of dueBuckets.values()) {
-      if (bucket) {
-        counts[bucket] += 1;
-      }
-    }
-
-    return counts;
-  }, [dueBuckets]);
-  const filteredCards =
-    deckFilter === 'all'
-      ? cards
-      : cards.filter((card) => dueBuckets.get(card.id) === deckFilter);
-  const effectiveFilter: DeckFilter =
-    deckFilter !== 'all' &&
-    filteredCards.some((card) => card.id === activeCardId)
-      ? deckFilter
-      : 'all';
-  const showDeckGroups =
-    effectiveFilter !== 'all' ||
-    dueCounts.overdue + dueCounts.today + dueCounts.soon > 0;
-  // The whole deck reads in groups: overdue, today, soon, then the rest. The
-  // order inside a group is the deck's own.
-  const visibleCards = useMemo(() => {
-    if (effectiveFilter !== 'all') {
-      return filteredCards;
-    }
-
-    if (!showDeckGroups) {
-      return cards;
-    }
-
-    const rank = (card: VisualCard) => {
-      const bucket = dueBuckets.get(card.id);
-      return bucket === 'overdue' ? 0 : bucket === 'today' ? 1 : bucket === 'soon' ? 2 : 3;
-    };
-
-    return [...cards].sort((a, b) => rank(a) - rank(b));
-  }, [cards, dueBuckets, effectiveFilter, filteredCards, showDeckGroups]);
-  const groupOf = useCallback(
-    (card: VisualCard) => dueBuckets.get(card.id) ?? null,
-    [dueBuckets],
-  );
-
-  const switcherItems = buildSwitcherItems(
-    visibleCards,
-    activeCardId,
-    showDeckGroups ? groupOf : undefined,
-  );
-  const switcherCardRows = switcherItems.filter(
-    (item) => item.type === 'card',
-  ).length;
-  const switcherDividerRows = switcherItems.length - switcherCardRows;
+  const switcherRows = Math.min(4, Math.max(1, cards.length));
   const switcherBottom =
     SWITCHER_TOP +
     INITIAL_CARD_SWITCHER_CONFIG.positionY +
     SWITCHER_CHROME +
-    Math.max(1, switcherCardRows) * INITIAL_CARD_SWITCHER_CONFIG.rowHeight +
-    (Math.max(1, switcherItems.length) - 1) * SWITCHER_ROW_GAP +
-    switcherDividerRows * DIVIDER_HEIGHT;
+    switcherRows * INITIAL_CARD_SWITCHER_CONFIG.rowHeight +
+    (switcherRows - 1) * SWITCHER_ROW_GAP;
   const sceneTopReserve = switcherBottom + SCENE_TOP_OVERHANG;
   const sceneBottomReserve = ARCHIVE_NAVIGATION_HEIGHT + SCENE_BOTTOM_OVERHANG;
   const sceneScale = getCardScale(
@@ -623,34 +587,6 @@ const MainApp: React.FC = () => {
     }
   }, []);
 
-  // The card that comes forward after one leaves the deck at `fromIndex`: the
-  // next one in order, preferably within the pressed overview tab.
-  const pickNeighbourId = (
-    list: VisualCard[],
-    fromIndex: number,
-    excludeId: string,
-  ): string => {
-    const inFilter = (card: VisualCard) =>
-      effectiveFilter === 'all' || dueBuckets.get(card.id) === effectiveFilter;
-
-    for (const strict of [true, false]) {
-      for (let offset = 1; offset <= list.length; offset += 1) {
-        const candidate = list[(fromIndex + offset) % list.length];
-
-        if (
-          candidate &&
-          candidate.id !== excludeId &&
-          !candidate.completedAt &&
-          (!strict || inFilter(candidate))
-        ) {
-          return candidate.id;
-        }
-      }
-    }
-
-    return '';
-  };
-
   const removePendingCompletedCard = useCallback(
     (requestedCardId?: string) => {
       const completedCardId = pendingCompletedCardIdRef.current;
@@ -692,9 +628,7 @@ const MainApp: React.FC = () => {
       );
       setActiveCardId(nextCardId);
     },
-    // pickNeighbourId is rebuilt every render with the current filter.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [cards, clearCompletedRemovalTimer, createTransientOutgoing, effectiveFilter, dueBuckets],
+    [cards, clearCompletedRemovalTimer, createTransientOutgoing],
   );
 
   useEffect(() => {
@@ -747,38 +681,21 @@ const MainApp: React.FC = () => {
     [activeCard, createTransientOutgoing, removePendingCompletedCard],
   );
 
-  // Leafs through the visible deck (all cards, or the pressed overview tab).
   const moveActiveCard = useCallback(
     (direction: -1 | 1) => {
-      if (visibleCards.length <= 1) {
+      if (cards.length <= 1) {
         return;
       }
 
-      const currentIndex = visibleCards.findIndex(
-        (card) => card.id === activeCardId,
-      );
+      const currentIndex = cards.findIndex((card) => card.id === activeCardId);
       const activeIndex = currentIndex >= 0 ? currentIndex : 0;
       const nextIndex =
-        (activeIndex + direction + visibleCards.length) % visibleCards.length;
+        (activeIndex + direction + cards.length) % cards.length;
 
-      handleSelectCard(visibleCards[nextIndex]!.id);
+      handleSelectCard(cards[nextIndex]!.id);
     },
-    [activeCardId, visibleCards, handleSelectCard],
+    [activeCardId, cards, handleSelectCard],
   );
-
-  const handleSelectDeckFilter = (filter: DeckFilter) => {
-    setDeckFilter(filter);
-
-    if (filter === 'all') {
-      return;
-    }
-
-    const first = cards.find((card) => dueBuckets.get(card.id) === filter);
-
-    if (first && dueBuckets.get(activeCardId) !== filter) {
-      handleSelectCard(first.id);
-    }
-  };
 
   const handleNextCard = useCallback(
     () => moveActiveCard(1),
@@ -2063,15 +1980,12 @@ const MainApp: React.FC = () => {
 
         <div className="absolute inset-x-3 top-4 z-30 flex justify-center">
           <CardSwitcher
-            cards={visibleCards}
+            cards={cards}
             activeCardId={activeCardId}
             onSelectCard={handleSelectCard}
             onNextCard={handleNextCard}
             onPreviousCard={handlePreviousCard}
-            groupOf={showDeckGroups ? groupOf : undefined}
-            groupCounts={dueCounts}
-            activeFilter={effectiveFilter}
-            onSelectFilter={handleSelectDeckFilter}
+            overdueIds={overdueIds}
           />
         </div>
 
@@ -2093,6 +2007,11 @@ const MainApp: React.FC = () => {
             height: INITIAL_TASK_CARD_V2_CONFIG.height * sceneScale,
           }}
         >
+        {/* Overdue: the same red dot on the corner of the deck. */}
+        <OverdueBadge
+          count={overdueIds.size}
+          className="absolute -left-2.5 -top-2.5 z-40"
+        />
         <div
           className="absolute left-0 top-0"
           style={{
@@ -2103,7 +2022,7 @@ const MainApp: React.FC = () => {
           }}
         >
           {activeCard && (
-            <CardStack cards={visibleCards} activeCardId={activeCardId} />
+            <CardStack cards={cards} activeCardId={activeCardId} />
           )}
 
           <AnimatePresence initial={false} mode="popLayout">

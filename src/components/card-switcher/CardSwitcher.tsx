@@ -7,13 +7,7 @@ import {
   INITIAL_CARD_SWITCHER_CONFIG,
   type CardSwitcherConfig,
 } from './cardSwitcherConfig';
-import { DeckDivider } from './DeckDivider';
-import {
-  buildSwitcherItems,
-  groupStyle,
-  type DeckFilter,
-  type DeckGroup,
-} from './switcherItems';
+import { OverdueBadge } from './OverdueBadge';
 
 interface CardSwitcherProps {
   cards: VisualCard[];
@@ -22,13 +16,11 @@ interface CardSwitcherProps {
   onNextCard: () => void;
   onPreviousCard: () => void;
   mode?: 'main' | 'archive';
-  /** When given, the list is split by dividers into these groups. */
-  groupOf?: (card: VisualCard) => DeckGroup;
-  groupCounts?: Record<'overdue' | 'today' | 'soon', number>;
-  /** The group the list is narrowed to ("all" for the whole deck). */
-  activeFilter?: DeckFilter;
-  onSelectFilter?: (filter: DeckFilter) => void;
+  /** Cards that are overdue: marked red, and counted in the corner. */
+  overdueIds?: ReadonlySet<string>;
 }
+
+const MAX_VISIBLE_ROWS = 4;
 
 const WHEEL_INTENT_THRESHOLD = 6;
 const WHEEL_GESTURE_END_MS = 90;
@@ -54,10 +46,7 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
   onNextCard,
   onPreviousCard,
   mode = 'main',
-  groupOf,
-  groupCounts,
-  activeFilter = 'all',
-  onSelectFilter,
+  overdueIds,
 }) => {
   const [config, setConfig] = useState<CardSwitcherConfig>(() => ({
     ...INITIAL_CARD_SWITCHER_CONFIG,
@@ -76,9 +65,17 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
     onPreviousCardRef.current = onPreviousCard;
   }, [cards, onNextCard, onPreviousCard]);
 
-  const items = useMemo(
-    () => buildSwitcherItems(cards, activeCardId, groupOf),
-    [cards, activeCardId, groupOf],
+  const activeIndex = Math.max(
+    0,
+    cards.findIndex((card) => card.id === activeCardId),
+  );
+  const windowStart = Math.min(
+    Math.max(0, activeIndex - (MAX_VISIBLE_ROWS - 1)),
+    Math.max(0, cards.length - MAX_VISIBLE_ROWS),
+  );
+  const visibleCards = useMemo(
+    () => cards.slice(windowStart, windowStart + MAX_VISIBLE_ROWS),
+    [cards, windowStart],
   );
 
   useEffect(() => {
@@ -196,41 +193,10 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
 
           <div className="relative">
             <div className="flex flex-col gap-0.5">
-              {items.map((item) => {
-                if (item.type === 'divider') {
-                  const dated = item.group !== null;
-
-                  return (
-                    <DeckDivider
-                      key={`divider-${item.group ?? 'rest'}`}
-                      group={item.group}
-                      count={
-                        item.group
-                          ? (groupCounts?.[item.group] ?? 0)
-                          : cards.filter((card) => groupOf?.(card) === null)
-                              .length
-                      }
-                      isFiltered={dated && activeFilter === item.group}
-                      onPress={
-                        dated && onSelectFilter
-                          ? () =>
-                              onSelectFilter(
-                                activeFilter === item.group
-                                  ? 'all'
-                                  : item.group!,
-                              )
-                          : undefined
-                      }
-                    />
-                  );
-                }
-
-                const { card } = item;
+              {visibleCards.map((card) => {
                 const isActive = card.id === activeCardId;
                 const palette = getCardPalette(card);
-                const mark = groupOf
-                  ? groupStyle(groupOf(card)).mark
-                  : 'transparent';
+                const isOverdue = Boolean(overdueIds?.has(card.id));
 
                 return (
                   <button
@@ -247,17 +213,21 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
                     }}
                     aria-pressed={isActive}
                   >
-                    <span
-                      className="absolute bottom-1 left-0 top-1 w-[3px] rounded-r-[2px]"
-                      style={{ backgroundColor: mark }}
-                      aria-hidden="true"
-                    />
+                    {isOverdue && (
+                      <span
+                        className="absolute bottom-1 left-0 top-1 w-[3px] rounded-r-[2px]"
+                        style={{ backgroundColor: '#B8483A' }}
+                        aria-hidden="true"
+                      />
+                    )}
                     <span
                       className="relative z-10 block min-w-0 flex-1 truncate font-mono font-semibold"
                       style={{
                         color: isActive
                           ? palette.accentDark
-                          : 'rgba(40,35,29,0.68)',
+                          : isOverdue
+                            ? '#8F3025'
+                            : 'rgba(40,35,29,0.68)',
                         fontSize: config.fontSize,
                         lineHeight: `${config.rowHeight}px`,
                       }}
@@ -270,6 +240,12 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
             </div>
           </div>
         </div>
+
+        {/* Overdue: a red dot on the corner of the list. */}
+        <OverdueBadge
+          count={overdueIds?.size ?? 0}
+          className="absolute -right-2 -top-2 z-10"
+        />
       </div>
 
       {import.meta.env.DEV && SHOW_CARD_SWITCHER_DEBUG && (
