@@ -25,6 +25,8 @@ export const serializeBackup = (
   cards: VisualCard[],
   archive: VisualCard[],
   trash: TrashedCard[],
+  /** A file for a person is indented; automatic snapshots are compact. */
+  pretty = true,
 ): string =>
   JSON.stringify(
     {
@@ -36,7 +38,7 @@ export const serializeBackup = (
       trash,
     },
     null,
-    2,
+    pretty ? 2 : undefined,
   );
 
 export const parseBackup = (text: string): BackupPayload | null => {

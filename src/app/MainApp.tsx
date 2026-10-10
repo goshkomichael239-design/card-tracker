@@ -34,11 +34,29 @@ import {
   type BackupImportResult,
 } from './backupUtils';
 import {
-  loadActiveCards,
-  loadArchivedCards,
-  saveActiveCards,
-  saveArchivedCards,
+  loadCornerHintDismissed,
+  saveCornerHintDismissed,
 } from './persistence';
+import {
+  appendListItem,
+  applyEdit,
+  applySeriesStep,
+  buildCompletedCard,
+  createId,
+  finishSeriesByHand,
+  insertAt,
+  pickNeighbourId,
+  sortArchive,
+  toggleListItem as toggleItem,
+} from './cardOps';
+import {
+  getDeckState,
+  setArchivedCards,
+  setCards,
+  setTrash,
+  snapshotBeforeImport,
+  useDeckStore,
+} from './deckStore';
 import { DEBUG_CARD_ID_PREFIX } from './debugCards';
 import { getListProgress } from './listUtils';
 import { reviveCard } from './archiveUtils';
@@ -49,16 +67,12 @@ import {
   firstOccurrence,
   isRecurrenceComplete,
 } from './recurrence';
-import {
-  loadTrash,
-  purgeExpiredTrash,
-  saveTrash,
-  type TrashedCard,
-} from './trash';
+import { purgeExpiredTrash } from './trash';
 import { DebugCardsPanel } from '../components/DebugCardsPanel';
 import { TrashBin } from '../components/trash/TrashBin';
 import { CouponSpike } from '../components/table/CouponSpike';
 import { TrashSheet } from '../components/trash/TrashSheet';
+import { StorageNotice } from '../components/StorageNotice';
 import { UndoTicket } from '../components/UndoTicket';
 import {
   addLocalDays,
@@ -85,17 +99,6 @@ import {
 import { TaskCard } from '../components/task-card/TaskCard';
 import { TransientTaskCardOverlay } from '../components/task-card/TransientTaskCardOverlay';
 import { INITIAL_TASK_CARD_V2_CONFIG } from '../components/task-card/taskCardV2Config';
-const createId = (): string => {
-  if (
-    typeof globalThis.crypto !== 'undefined' &&
-    typeof globalThis.crypto.randomUUID === 'function'
-  ) {
-    return globalThis.crypto.randomUUID();
-  }
-
-  return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-};
-
 type TransientOutgoingKind =
   | 'switch'
   | 'completion'
@@ -135,29 +138,6 @@ const undoIsAboutTrashedCard = (
     (cardId === undefined || action.cardId === cardId)) ||
   (action?.kind === 'trash-archived' &&
     (cardId === undefined || action.card.id === cardId));
-
-const sortArchive = (cards: VisualCard[]): VisualCard[] =>
-  [...cards].sort(
-    (left, right) =>
-      new Date(right.completedAt ?? 0).getTime() -
-      new Date(left.completedAt ?? 0).getTime(),
-  );
-
-const insertAt = <T,>(items: T[], item: T, index: number): T[] => {
-  const next = [...items];
-  next.splice(Math.max(0, Math.min(index, next.length)), 0, item);
-  return next;
-};
-
-const CORNER_HINT_STORAGE_KEY = 'card-tracker.corner-hint-dismissed.v1';
-
-const loadCornerHintDismissed = (): boolean => {
-  try {
-    return window.localStorage.getItem(CORNER_HINT_STORAGE_KEY) === '1';
-  } catch {
-    return false;
-  }
-};
 
 interface TransientOutgoingCard {
   key: number;
@@ -199,30 +179,13 @@ const SWITCHER_TOP = 16;
 const SWITCHER_CHROME = 14;
 const SWITCHER_ROW_GAP = 2;
 
-/**
- * The card that comes forward after one leaves the deck at `fromIndex`: the
- * next one in order that is not done.
- */
-const pickNeighbourId = (
-  list: VisualCard[],
-  fromIndex: number,
-  excludeId: string,
-): string => {
-  for (let offset = 1; offset <= list.length; offset += 1) {
-    const candidate = list[(fromIndex + offset) % list.length];
-
-    if (candidate && candidate.id !== excludeId && !candidate.completedAt) {
-      return candidate.id;
-    }
-  }
-
-  return '';
-};
-
 const MainApp: React.FC = () => {
   const { width: viewportWidth, height: viewportHeight } = useViewportSize();
   const [isArchiveOpen, setIsArchiveOpen] = useState(false);
-  const [trash, setTrash] = useState<TrashedCard[]>(loadTrash);
+  // The data layer (deckStore.ts) owns the cards, the archive and the bin.
+  const cards = useDeckStore((state) => state.cards);
+  const archivedCards = useDeckStore((state) => state.archivedCards);
+  const trash = useDeckStore((state) => state.trash);
   const [isTrashOpen, setIsTrashOpen] = useState(false);
   const [trashBumpKey, setTrashBumpKey] = useState(0);
   const [spikeBumpKey, setSpikeBumpKey] = useState(0);
@@ -239,61 +202,6 @@ const MainApp: React.FC = () => {
     loadCornerHintDismissed,
   );
 
-  const [cards, setCards] = useState<VisualCard[]>(() => {
-    const storedCards = loadActiveCards();
-    if (storedCards !== null) {
-      return storedCards;
-    }
-
-    if (!import.meta.env.DEV) {
-      return [
-        {
-          id: createId(),
-          title: 'Моя первая карточка',
-          kind: 'single',
-          timeMode: 'none',
-          createdAt: new Date().toISOString(),
-        },
-      ];
-    }
-
-    const now = Date.now();
-    const seeds: Array<{ title: string; timeMode: TimeMode }> = [
-      { title: 'Хлеб', timeMode: 'none' },
-      { title: 'Абсолютное безумие', timeMode: 'none' },
-      { title: 'Мама мыла раму', timeMode: 'deadline' },
-      { title: 'Рыба в воде', timeMode: 'reminder' },
-      { title: 'Кленовый сироп', timeMode: 'deadline' },
-      {
-        title: 'Продумать движение новой карточки',
-        timeMode: 'reminder',
-      },
-      {
-        title:
-          'Очень длинное название карточки для проверки обрезания текста в переключателе',
-        timeMode: 'none',
-      },
-    ];
-
-    return seeds.map((seed, index) => {
-      const targetAt = new Date(
-        now + (index + 1) * 24 * 60 * 60 * 1000,
-      ).toISOString();
-
-      return {
-        id: createId(),
-        title: seed.title,
-        kind: 'single',
-        timeMode: seed.timeMode,
-        deadlineAt: seed.timeMode === 'deadline' ? targetAt : undefined,
-        reminderAt: seed.timeMode === 'reminder' ? targetAt : undefined,
-        createdAt: new Date(now - index * 60 * 1000).toISOString(),
-      };
-    });
-  });
-  const [archivedCards, setArchivedCards] = useState<VisualCard[]>(
-    loadArchivedCards,
-  );
   const [activeCardId, setActiveCardId] = useState(() => cards[0]?.id ?? '');
 
   const [creationState, setCreationState] =
@@ -345,7 +253,6 @@ const MainApp: React.FC = () => {
   const couponFlightInProgressRef = useRef(false);
   const detachedCouponLayerRef =
     useRef<DetachedCompletionCouponHandle | null>(null);
-  const cardsRef = useRef(cards);
   const completedRemovalTimerRef = useRef<number | null>(null);
   const pendingCompletedCardIdRef = useRef<string | null>(null);
   const pendingCompletedRemovalArmedRef = useRef(false);
@@ -502,14 +409,6 @@ const MainApp: React.FC = () => {
   );
 
   useEffect(() => {
-    cardsRef.current = cards;
-  }, [cards]);
-
-  useEffect(() => {
-    saveActiveCards(cards);
-  }, [cards]);
-
-  useEffect(() => {
     if (creationState !== 'editing' || draftStep !== 'title') {
       return;
     }
@@ -544,14 +443,6 @@ const MainApp: React.FC = () => {
       }
     };
   }, []);
-
-  useEffect(() => {
-    saveTrash(trash);
-  }, [trash]);
-
-  useEffect(() => {
-    saveArchivedCards(archivedCards);
-  }, [archivedCards]);
 
   useEffect(() => {
     let rolloverTimer: number | null = null;
@@ -869,7 +760,7 @@ const MainApp: React.FC = () => {
 
       const now = new Date().toISOString();
       const isSeries = selectedKind === 'series';
-      const lastCard = cardsRef.current.at(-1);
+      const lastCard = getDeckState().cards.at(-1);
       const newCard: VisualCard = {
         id: createId(),
         // Pastel scheme that differs from the card it will sit next to.
@@ -1313,23 +1204,18 @@ const MainApp: React.FC = () => {
     // A repeating card is a tear-off pad: today's sheet goes to the archive as
     // its own card, the pad stays on the table showing the next sheet.
     const isRepeating = Boolean(cardToComplete.recurrence);
-    const completedAt = new Date().toISOString();
-    const completedCard: VisualCard = isRepeating
-      ? {
-          ...cardToComplete,
-          id: createId(),
-          completedAt,
-          recurrence: undefined,
-          postponements: undefined,
-        }
-      : { ...cardToComplete, completedAt };
+    const completedCard = buildCompletedCard(
+      cardToComplete,
+      new Date().toISOString(),
+      createId(),
+    );
 
     showUndo(
       cardToComplete.kind === 'series' ? 'Серия завершена' : 'Выполнено',
       {
         kind: 'complete',
         before: cardBefore ?? cardToComplete,
-        index: cardsRef.current.findIndex(
+        index: getDeckState().cards.findIndex(
           (card) => card.id === cardToComplete.id,
         ),
         archivedId: completedCard.id,
@@ -1348,11 +1234,10 @@ const MainApp: React.FC = () => {
       });
 
       const advanced = advanceRecurringCard(cardToComplete);
-      const nextCards = cardsRef.current.map((card) =>
+      const nextCards = getDeckState().cards.map((card) =>
         card.id === advanced.id ? advanced : card,
       );
 
-      cardsRef.current = nextCards;
       setCards(nextCards);
       setArchivedCards((previous) => [completedCard, ...previous]);
       // The torn sheet slides away and uncovers the next one underneath.
@@ -1380,10 +1265,9 @@ const MainApp: React.FC = () => {
           ? getListProgress(completedCard.list)
           : undefined,
     });
-    const nextCards = cardsRef.current.map((card) =>
+    const nextCards = getDeckState().cards.map((card) =>
         card.id === completedCard.id ? completedCard : card,
       );
-    cardsRef.current = nextCards;
     setCards(nextCards);
     setArchivedCards((previous) => [
       completedCard,
@@ -1395,111 +1279,61 @@ const MainApp: React.FC = () => {
   };
 
   const recordSeriesStep = (couponBounds: DOMRect) => {
-    const currentCard = cardsRef.current.find(
+    const currentCard = getDeckState().cards.find(
       (card) => card.id === activeCardId,
     );
-    const series = currentCard?.kind === 'series' ? currentCard.series : undefined;
 
-    if (!currentCard || !series || currentCard.completedAt || couponFlightInProgressRef.current) {
+    if (
+      !currentCard ||
+      currentCard.completedAt ||
+      couponFlightInProgressRef.current
+    ) {
       return;
     }
 
-    const completedCount = series.entries.length;
-    if (completedCount >= series.targetCount) {
-      // Every step is already counted (a finished series put back on the
-      // table from the archive): the coupon simply closes it again.
-      handleCompleteCard(
-        couponBounds,
-        {
-          ...currentCard,
-          series: {
-            ...series,
-            finishedAt: new Date().toISOString(),
-            finishReason: 'completed',
-          },
-        },
-        currentCard,
-      );
+    const result = applySeriesStep(currentCard, new Date());
+
+    if (!result) {
       return;
     }
 
-    const now = new Date();
-    const nowIso = now.toISOString();
-    const anchorTime = new Date(series.timingAnchorAt).getTime();
-    const durationMs = Number.isFinite(anchorTime)
-      ? Math.max(0, now.getTime() - anchorTime)
-      : 0;
-    const entries = [
-      ...series.entries,
-      { completedAt: nowIso, durationMs },
-    ];
-    const isFinished = entries.length >= series.targetCount;
-    const updatedCard: VisualCard = {
-      ...currentCard,
-      series: {
-        ...series,
-        entries,
-        timingAnchorAt: nowIso,
-        ...(isFinished
-          ? { finishedAt: nowIso, finishReason: 'completed' as const }
-          : {}),
-      },
-    };
-    const nextCards = cardsRef.current.map((card) =>
-      card.id === updatedCard.id ? updatedCard : card,
+    if (result.isFinished) {
+      handleCompleteCard(couponBounds, result.card, currentCard);
+      return;
+    }
+
+    setCards((previous) =>
+      previous.map((card) => (card.id === result.card.id ? result.card : card)),
     );
-    cardsRef.current = nextCards;
-    setCards(nextCards);
-
-    if (isFinished) {
-      handleCompleteCard(couponBounds, updatedCard, currentCard);
-    }
   };
 
   const finishSeries = (couponBounds: DOMRect) => {
-    const currentCard = cardsRef.current.find(
+    const currentCard = getDeckState().cards.find(
       (card) => card.id === activeCardId,
     );
-    const series = currentCard?.kind === 'series' ? currentCard.series : undefined;
 
-    if (!currentCard || !series || currentCard.completedAt || couponFlightInProgressRef.current) {
+    if (
+      !currentCard ||
+      currentCard.completedAt ||
+      couponFlightInProgressRef.current
+    ) {
       return;
     }
 
-    const nowIso = new Date().toISOString();
-    const completedCard: VisualCard = {
-      ...currentCard,
-      series: {
-        ...series,
-        finishedAt: nowIso,
-        finishReason: 'manual',
-      },
-    };
-    handleCompleteCard(couponBounds, completedCard, currentCard);
+    const finished = finishSeriesByHand(currentCard, new Date());
+
+    if (finished) {
+      handleCompleteCard(couponBounds, finished, currentCard);
+    }
   };
 
   const toggleListItem = (itemId: string) => {
+    const now = new Date();
+
     setCards((previous) =>
-      previous.map((card) => {
-        if (card.id !== activeCardId || card.kind !== 'list' || !card.list || card.completedAt) {
-          return card;
-        }
-        return {
-          ...card,
-          list: {
-            items: card.list.items.map((item) =>
-              item.id === itemId
-                ? {
-                    ...item,
-                    completedAt: item.completedAt
-                      ? undefined
-                      : new Date().toISOString(),
-                  }
-                : item,
-            ),
-          },
-        };
-      }),
+      previous.map((card) =>
+        card.id === activeCardId ? toggleItem(card, itemId, now) : card,
+      ),
     );
   };
 
@@ -1514,29 +1348,17 @@ const MainApp: React.FC = () => {
       return;
     }
 
-    setCards((previous) =>
-      previous.map((card) => {
-        if (
-          card.id !== cardId ||
-          card.kind !== 'list' ||
-          !card.list ||
-          card.completedAt
-        ) {
-          return card;
-        }
+    const item = { id: createId(), text };
 
-        return {
-          ...card,
-          list: {
-            items: [...card.list.items, { id: createId(), text }],
-          },
-        };
-      }),
+    setCards((previous) =>
+      previous.map((card) =>
+        card.id === cardId ? appendListItem(card, item) : card,
+      ),
     );
   };
 
   const handleDeleteCard = (cardId: string) => {
-    const currentCards = cardsRef.current;
+    const currentCards = getDeckState().cards;
     const index = currentCards.findIndex((card) => card.id === cardId);
     const cardToDelete = currentCards[index];
 
@@ -1648,12 +1470,11 @@ const MainApp: React.FC = () => {
       current?.card.id === before.id ? null : current,
     );
 
-    const current = cardsRef.current;
+    const current = getDeckState().cards;
     const next = current.some((card) => card.id === before.id)
       ? current.map((card) => (card.id === before.id ? before : card))
       : insertAt(current, before, index);
 
-    cardsRef.current = next;
     setCards(next);
 
     if (activeCard && activeCard.id !== before.id && !activeCard.completedAt) {
@@ -1676,7 +1497,7 @@ const MainApp: React.FC = () => {
       restoreFromTrash(entry.action.cardId);
     } else if (entry.action.kind === 'postpone') {
       const { before, index } = entry.action;
-      const current = cardsRef.current;
+      const current = getDeckState().cards;
 
       if (!current.some((card) => card.id === before.id)) {
         return;
@@ -1688,7 +1509,6 @@ const MainApp: React.FC = () => {
         index,
       );
 
-      cardsRef.current = next;
       setCards(next);
 
       if (activeCard && activeCard.id !== before.id) {
@@ -1755,7 +1575,7 @@ const MainApp: React.FC = () => {
       {
         card: reviveCard(archived),
         trashedAt: new Date().toISOString(),
-        index: cardsRef.current.length,
+        index: getDeckState().cards.length,
       },
       ...previous.filter((item) => item.card.id !== cardId),
     ]);
@@ -1766,7 +1586,7 @@ const MainApp: React.FC = () => {
   // Puts a card off: it gets its stamp and new time, slips to the back of the
   // deck, and the next card comes forward.
   const handlePostponeCard = (cardId: string, until: Date) => {
-    const current = cardsRef.current;
+    const current = getDeckState().cards;
     const index = current.findIndex((card) => card.id === cardId);
     const before = current[index];
 
@@ -1783,7 +1603,6 @@ const MainApp: React.FC = () => {
     const next = [...current.filter((card) => card.id !== cardId), postponed];
     const nextActiveId = pickNeighbourId(current, index, cardId) || cardId;
 
-    cardsRef.current = next;
     setCards(next);
 
     if (nextActiveId !== cardId) {
@@ -1803,16 +1622,7 @@ const MainApp: React.FC = () => {
   const handleSaveCard = (edited: VisualCard) => {
     setCards((previous) =>
       previous.map((card) =>
-        card.id === edited.id && !card.completedAt
-          ? {
-              ...edited,
-              id: card.id,
-              kind: card.kind,
-              timeMode: card.timeMode,
-              createdAt: card.createdAt,
-              completedAt: undefined,
-            }
-          : card,
+        card.id === edited.id ? applyEdit(card, edited) : card,
       ),
     );
   };
@@ -1823,18 +1633,13 @@ const MainApp: React.FC = () => {
     }
 
     setIsCornerHintDismissed(true);
-
-    try {
-      window.localStorage.setItem(CORNER_HINT_STORAGE_KEY, '1');
-    } catch {
-      // The hint simply shows again next time when storage is unavailable.
-    }
+    saveCornerHintDismissed();
   };
 
   const handleExportBackup = () => {
     downloadTextFile(
       getBackupFilename(),
-      serializeBackup(cardsRef.current, archivedCards, trash),
+      serializeBackup(getDeckState().cards, archivedCards, trash),
     );
   };
 
@@ -1847,9 +1652,12 @@ const MainApp: React.FC = () => {
       return { ok: false, message: 'Файл не похож на копию Card Tracker' };
     }
 
+    // Whatever the import does, the state just before it is kept.
+    snapshotBeforeImport();
+
     const knownIds = new Set(
       [
-        ...cardsRef.current,
+        ...getDeckState().cards,
         ...archivedCards,
         ...trash.map((item) => item.card),
       ].map((card) => card.id),
@@ -1883,7 +1691,7 @@ const MainApp: React.FC = () => {
     }
 
     if (newActive.length > 0) {
-      const hasActiveCard = cardsRef.current.some(
+      const hasActiveCard = getDeckState().cards.some(
         (card) => card.id === activeCardId,
       );
 
@@ -1924,7 +1732,7 @@ const MainApp: React.FC = () => {
   };
 
   const handleRemoveDebugCards = () => {
-    const remaining = cardsRef.current.filter(
+    const remaining = getDeckState().cards.filter(
       (card) => !card.id.startsWith(DEBUG_CARD_ID_PREFIX),
     );
 
@@ -1964,6 +1772,8 @@ const MainApp: React.FC = () => {
 
   return (
     <main className="relative h-full w-full overflow-hidden">
+      <StorageNotice />
+
       <ArchiveView
         isOpen={isArchiveOpen}
         archivedCards={archivedCards}

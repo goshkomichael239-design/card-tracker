@@ -1,5 +1,7 @@
 import type { VisualCard } from './cardTheme';
 import { isStoredVisualCard, sanitizeStoredCard } from './cardValidation';
+import { quarantine } from './persistence';
+import { readValue, writeValue } from './storage/kv';
 
 /** A card thrown into the bin: it keeps its place in the deck for a restore. */
 export interface TrashedCard {
@@ -41,33 +43,34 @@ export const purgeExpiredTrash = (
   );
 
 export const loadTrash = (): TrashedCard[] => {
-  try {
-    const stored = window.localStorage.getItem(TRASH_STORAGE_KEY);
+  const stored = readValue<unknown>(TRASH_STORAGE_KEY);
 
-    if (!stored) {
-      return [];
-    }
-
-    const parsed: unknown = JSON.parse(stored);
-
-    return Array.isArray(parsed)
-      ? purgeExpiredTrash(parsed.filter(isTrashedCard)).map((item) => ({
-          ...item,
-          card: sanitizeStoredCard(item.card),
-        }))
-      : [];
-  } catch {
+  if (stored === undefined) {
     return [];
   }
+
+  if (!Array.isArray(stored)) {
+    quarantine(TRASH_STORAGE_KEY, [stored]);
+    return [];
+  }
+
+  const valid = stored.filter(isTrashedCard);
+
+  if (valid.length !== stored.length) {
+    quarantine(
+      TRASH_STORAGE_KEY,
+      stored.filter((item) => !isTrashedCard(item)),
+    );
+  }
+
+  return purgeExpiredTrash(valid).map((item) => ({
+    ...item,
+    card: sanitizeStoredCard(item.card),
+  }));
 };
 
-export const saveTrash = (items: TrashedCard[]): void => {
-  try {
-    window.localStorage.setItem(TRASH_STORAGE_KEY, JSON.stringify(items));
-  } catch {
-    // The scene must stay usable when browser storage is unavailable.
-  }
-};
+export const saveTrash = (items: TrashedCard[]): void =>
+  writeValue(TRASH_STORAGE_KEY, items);
 
 /** Whole days the card has left in the bin (at least 1 while it is there). */
 export const getTrashDaysLeft = (
