@@ -2010,6 +2010,7 @@ const MainApp: React.FC = () => {
         {/* Overdue: the same red dot on the corner of the deck. */}
         <OverdueBadge
           count={overdueIds.size}
+          label="просрочено"
           className="absolute -left-2.5 -top-2.5 z-40"
         />
         <div
@@ -2092,6 +2093,7 @@ const MainApp: React.FC = () => {
                   onAddListItem={(text) =>
                     addListItem(activeCard.id, text)
                   }
+                  isOverdue={overdueIds.has(activeCard.id)}
                 />
               </motion.div>
             )}

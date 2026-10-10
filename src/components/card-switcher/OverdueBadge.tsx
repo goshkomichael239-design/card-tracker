@@ -2,6 +2,8 @@ import React from 'react';
 
 interface OverdueBadgeProps {
   count: number;
+  /** A word after the number, so the dot says what it counts. */
+  label?: string;
   className?: string;
   style?: React.CSSProperties;
 }
@@ -12,6 +14,7 @@ interface OverdueBadgeProps {
  */
 export const OverdueBadge: React.FC<OverdueBadgeProps> = ({
   count,
+  label,
   className = '',
   style,
 }) => {
@@ -19,14 +22,14 @@ export const OverdueBadge: React.FC<OverdueBadgeProps> = ({
     return null;
   }
 
-  const label = `Просрочено: ${count}`;
+  const description = `Просрочено: ${count}`;
 
   return (
     <span
       role="img"
-      aria-label={label}
-      title={label}
-      className={`pointer-events-none flex h-[22px] min-w-[22px] items-center justify-center rounded-full px-1.5 font-mono text-[12px] font-bold leading-none tabular-nums ${className}`}
+      aria-label={description}
+      title={description}
+      className={`pointer-events-none flex h-[22px] min-w-[22px] items-center justify-center whitespace-nowrap rounded-full font-mono font-bold leading-none tabular-nums ${label ? 'gap-1 px-2.5 text-[11px] uppercase tracking-[0.08em]' : 'px-1.5 text-[12px]'} ${className}`}
       style={{
         color: '#FFF4EC',
         background:
@@ -38,6 +41,7 @@ export const OverdueBadge: React.FC<OverdueBadgeProps> = ({
       }}
     >
       {count}
+      {label && <span className="font-semibold">{label}</span>}
     </span>
   );
 };

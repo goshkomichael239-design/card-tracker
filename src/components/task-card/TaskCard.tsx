@@ -60,6 +60,8 @@ interface TaskCardProps {
   onCornerOpened?: () => void;
   isStatic?: boolean;
   hideCoupon?: boolean;
+  /** The card is overdue: a red dot sits in front of its kind label. */
+  isOverdue?: boolean;
 }
 
 interface FaceState {
@@ -82,6 +84,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
   onCornerOpened,
   isStatic = false,
   hideCoupon = false,
+  isOverdue = false,
 }) => {
   const palette = getCardPalette(card);
   const config = INITIAL_TASK_CARD_V2_CONFIG;
@@ -207,12 +210,25 @@ export const TaskCard: React.FC<TaskCardProps> = ({
     <div className="relative flex h-full flex-col">
       <div className="flex items-center justify-between">
         <span
-          className="rounded-full px-3 py-1.5 font-mono text-[11.5px] font-bold uppercase tracking-[0.12em]"
+          className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 font-mono text-[11.5px] font-bold uppercase tracking-[0.12em]"
           style={{
             color: palette.accentDark,
             backgroundColor: `${palette.accent}1d`,
           }}
         >
+          {/* Overdue: a red dot in front of the label. */}
+          {isOverdue && !card.completedAt && (
+            <span
+              className="h-2.5 w-2.5 shrink-0 rounded-full"
+              style={{
+                background:
+                  'radial-gradient(circle at 32% 28%, #E0705F 0%, #B8483A 55%, #8F3025 100%)',
+                boxShadow: '0 1px 2px rgba(40,12,8,0.4)',
+              }}
+              role="img"
+              aria-label="Просрочено"
+            />
+          )}
           {kindLabel}
         </span>
       </div>

@@ -77,6 +77,15 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
     () => cards.slice(windowStart, windowStart + MAX_VISIBLE_ROWS),
     [cards, windowStart],
   );
+  // Overdue cards the window has scrolled past, above and below it.
+  const overdueAbove = overdueIds
+    ? cards.slice(0, windowStart).filter((card) => overdueIds.has(card.id)).length
+    : 0;
+  const overdueBelow = overdueIds
+    ? cards
+        .slice(windowStart + MAX_VISIBLE_ROWS)
+        .filter((card) => overdueIds.has(card.id)).length
+    : 0;
 
   useEffect(() => {
     const switcher = switcherRef.current;
@@ -241,11 +250,29 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
           </div>
         </div>
 
-        {/* Overdue: a red dot on the corner of the list. */}
+        {/* Overdue: a red dot on the corner of the list, saying what it is. */}
         <OverdueBadge
           count={overdueIds?.size ?? 0}
+          label="просрочено"
           className="absolute -right-2 -top-2 z-10"
         />
+
+        {/* Overdue cards hidden by the scroll of the list: a dot at the edge
+            of the panel on the side where they are. */}
+        {overdueAbove > 0 && (
+          <OverdueBadge
+            count={overdueAbove}
+            label="↑"
+            className="absolute -top-2 left-4 z-10"
+          />
+        )}
+        {overdueBelow > 0 && (
+          <OverdueBadge
+            count={overdueBelow}
+            label="↓"
+            className="absolute -bottom-2 left-4 z-10"
+          />
+        )}
       </div>
 
       {import.meta.env.DEV && SHOW_CARD_SWITCHER_DEBUG && (
