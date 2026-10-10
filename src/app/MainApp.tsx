@@ -7,7 +7,6 @@ import React, {
 } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 
-import tableTexture from '../assets/table-background.webp';
 import cardboardTexture from '../assets/cardboard.avif';
 
 import {
@@ -61,6 +60,7 @@ import { purgeExpiredTrash } from './trash';
 import { DebugCardsPanel } from '../components/DebugCardsPanel';
 import { TrashBin } from '../components/trash/TrashBin';
 import { CouponSpike } from '../components/table/CouponSpike';
+import { TableSurface } from '../components/table/TableSurface';
 import { TrashSheet } from '../components/trash/TrashSheet';
 import { StorageNotice } from '../components/StorageNotice';
 import { UndoTicket } from '../components/UndoTicket';
@@ -1466,38 +1466,6 @@ const MainApp: React.FC = () => {
 };
 
 
-const TableBackground: React.FC = () => {
-  return (
-    <>
-      <div
-        className="absolute inset-0"
-        style={{
-          backgroundImage: `url(${tableTexture})`,
-          backgroundPosition: 'center',
-          backgroundSize: 'cover',
-        }}
-      />
-
-      <div
-        className="absolute inset-0"
-        style={{
-          background: `
-            radial-gradient(
-              ellipse at 25% 15%,
-              rgba(255,255,255,0.12) 0%,
-              transparent 55%
-            ),
-            radial-gradient(
-              ellipse at 50% 45%,
-              rgba(255,255,255,0.035) 0%,
-              transparent 42%
-            ),
-            rgba(0,0,0,0.22)
-          `,
-        }}
-      />
-    </>
-  );
-};
+const TableBackground: React.FC = () => <TableSurface />;
 
 export default MainApp;

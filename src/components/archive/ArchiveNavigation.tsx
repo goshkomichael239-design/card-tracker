@@ -1,7 +1,7 @@
 import React from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 
-import tableTexture from '../../assets/table-background.webp';
+import { TableSurface } from '../table/TableSurface';
 import whiteMarbleTexture from '../../assets/white-marble.webp';
 
 interface ArchiveNavigationProps {
@@ -65,14 +65,11 @@ export const ArchiveNavigation: React.FC<ArchiveNavigationProps> = ({
         transition={NAV_SURFACE_TRANSITION}
         className="pointer-events-none absolute inset-0"
         style={{
-          backgroundImage: `url(${tableTexture})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center center',
           boxShadow: '0 -8px 24px rgba(0,0,0,0.5)',
           willChange: 'opacity',
         }}
       >
-        <div className="absolute inset-0 bg-white/[0.035]" />
+        <TableSurface isFull={false} />
       </motion.div>
 
       <AnimatePresence mode="wait">
