@@ -3,7 +3,16 @@ import React, { useEffect, useRef } from 'react';
 import type { VisualCard } from '../../app/cardTheme';
 import { TaskCard } from './TaskCard';
 
-type TransientCardKind = 'switch' | 'completion' | 'discard';
+type TransientCardKind = 'switch' | 'completion' | 'discard' | 'trash';
+
+// Silhouettes of the card being crumpled into a ball. All three have the same
+// twelve points so the browser can morph one into the next.
+const SHEET_PATH =
+  'polygon(0% 0%, 33% 0%, 66% 0%, 100% 0%, 100% 33%, 100% 66%, 100% 100%, 66% 100%, 33% 100%, 0% 100%, 0% 66%, 0% 33%)';
+const CRUMPLING_PATH =
+  'polygon(6% 4%, 30% 9%, 64% 2%, 95% 8%, 90% 36%, 98% 70%, 92% 95%, 62% 90%, 35% 98%, 4% 92%, 10% 62%, 2% 30%)';
+const BALL_PATH =
+  'polygon(20% 14%, 38% 22%, 60% 10%, 82% 22%, 76% 42%, 88% 64%, 74% 86%, 56% 78%, 36% 90%, 16% 78%, 24% 56%, 12% 34%)';
 
 interface TransientTaskCardOverlayProps {
   card: VisualCard;
@@ -28,6 +37,69 @@ export const TransientTaskCardOverlay: React.FC<
   useEffect(() => {
     const animations: Animation[] = [];
     const frameId = window.requestAnimationFrame(() => {
+      if (kind === 'trash') {
+        const overlay = overlayRef.current;
+
+        if (!overlay) {
+          return;
+        }
+
+        // Aim at the basket on the table. The overlay lives inside the scaled
+        // scene, so screen distances are divided by the scene's scale.
+        const box = overlay.getBoundingClientRect();
+        const scale = box.width / overlay.offsetWidth || 1;
+        const bin = document
+          .querySelector('[data-trash-bin]')
+          ?.getBoundingClientRect();
+        const dx = bin
+          ? (bin.left + bin.width / 2 - (box.left + box.width / 2)) / scale
+          : -overlay.offsetWidth * 0.8;
+        const dy = bin
+          ? (bin.top + bin.height * 0.3 - (box.top + box.height / 2)) / scale
+          : overlay.offsetHeight * 0.9;
+
+        const animation = overlay.animate(
+          [
+            {
+              transform: 'translate3d(0, 0, 0) rotate(0deg) scale(1)',
+              clipPath: SHEET_PATH,
+              opacity: 1,
+              offset: 0,
+            },
+            {
+              transform: 'translate3d(0, -8px, 0) rotate(-3deg) scale(0.9, 0.84)',
+              clipPath: CRUMPLING_PATH,
+              opacity: 1,
+              offset: 0.26,
+            },
+            {
+              // Thrown in an arc: up first, then down into the basket.
+              transform: `translate3d(${dx * 0.55}px, ${dy * 0.3 - 46}px, 0) rotate(-14deg) scale(0.4)`,
+              clipPath: BALL_PATH,
+              opacity: 1,
+              offset: 0.62,
+            },
+            {
+              transform: `translate3d(${dx}px, ${dy}px, 0) rotate(-30deg) scale(0.1)`,
+              clipPath: BALL_PATH,
+              opacity: 0.8,
+              offset: 1,
+            },
+          ],
+          {
+            duration: 640,
+            easing: 'cubic-bezier(0.45, 0, 0.55, 1)',
+            fill: 'forwards',
+          },
+        );
+
+        animations.push(animation);
+        animation.finished
+          .then(() => onFinish(kind))
+          .catch(() => undefined);
+        return;
+      }
+
       if (kind === 'discard') {
         const topHalf = topHalfRef.current;
         const bottomHalf = bottomHalfRef.current;

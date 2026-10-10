@@ -23,7 +23,7 @@ const describeResult = (result: BackupImportResult): string => {
     return result.message;
   }
 
-  const added = result.addedActive + result.addedArchive;
+  const added = result.addedActive + result.addedArchive + result.addedTrash;
 
   return added === 0
     ? 'Все карточки из копии уже здесь'

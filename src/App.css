@@ -320,6 +320,89 @@
   }
 }
 
+/* Waste-paper basket on the table: lifts a little under the cursor and gives
+   a short bump when a card lands in it. */
+.trash-bin {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  transition: transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1), filter 180ms ease-out;
+}
+
+@media (hover: hover) {
+  .trash-bin:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.12);
+  }
+}
+
+.trash-bin:active {
+  transform: translateY(1px) scale(0.97);
+}
+
+.trash-bin:focus-visible {
+  outline: none;
+  filter: brightness(1.2) drop-shadow(0 0 6px rgba(255, 230, 200, 0.6));
+}
+
+@keyframes trash-bump {
+  0% {
+    transform: none;
+  }
+  30% {
+    transform: translateY(2px) scale(1.05, 0.94) rotate(-5deg);
+  }
+  65% {
+    transform: translateY(-1px) rotate(3deg);
+  }
+  100% {
+    transform: none;
+  }
+}
+
+.trash-bump {
+  transform-origin: 50% 90%;
+  animation: trash-bump 380ms cubic-bezier(0.3, 0.7, 0.3, 1);
+}
+
+/* Undo ticket: slides up from the table edge, a strip burns down meanwhile. */
+@keyframes ticket-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.ticket-in {
+  animation: ticket-in 240ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@keyframes ticket-countdown {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+
+.ticket-countdown {
+  transform-origin: left center;
+  animation-name: ticket-countdown;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .trash-bump,
+  .ticket-in {
+    animation: none;
+  }
+}
+
 /* First-run arrow: the dashes crawl slowly toward the folded corner. */
 @keyframes corner-hint-dash {
   to {

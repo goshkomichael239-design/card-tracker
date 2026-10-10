@@ -17,6 +17,8 @@ interface DetachedCompletionCouponProps {
 
 export interface DetachedCompletionCouponHandle {
   launch: (coupon: DetachedCoupon) => void;
+  /** Takes the coupon out of the air at once (used when a completion is undone). */
+  cancel: () => void;
 }
 
 // The coupon is laid out at its natural size inside the card and then scaled
@@ -118,6 +120,22 @@ export const DetachedCompletionCoupon = forwardRef<
           onFlightCompleteRef.current();
         })
         .catch(() => undefined);
+    },
+    cancel: () => {
+      const couponElement = couponRef.current;
+
+      if (!animationRef.current) {
+        return;
+      }
+
+      animationRef.current.cancel();
+      animationRef.current = null;
+
+      if (couponElement) {
+        couponElement.style.visibility = 'hidden';
+      }
+
+      onFlightCompleteRef.current();
     },
   }), []);
 

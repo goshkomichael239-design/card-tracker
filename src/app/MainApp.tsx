@@ -35,7 +35,16 @@ import {
 import { isStoredVisualCard } from './cardValidation';
 import { DEBUG_CARD_ID_PREFIX } from './debugCards';
 import { getListProgress } from './listUtils';
+import {
+  loadTrash,
+  purgeExpiredTrash,
+  saveTrash,
+  type TrashedCard,
+} from './trash';
 import { DebugCardsPanel } from '../components/DebugCardsPanel';
+import { TrashBin } from '../components/trash/TrashBin';
+import { TrashSheet } from '../components/trash/TrashSheet';
+import { UndoTicket } from '../components/UndoTicket';
 import {
   addLocalDays,
   createLocalDateTimeValue,
@@ -73,7 +82,26 @@ const createId = (): string => {
   return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 };
 
-type TransientOutgoingKind = 'switch' | 'completion' | 'discard';
+type TransientOutgoingKind = 'switch' | 'completion' | 'discard' | 'trash';
+
+/** The last destructive action, which the undo ticket can take back. */
+type UndoAction =
+  | { kind: 'trash'; cardId: string }
+  | { kind: 'complete'; before: VisualCard; index: number };
+
+interface UndoEntry {
+  key: number;
+  message: string;
+  action: UndoAction;
+}
+
+const UNDO_DURATION_MS = 6_000;
+
+const insertAt = <T,>(items: T[], item: T, index: number): T[] => {
+  const next = [...items];
+  next.splice(Math.max(0, Math.min(index, next.length)), 0, item);
+  return next;
+};
 
 const ARCHIVE_STORAGE_KEY = 'card-tracker.archive.v1';
 const ACTIVE_CARDS_STORAGE_KEY = 'card-tracker.active-cards.v1';
@@ -178,6 +206,11 @@ const SWITCHER_ROW_GAP = 2;
 const MainApp: React.FC = () => {
   const { width: viewportWidth, height: viewportHeight } = useViewportSize();
   const [isArchiveOpen, setIsArchiveOpen] = useState(false);
+  const [trash, setTrash] = useState<TrashedCard[]>(loadTrash);
+  const [isTrashOpen, setIsTrashOpen] = useState(false);
+  const [trashBumpKey, setTrashBumpKey] = useState(0);
+  const [undoEntry, setUndoEntry] = useState<UndoEntry | null>(null);
+  const undoSequenceRef = useRef(0);
   const [isCornerHintDismissed, setIsCornerHintDismissed] = useState(
     loadCornerHintDismissed,
   );
@@ -301,6 +334,8 @@ const MainApp: React.FC = () => {
     (card) => card.id === expandedListCardId && card.kind === 'list',
   );
   const isListSheetOpen = Boolean(expandedListCard);
+  // Any sheet lying over the table blocks the table's own gestures and keys.
+  const isOverlayOpen = isListSheetOpen || isTrashOpen;
   const firstCardCreatedAt = useMemo(() => {
     const earliestTimestamp = [...cards, ...archivedCards].reduce<number | null>(
       (earliest, card) => {
@@ -506,6 +541,10 @@ const MainApp: React.FC = () => {
   }, [expandedListCard, expandedListCardId]);
 
   useEffect(() => {
+    saveTrash(trash);
+  }, [trash]);
+
+  useEffect(() => {
     try {
       window.localStorage.setItem(
         ARCHIVE_STORAGE_KEY,
@@ -685,7 +724,7 @@ const MainApp: React.FC = () => {
   const handleScenePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
     if (
       isArchiveOpen ||
-      isListSheetOpen ||
+      isOverlayOpen ||
       isCreating ||
       (event.pointerType === 'mouse' && event.button !== 0) ||
       !isSceneGestureTarget(event.target)
@@ -724,11 +763,13 @@ const MainApp: React.FC = () => {
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (
-        isListSheetOpen
-      ) {
-        if (event.key === 'Escape' && isListSheetOpen) {
-          setExpandedListCardId(null);
+      if (isOverlayOpen) {
+        if (event.key === 'Escape') {
+          if (isTrashOpen) {
+            setIsTrashOpen(false);
+          } else {
+            setExpandedListCardId(null);
+          }
         }
         return;
       }
@@ -757,7 +798,8 @@ const MainApp: React.FC = () => {
     handlePreviousCard,
     isArchiveOpen,
     isCreating,
-    isListSheetOpen,
+    isOverlayOpen,
+    isTrashOpen,
   ]);
 
   const handleStartCreating = () => {
@@ -1219,9 +1261,13 @@ const MainApp: React.FC = () => {
     }, 110);
   };
 
+  // `cardBefore` is the card exactly as it was before the press that completed
+  // it (for a series that is before its last step was counted); undo returns
+  // the card to that state.
   const handleCompleteCard = (
     couponBounds: DOMRect,
     cardToComplete: VisualCard | undefined = activeCard,
+    cardBefore: VisualCard | undefined = cardToComplete,
   ) => {
     if (
       !cardToComplete ||
@@ -1231,6 +1277,16 @@ const MainApp: React.FC = () => {
       return;
     }
 
+    showUndo(
+      cardToComplete.kind === 'series' ? 'Серия завершена' : 'Выполнено',
+      {
+        kind: 'complete',
+        before: cardBefore ?? cardToComplete,
+        index: cardsRef.current.findIndex(
+          (card) => card.id === cardToComplete.id,
+        ),
+      },
+    );
     couponFlightInProgressRef.current = true;
     const completedAt = new Date().toISOString();
 
@@ -1319,7 +1375,7 @@ const MainApp: React.FC = () => {
     setCards(nextCards);
 
     if (isFinished) {
-      handleCompleteCard(couponBounds, updatedCard);
+      handleCompleteCard(couponBounds, updatedCard, currentCard);
     }
   };
 
@@ -1342,7 +1398,7 @@ const MainApp: React.FC = () => {
         finishReason: 'manual',
       },
     };
-    handleCompleteCard(couponBounds, completedCard);
+    handleCompleteCard(couponBounds, completedCard, currentCard);
   };
 
   const toggleListItem = (itemId: string) => {
@@ -1422,9 +1478,127 @@ const MainApp: React.FC = () => {
         ? currentCards[(index + 1) % currentCards.length]
         : undefined;
 
-    createTransientOutgoing(cardToDelete, 'discard');
+    // Not destroyed: crumpled and thrown into the basket, from where it can be
+    // put back for a while.
+    createTransientOutgoing(cardToDelete, 'trash');
     setCards((previous) => previous.filter((card) => card.id !== cardId));
     setActiveCardId(nextCard?.id ?? '');
+    setTrash((previous) => [
+      { card: cardToDelete, trashedAt: new Date().toISOString(), index },
+      ...previous.filter((item) => item.card.id !== cardId),
+    ]);
+    showUndo('Карточка в корзине', { kind: 'trash', cardId });
+  };
+
+  function showUndo(message: string, action: UndoAction) {
+    undoSequenceRef.current += 1;
+    setUndoEntry({ key: undoSequenceRef.current, message, action });
+  }
+
+  const handleUndoExpire = useCallback(() => setUndoEntry(null), []);
+
+  // Puts a card from the basket back into the deck at the place it had and
+  // brings it to the front.
+  const restoreFromTrash = (cardId: string) => {
+    const item = trash.find((entry) => entry.card.id === cardId);
+
+    if (!item) {
+      return;
+    }
+
+    // A completion still settling on the table is finished first, so the two
+    // transitions do not fight over the active card.
+    const isSettling = pendingCompletedCardIdRef.current !== null;
+
+    if (isSettling) {
+      removePendingCompletedCard();
+    }
+
+    setTrash((previous) =>
+      previous.filter((entry) => entry.card.id !== cardId),
+    );
+    setCards((previous) =>
+      previous.some((card) => card.id === cardId)
+        ? previous
+        : insertAt(previous, item.card, item.index),
+    );
+
+    if (!isSettling && activeCard && activeCard.id !== cardId) {
+      createTransientOutgoing(activeCard, 'switch');
+    }
+
+    setActiveCardId(cardId);
+    setUndoEntry((current) =>
+      current?.action.kind === 'trash' && current.action.cardId === cardId
+        ? null
+        : current,
+    );
+  };
+
+  const deleteFromTrashForever = (cardId: string) => {
+    setTrash((previous) =>
+      previous.filter((entry) => entry.card.id !== cardId),
+    );
+    setUndoEntry((current) =>
+      current?.action.kind === 'trash' && current.action.cardId === cardId
+        ? null
+        : current,
+    );
+  };
+
+  const emptyTrash = () => {
+    setTrash([]);
+    setUndoEntry((current) =>
+      current?.action.kind === 'trash' ? null : current,
+    );
+  };
+
+  // Takes a completion back: the coupon is taken out of the air, the card
+  // leaves the archive and returns to the deck exactly as it was before.
+  const undoCompletion = (before: VisualCard, index: number) => {
+    clearCompletedRemovalTimer();
+    pendingCompletedCardIdRef.current = null;
+    pendingCompletedRemovalArmedRef.current = false;
+    setPendingCompletedCardId(null);
+    detachedCouponLayerRef.current?.cancel();
+    couponFlightInProgressRef.current = false;
+
+    setArchivedCards((previous) =>
+      previous.filter((card) => card.id !== before.id),
+    );
+    setTransientOutgoing((current) =>
+      current?.card.id === before.id ? null : current,
+    );
+
+    const current = cardsRef.current;
+    const next = current.some((card) => card.id === before.id)
+      ? current.map((card) => (card.id === before.id ? before : card))
+      : insertAt(current, before, index);
+
+    cardsRef.current = next;
+    setCards(next);
+
+    if (activeCard && activeCard.id !== before.id && !activeCard.completedAt) {
+      createTransientOutgoing(activeCard, 'switch');
+    }
+
+    setActiveCardId(before.id);
+  };
+
+  const handleUndo = () => {
+    const entry = undoEntry;
+
+    if (!entry) {
+      return;
+    }
+
+    setUndoEntry(null);
+
+    if (entry.action.kind === 'trash') {
+      restoreFromTrash(entry.action.cardId);
+    } else {
+      undoCompletion(entry.action.before, entry.action.index);
+    }
   };
 
   // Applies an edit made on the card's edit face. Identity-defining fields and
@@ -1463,7 +1637,7 @@ const MainApp: React.FC = () => {
   const handleExportBackup = () => {
     downloadTextFile(
       getBackupFilename(),
-      serializeBackup(cardsRef.current, archivedCards),
+      serializeBackup(cardsRef.current, archivedCards, trash),
     );
   };
 
@@ -1477,7 +1651,11 @@ const MainApp: React.FC = () => {
     }
 
     const knownIds = new Set(
-      [...cardsRef.current, ...archivedCards].map((card) => card.id),
+      [
+        ...cardsRef.current,
+        ...archivedCards,
+        ...trash.map((item) => item.card),
+      ].map((card) => card.id),
     );
     const takeNew = (incoming: VisualCard[]) =>
       incoming.filter((card) => {
@@ -1490,6 +1668,22 @@ const MainApp: React.FC = () => {
       });
     const newActive = takeNew(backup.cards);
     const newArchive = takeNew(backup.archive);
+    const newTrashCards = new Set(
+      takeNew(backup.trash.map((item) => item.card)).map((card) => card.id),
+    );
+    const newTrash = backup.trash.filter((item) =>
+      newTrashCards.has(item.card.id),
+    );
+
+    if (newTrash.length > 0) {
+      setTrash((previous) =>
+        purgeExpiredTrash([...previous, ...newTrash]).sort(
+          (left, right) =>
+            new Date(right.trashedAt).getTime() -
+            new Date(left.trashedAt).getTime(),
+        ),
+      );
+    }
 
     if (newActive.length > 0) {
       const hasActiveCard = cardsRef.current.some(
@@ -1517,6 +1711,7 @@ const MainApp: React.FC = () => {
       ok: true,
       addedActive: newActive.length,
       addedArchive: newArchive.length,
+      addedTrash: newTrash.length,
     };
   };
 
@@ -1537,6 +1732,11 @@ const MainApp: React.FC = () => {
     );
 
     setCards(remaining);
+    setTrash((previous) =>
+      previous.filter(
+        (item) => !item.card.id.startsWith(DEBUG_CARD_ID_PREFIX),
+      ),
+    );
     setActiveCardId(
       remaining.some((card) => card.id === activeCardId)
         ? activeCardId
@@ -1549,8 +1749,13 @@ const MainApp: React.FC = () => {
   }, []);
 
   const handleTransientOutgoingFinish = useCallback(
-    (_kind: TransientOutgoingKind) => {
+    (kind: TransientOutgoingKind) => {
       setTransientOutgoing(null);
+
+      if (kind === 'trash') {
+        // The crumpled card has just landed: the basket gives a little bump.
+        setTrashBumpKey((previous) => previous + 1);
+      }
     },
     [],
   );
@@ -1887,6 +2092,14 @@ const MainApp: React.FC = () => {
         </div>
       </div>
 
+      {/* The basket stands on the table, in the corner just above the edge. */}
+      <TrashBin
+        count={trash.length}
+        bumpKey={trashBumpKey}
+        onOpen={() => setIsTrashOpen(true)}
+        style={{ left: 12, bottom: ARCHIVE_NAVIGATION_HEIGHT + 12 }}
+      />
+
       <DetachedCompletionCoupon
         ref={detachedCouponLayerRef}
         onFlightComplete={handleCouponFlightComplete}
@@ -1900,12 +2113,38 @@ const MainApp: React.FC = () => {
           onClose={() => setExpandedListCardId(null)}
         />
       )}
+
+      {isTrashOpen && (
+        <TrashSheet
+          items={trash}
+          canRestore={!isCreating}
+          onRestore={(cardId) => {
+            restoreFromTrash(cardId);
+            setIsTrashOpen(false);
+          }}
+          onDeleteForever={deleteFromTrashForever}
+          onEmpty={emptyTrash}
+          onClose={() => setIsTrashOpen(false)}
+        />
+      )}
       </div>
 
       <ArchiveNavigation
         isArchiveOpen={isArchiveOpen}
         onToggle={() => setIsArchiveOpen((previous) => !previous)}
       />
+
+      {/* Rides over the bottom edge of the table, never over the card. */}
+      {undoEntry && (
+        <UndoTicket
+          key={undoEntry.key}
+          message={undoEntry.message}
+          onUndo={handleUndo}
+          onExpire={handleUndoExpire}
+          durationMs={UNDO_DURATION_MS}
+          style={{ bottom: 14 }}
+        />
+      )}
 
       {import.meta.env.DEV && (
         <DebugCardsPanel

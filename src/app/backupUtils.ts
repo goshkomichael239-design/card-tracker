@@ -1,21 +1,30 @@
 import type { VisualCard } from './cardTheme';
 import { isStoredVisualCard } from './cardValidation';
+import { isTrashedCard, purgeExpiredTrash, type TrashedCard } from './trash';
 
 const BACKUP_APP_ID = 'card-tracker';
-const BACKUP_VERSION = 1;
+// v2 adds the bin; v1 files (without it) still import.
+const BACKUP_VERSION = 2;
 
 export interface BackupPayload {
   cards: VisualCard[];
   archive: VisualCard[];
+  trash: TrashedCard[];
 }
 
 export type BackupImportResult =
-  | { ok: true; addedActive: number; addedArchive: number }
+  | {
+      ok: true;
+      addedActive: number;
+      addedArchive: number;
+      addedTrash: number;
+    }
   | { ok: false; message: string };
 
 export const serializeBackup = (
   cards: VisualCard[],
   archive: VisualCard[],
+  trash: TrashedCard[],
 ): string =>
   JSON.stringify(
     {
@@ -24,6 +33,7 @@ export const serializeBackup = (
       exportedAt: new Date().toISOString(),
       cards: cards.filter((card) => !card.completedAt),
       archive,
+      trash,
     },
     null,
     2,
@@ -54,6 +64,9 @@ export const parseBackup = (text: string): BackupPayload | null => {
       archive: backup.archive
         .filter(isStoredVisualCard)
         .filter((card) => Boolean(card.completedAt)),
+      trash: Array.isArray(backup.trash)
+        ? purgeExpiredTrash(backup.trash.filter(isTrashedCard))
+        : [],
     };
   } catch {
     return null;
