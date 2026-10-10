@@ -231,9 +231,11 @@
   }
 }
 
+/* No `margin: 0; padding: 0` here on purpose: an unlayered rule like that beats
+   every Tailwind spacing utility (they live in a cascade layer), which used to
+   zero out all px-*, py-*, mt-* ... in the app. Tailwind's own preflight
+   already resets default margins and paddings. */
 * {
-  margin: 0;
-  padding: 0;
   box-sizing: border-box;
 }
 
