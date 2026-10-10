@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 
 import cardboardTexture from '../../assets/cardboard.avif';
-import tableTexture from '../../assets/black-main-background.avif';
+import tableTexture from '../../assets/table-background.webp';
 import {
   INITIAL_TASK_CARD_V2_CONFIG,
   type TaskCardV2Config,

@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import tableTexture from '../../assets/black-main-background.avif';
+import tableTexture from '../../assets/table-background.webp';
 import cardboardTexture from '../../assets/cardboard.avif';
 
 interface CardColorPreset {

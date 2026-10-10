@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 
-import whiteMarbleTexture from '../../assets/white_marble.png';
+import whiteMarbleTexture from '../../assets/white-marble.webp';
 import { pluralDays, summarizeArchive } from '../../app/archiveUtils';
 import type { BackupImportResult } from '../../app/backupUtils';
 import type { VisualCard } from '../../app/cardTheme';

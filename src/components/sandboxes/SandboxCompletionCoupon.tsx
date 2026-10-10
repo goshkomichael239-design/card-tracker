@@ -4,7 +4,7 @@ import {
   motion,
 } from 'framer-motion';
 
-import tableTexture from '../../assets/black-main-background.avif';
+import tableTexture from '../../assets/table-background.webp';
 import cardboardTexture from '../../assets/cardboard.avif';
 
 /* -------------------------------------------------------------------------- */

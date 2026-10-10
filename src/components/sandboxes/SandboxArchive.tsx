@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import tableTexture from '../../assets/black-main-background.avif';
-import whiteMarbleTexture from '../../assets/white_marble.png';
+import tableTexture from '../../assets/table-background.webp';
+import whiteMarbleTexture from '../../assets/white-marble.webp';
 import cardboardTexture from '../../assets/cardboard.avif';
 
 interface CardColorPreset {
