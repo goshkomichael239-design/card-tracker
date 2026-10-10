@@ -1,0 +1,787 @@
+<title>Дорожная карта Card Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lora:wght@400;600&display=swap">
+<style>
+  /* One column of index-card blocks on the table's cloth: what is done, what is ahead. */
+  :root {
+    --bg: #dfe7de;
+    --paper: #f7f3e8;
+    --paper-edge: #d9d1bb;
+    --ink: #26231d;
+    --ink-soft: #6a6354;
+    --line: rgba(60, 50, 30, 0.14);
+    --cloth: #0f5a37;
+    --gold: #a97b1c;
+    --gold-soft: #f1dc9a;
+    --todo: #8a8372;
+    --font-display: 'Lora', Georgia, 'Times New Roman', serif;
+    --font-mono: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0b2418;
+      --paper: #17382a;
+      --paper-edge: #2a5640;
+      --ink: #eef0e2;
+      --ink-soft: #a9bcae;
+      --line: rgba(238, 240, 226, 0.14);
+      --cloth: #2fb36d;
+      --gold: #e6bd5c;
+      --gold-soft: #4a4020;
+      --todo: #8aa391;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0b2418;
+    --paper: #17382a;
+    --paper-edge: #2a5640;
+    --ink: #eef0e2;
+    --ink-soft: #a9bcae;
+    --line: rgba(238, 240, 226, 0.14);
+    --cloth: #2fb36d;
+    --gold: #e6bd5c;
+    --gold-soft: #4a4020;
+    --todo: #8aa391;
+    color-scheme: dark;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-display);
+    padding-inline: 16px;
+    padding-block: 28px 56px;
+  }
+  .page { max-width: 760px; margin-inline: auto; display: grid; gap: 24px; }
+
+  .head { display: grid; gap: 14px; }
+  .eyebrow {
+    font-family: var(--font-mono); font-size: 11.5px; letter-spacing: 0.16em;
+    text-transform: uppercase; color: var(--ink-soft);
+  }
+  h1 { font-size: clamp(28px, 6vw, 40px); line-height: 1.1; font-weight: 600; text-wrap: balance; }
+  .principle { color: var(--ink-soft); max-width: 60ch; line-height: 1.5; }
+
+  .progress { display: grid; gap: 10px; }
+  .progress__nums { display: flex; flex-wrap: wrap; gap: 6px 20px; align-items: baseline; font-variant-numeric: tabular-nums; }
+  .progress__main { font-size: 22px; font-weight: 600; }
+  .progress__side { font-family: var(--font-mono); font-size: 12.5px; color: var(--ink-soft); letter-spacing: 0.04em; }
+  .bar { height: 12px; border-radius: 7px; background: var(--paper-edge); box-shadow: inset 0 1px 3px rgba(0,0,0,0.25); overflow: hidden; }
+  .bar > i { display: block; height: 100%; width: 62%; background: var(--cloth); border-radius: 7px; }
+
+  .filters { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    font-family: var(--font-mono); font-size: 12.5px; letter-spacing: 0.08em; text-transform: uppercase;
+    padding: 9px 14px; border-radius: 999px; border: 1px solid var(--paper-edge);
+    background: var(--paper); color: var(--ink); cursor: pointer;
+  }
+  .chip[aria-pressed="true"] { background: var(--cloth); color: #fff; border-color: var(--cloth); }
+  .chip:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+  .blocks { display: grid; gap: 22px; }
+  .block { display: grid; gap: 0; }
+  .block__head {
+    display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 12px;
+    padding: 10px 16px; background: var(--paper-edge); border-radius: 10px 10px 0 0;
+  }
+  .block__head h2 { font-size: 17px; font-weight: 600; }
+  .block__count { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.08em; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+  .list { list-style: none; margin: 0; padding: 0; background: var(--paper); border: 1px solid var(--paper-edge); border-top: 0; border-radius: 0 0 10px 10px; }
+  .item {
+    display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; gap: 12px; align-items: start;
+    padding: 12px 16px; border-top: 1px dashed var(--line);
+  }
+  .item:first-child { border-top: 0; }
+  .mark {
+    width: 20px; height: 20px; border-radius: 50%; margin-top: 1px;
+    border: 2px solid var(--todo); display: grid; place-items: center;
+  }
+  .item--done .mark { background: var(--cloth); border-color: var(--cloth); }
+  .item--done .mark::after { content: ''; width: 5px; height: 10px; border: solid #fff; border-width: 0 2px 2px 0; transform: translateY(-1px) rotate(45deg); }
+  .item--dropped .mark { border-style: dashed; opacity: 0.6; }
+  .text { line-height: 1.4; overflow-wrap: anywhere; }
+  .item--dropped .text { color: var(--ink-soft); }
+  .note { margin-top: 4px; font-size: 14px; line-height: 1.4; color: var(--ink-soft); overflow-wrap: anywhere; }
+  .state {
+    font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
+    padding-top: 3px; color: var(--todo); white-space: nowrap;
+  }
+  .item--done .state { color: var(--cloth); }
+  code { font-family: var(--font-mono); font-size: 0.86em; background: var(--gold-soft); padding: 1px 5px; border-radius: 4px; }
+
+  .footer { border-top: 1px solid var(--line); padding-top: 16px; color: var(--ink-soft); line-height: 1.5; }
+  .footer strong { color: var(--ink); }
+
+  @media (max-width: 480px) {
+    .item { grid-template-columns: 22px minmax(0, 1fr); }
+    .state { grid-column: 2; padding-top: 0; }
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .bar > i { animation: grow 700ms ease-out; }
+    @keyframes grow { from { width: 0; } }
+  }
+</style>
+
+<main class="page">
+  <header class="head">
+    <p class="eyebrow">Card Tracker · состояние на 11 октября 2026 г.</p>
+    <h1>Дорожная карта</h1>
+    <p class="principle">Принцип: функция появляется, только если у неё есть физический прообраз на столе. Нет прообраза — функцию не делаем или прячем.</p>
+  </header>
+
+  <div class="progress">
+    <div class="progress__nums">
+      <span class="progress__main">Сделано 41 из 66</span>
+      <span class="progress__side">62% · впереди 25 · отменено 2</span>
+    </div>
+    <div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="66" aria-valuenow="41"><i></i></div>
+  </div>
+
+  <div class="filters" role="group" aria-label="Что показывать">
+    <button type="button" class="chip" id="f-all" aria-pressed="true" data-filter="all">Всё</button>
+    <button type="button" class="chip" id="f-done" aria-pressed="false" data-filter="done">Сделано</button>
+    <button type="button" class="chip" id="f-todo" aria-pressed="false" data-filter="todo">Впереди</button>
+  </div>
+
+  <div class="blocks">
+      <section class="block" data-block>
+        <header class="block__head">
+          <h2>Уже сделано</h2>
+          <span class="block__count">20 из 20</span>
+        </header>
+        <ul class="list">
+        <li class="item item--done" data-status="done">
+          <span class="mark" aria-hidden="true"></span>
+          <div class="body">
+            <p class="text">Карточки трёх типов: одна задача, серия, список</p>
+            
+          </div>
+          <span class="state">сделано</span>
+        </li>
+        <li class="item item--done" data-status="done">
+          <span class="mark" aria-hidden="true"></span>
+          <div class="body">
+            <p class="text">Срок и напоминание, состояние «просрочено / пора»</p>
+            
+          </div>
+          <span class="state">сделано</span>
+        </li>
+        <li class="item item--done" data-status="done">
+          <span class="mark" aria-hidden="true"></span>
+          <div class="body">
+            <p class="text">Загнутый уголок → грань «Действия» → «Правка» / «Удалить» (стирание тряпкой)</p>
+            
+          </div>
+          <span class="state">сделано</span>
+        </li>
+        <li class="item item--done" data-status="done">
+          <span class="mark" aria-hidden="true"></span>
+          <div class="body">
+            <p class="text">Правка по типам: название + срок, название + цель серии, пункты списка</p>
+            
+          </div>
+          <span class="state">сделано</span>
+        </li>
+        <li class="item item--done" data-status="done">
+          <span class="mark" aria-hidden="true"></span>
+          <div class="body">
+            <p class="text">Удаление с подтверждением и разрывом карточки пополам</p>
+            
+          </div>
+          <span class="state">сделано</span>
+        </li>
+        <li class="item item--done" data-status="done">
+          <span class="mark" aria-hidden="true"></span>
+          <div class="body">
+            <p class="text">«Завершить серию» с гранью подтверждения</p>
+            
+          </div>
+          <span class="state">сделано</span>
+        </li>
+        <li class="item item--done" data-status="done">
+          <span class="mark" aria-hidden="true"></span>
+          <div class="body">
+            <p class="text">Отрывной купон с перфорацией; лунка под ним с долей выполненного</p>
+            
+          </div>
+          <span class="state">сделано</span>
+        </li>
+        <li class="item item--done" data-status="done">
+          <span class="mark" aria-hidden="true"></span>
+          <div class="body">
+            <p class="text">Пастельные цветовые схемы карточек со вторым акцентом</p>
+            
+          </div>
+          <span class="state">сделано</span>
+        </li>
+        <li class="item item--done" data-status="done">
+          <span class="mark" aria-hidden="true"></span>
+          <div class="body">
+            <p class="text">Тиснёные надписи, шрифт Lora локально</p>
+            
+          </div>
+          <span class="state">сделано</span>
+        </li>
+        <li class="item item--done" data-status="done">
+          <span class="mark" aria-hidden="true"></span>
+          <div class="body">
+            <p class="text">Адаптивный масштаб сцены</p>
+            
+          </div>
+          <span class="state">сделано</span>
+        </li>
+        <li class="item item--done" data-status="done">
+          <span class="mark" aria-hidden="true"></span>
+          <div class="body">
+            <p class="text">Экспорт / импорт копии в JSON</p>
+            
+          </div>
+          <span class="state">сделано</span>
+        </li>
+        <li class="item item--done" data-status="done">
+          <span class="mark" aria-hidden="true"></span>
+          <div class="body">
+            <p class="text">Отладочные 15 карточек (только в dev)</p>
+            
+          </div>
+          <span class="state">сделано</span>
+        </li>
+        <li class="item item--done" data-status="done">
+          <span class="mark" aria-hidden="true"></span>
+          <div class="body">
+            <p class="text">Стол: тёмно-зелёное сукно с лампой и кожаной кромкой (плитка 8 КБ вместо фона 11,6 МБ)</p>
+            <p class="note">итог — чистый изумрудный цвет со светом лампы и тёмными краями, рисуется браузером без картинок</p>
+          </div>
+          <span class="state">сделано</span>
+        </li>
+        <li class="item item--done" data-status="done">
+          <span class="mark" aria-hidden="true"></span>
+          <div class="body">
+            <p class="text">Закреплённые карточки: золотая скрепка со звездой на конце, в списке перед названием ★</p>
+            
+          </div>
+          <span class="state">сделано</span>
+        </li>
+        <li class="item item--done" data-status="done">
+          <span class="mark" aria-hidden="true"></span>
+          <div class="body">
+            <p class="text">Форма создания карточки в общем стиле: та же бумага, загнутый уголок вместо «×», тиснёные слоты с подсказками, цвет с самого начала</p>
+            
+          </div>
+          <span class="state">сделано</span>
+        </li>
+        <li class="item item--done" data-status="done">
+          <span class="mark" aria-hidden="true"></span>
+          <div class="body">
+            <p class="text">Список: «Показать все» открывается на самой карточке постранично, с полем «Добавить пункт»</p>
+            
+          </div>
+          <span class="state">сделано</span>
+        </li>
+        <li class="item item--done" data-status="done">
+          <span class="mark" aria-hidden="true"></span>
+          <div class="body">
+            <p class="text">Список сам отрывает купон, когда отмечен последний пункт (пауза 1,2 с, можно передумать)</p>
+            
+          </div>
+          <span class="state">сделано</span>
+        </li>
+        <li class="item item--done" data-status="done">
+          <span class="mark" aria-hidden="true"></span>
+          <div class="body">
+            <p class="text">Просроченное: красные точки перед названиями в списке, счётчик «N просрочено», точка на самой карточке</p>
+            
+          </div>
+          <span class="state">сделано</span>
+        </li>
+        <li class="item item--done" data-status="done">
+          <span class="mark" aria-hidden="true"></span>
+          <div class="body">
+            <p class="text">Архив листается страницами по размеру экрана, стрелки ← →, ярлыки месяцев</p>
+            
+          </div>
+          <span class="state">сделано</span>
+        </li>
+        <li class="item item--done" data-status="done">
+          <span class="mark" aria-hidden="true"></span>
+          <div class="body">
+            <p class="text">Автокопии и защита данных (две вкладки, карантин, постоянное хранилище)</p>
+            
+          </div>
+          <span class="state">сделано</span>
+        </li>
+        </ul>
+      </section>
+      <section class="block" data-block>
+        <header class="block__head">
+          <h2>Техническая основа</h2>
+          <span class="block__count">4 из 4</span>
+        </header>
+        <ul class="list">
+        <li class="item item--done" data-status="done">
+          <span class="mark" aria-hidden="true"></span>
+          <div class="body">
+            <p class="text">Состояние карточек вынесено в отдельный слой данных (Zustand, <code>deckStore.ts</code>), чистые операции над карточками в <code>cardOps.ts</code>, создание карточки в <code>useCardDraft.ts</code></p>
+            
+          </div>
+          <span class="state">сделано</span>
+        </li>
+        <li class="item item--done" data-status="done">
+          <span class="mark" aria-hidden="true"></span>
+          <div class="body">
+            <p class="text">Версия формата данных и миграции (colorId, серии, списки, будущие поля)</p>
+            
+          </div>
+          <span class="state">сделано</span>
+        </li>
+        <li class="item item--done" data-status="done">
+          <span class="mark" aria-hidden="true"></span>
+          <div class="body">
+            <p class="text">Хранение в IndexedDB вместо localStorage (перенос один раз, защита от двух вкладок, карантин битых карточек)</p>
+            
+          </div>
+          <span class="state">сделано</span>
+        </li>
+        <li class="item item--done" data-status="done">
+          <span class="mark" aria-hidden="true"></span>
+          <div class="body">
+            <p class="text">Автоматическая резервная копия: при запуске, по ходу работы и перед загрузкой копии; в архиве кнопка «Автокопии»</p>
+            
+          </div>
+          <span class="state">сделано</span>
+        </li>
+        </ul>
+      </section>
+      <section class="block" data-block>
+        <header class="block__head">
+          <h2>Обязательный минимум трекера</h2>
+          <span class="block__count">5 из 7</span>
+        </header>
+        <ul class="list">
+        <li class="item item--todo" data-status="todo">
+          <span class="mark" aria-hidden="true"></span>
+          <div class="body">
+            <p class="text">PWA: установка на телефон, работа без сети</p>
+            
+          </div>
+          <span class="state">впереди</span>
+        </li>
+        <li class="item item--todo" data-status="todo">
+          <span class="mark" aria-hidden="true"></span>
+          <div class="body">
+            <p class="text">Уведомления о напоминаниях и сроках</p>
+            
+          </div>
+          <span class="state">впереди</span>
+        </li>
+        <li class="item item--done" data-status="done">
+          <span class="mark" aria-hidden="true"></span>
+          <div class="body">
+            <p class="text">Корзина под столом: выброшенная карточка лежит смятой 30 дней, её можно разгладить и вернуть</p>
+            
+          </div>
+          <span class="state">сделано</span>
+        </li>
+        <li class="item item--done" data-status="done">
+          <span class="mark" aria-hidden="true"></span>
+          <div class="body">
+            <p class="text">Отмена последнего действия (завершение, удаление) — несколько секунд на «вернуть»</p>
+            
+          </div>
+          <span class="state">сделано</span>
+        </li>
+        <li class="item item--done" data-status="done">
+          <span class="mark" aria-hidden="true"></span>
+          <div class="body">
+            <p class="text">Отложить: штамп «Отложено» с новой датой, карточка уходит в конец колоды</p>
+            
+          </div>
+          <span class="state">сделано</span>
+        </li>
+        <li class="item item--done" data-status="done">
+          <span class="mark" aria-hidden="true"></span>
+          <div class="body">
+            <p class="text">Повторяющиеся задачи: отрывной календарь, под оторванным листком уже лежит следующий</p>
+            
+          </div>
+          <span class="state">сделано</span>
+        </li>
+        <li class="item item--done" data-status="done">
+          <span class="mark" aria-hidden="true"></span>
+          <div class="body">
+            <p class="text">Обзор просроченного: красная точка со счётчиком на списке и стопке, просроченные подсвечены (без фильтра)</p>
+            <p class="note">итог — красные точки в списке, подпись «N просрочено» в углу списка, точка на самой карточке, без дубля на стопке</p>
+          </div>
+          <span class="state">сделано</span>
+        </li>
+        </ul>
+      </section>
+      <section class="block" data-block>
+        <header class="block__head">
+          <h2>Удобство</h2>
+          <span class="block__count">1 из 9</span>
+        </header>
+        <ul class="list">
+        <li class="item item--todo" data-status="todo">
+          <span class="mark" aria-hidden="true"></span>
+          <div class="body">
+            <p class="text">Колоды (Работа / Дом / Личное) — несколько стопок на столе</p>
+            
+          </div>
+          <span class="state">впереди</span>
+        </li>
+        <li class="item item--done" data-status="done">
+          <span class="mark" aria-hidden="true"></span>
+          <div class="body">
+            <p class="text">Закрепить важное: звёздочка у уголка превращается в золотую булавку, карточка всегда сверху</p>
+            <p class="note">вышла золотая скрепка со звездой на конце (на том же месте), закреплённые карточки всегда первые</p>
+          </div>
+          <span class="state">сделано</span>
+        </li>
+        <li class="item item--dropped" data-status="dropped">
+          <span class="mark" aria-hidden="true"></span>
+          <div class="body">
+            <p class="text"><s>Порядок карточек (перетаскивание)</s></p>
+            <p class="note">решили не делать: порядок задают «отложить» и «закрепить»</p>
+          </div>
+          <span class="state">отменено</span>
+        </li>
+        <li class="item item--todo" data-status="todo">
+          <span class="mark" aria-hidden="true"></span>
+          <div class="body">
+            <p class="text">Поиск</p>
+            
+          </div>
+          <span class="state">впереди</span>
+        </li>
+        <li class="item item--todo" data-status="todo">
+          <span class="mark" aria-hidden="true"></span>
+          <div class="body">
+            <p class="text">Быстрая запись: блокнот с отрывными карточками, одно поле + Enter</p>
+            
+          </div>
+          <span class="state">впереди</span>
+        </li>
+        <li class="item item--todo" data-status="todo">
+          <span class="mark" aria-hidden="true"></span>
+          <div class="body">
+            <p class="text">Понимание дат в тексте («завтра в 9», «в пятницу»)</p>
+            
+          </div>
+          <span class="state">впереди</span>
+        </li>
+        <li class="item item--todo" data-status="todo">
+          <span class="mark" aria-hidden="true"></span>
+          <div class="body">
+            <p class="text">Заметки на обороте карточки (линованная бумага)</p>
+            
+          </div>
+          <span class="state">впереди</span>
+        </li>
+        <li class="item item--todo" data-status="todo">
+          <span class="mark" aria-hidden="true"></span>
+          <div class="body">
+            <p class="text">Правка типа и режима времени</p>
+            
+          </div>
+          <span class="state">впереди</span>
+        </li>
+        <li class="item item--todo" data-status="todo">
+          <span class="mark" aria-hidden="true"></span>
+          <div class="body">
+            <p class="text">Фокус на сегодня: конверт / лоток на 3–5 карточек</p>
+            
+          </div>
+          <span class="state">впереди</span>
+        </li>
+        <li class="item item--todo" data-status="todo">
+          <span class="mark" aria-hidden="true"></span>
+          <div class="body">
+            <p class="text">Таймер фокуса: песочные часы на карточке</p>
+            
+          </div>
+          <span class="state">впереди</span>
+        </li>
+        </ul>
+      </section>
+      <section class="block" data-block>
+        <header class="block__head">
+          <h2>Новый архив</h2>
+          <span class="block__count">9 из 9</span>
+        </header>
+        <ul class="list">
+        <li class="item item--done" data-status="done">
+          <span class="mark" aria-hidden="true"></span>
+          <div class="body">
+            <p class="text">Картотека: карточки стоят на ребре (на мраморе, без ящика — по решению)</p>
+            
+          </div>
+          <span class="state">сделано</span>
+        </li>
+        <li class="item item--done" data-status="done">
+          <span class="mark" aria-hidden="true"></span>
+          <div class="body">
+            <p class="text">Закладки-разделители месяцев, листание пальцем</p>
+            
+          </div>
+          <span class="state">сделано</span>
+        </li>
+        <li class="item item--done" data-status="done">
+          <span class="mark" aria-hidden="true"></span>
+          <div class="body">
+            <p class="text">Накалыватель для купонов: оторванный купон летит туда</p>
+            
+          </div>
+          <span class="state">сделано</span>
+        </li>
+        <li class="item item--done" data-status="done">
+          <span class="mark" aria-hidden="true"></span>
+          <div class="body">
+            <p class="text">Вернуть карточку из архива на стол</p>
+            
+          </div>
+          <span class="state">сделано</span>
+        </li>
+        <li class="item item--done" data-status="done">
+          <span class="mark" aria-hidden="true"></span>
+          <div class="body">
+            <p class="text">Удалить из архива (через корзину)</p>
+            
+          </div>
+          <span class="state">сделано</span>
+        </li>
+        <li class="item item--done" data-status="done">
+          <span class="mark" aria-hidden="true"></span>
+          <div class="body">
+            <p class="text">Поиск и фильтр по типу в архиве</p>
+            
+          </div>
+          <span class="state">сделано</span>
+        </li>
+        <li class="item item--done" data-status="done">
+          <span class="mark" aria-hidden="true"></span>
+          <div class="body">
+            <p class="text">История серии (когда засчитывались шаги)</p>
+            
+          </div>
+          <span class="state">сделано</span>
+        </li>
+        <li class="item item--done" data-status="done">
+          <span class="mark" aria-hidden="true"></span>
+          <div class="body">
+            <p class="text">Раздел «Корзина» (пока отдельным листом у корзины на столе)</p>
+            
+          </div>
+          <span class="state">сделано</span>
+        </li>
+        <li class="item item--done" data-status="done">
+          <span class="mark" aria-hidden="true"></span>
+          <div class="body">
+            <p class="text">Скромная сводка: за неделю / за месяц / всего, дней подряд</p>
+            
+          </div>
+          <span class="state">сделано</span>
+        </li>
+        </ul>
+      </section>
+      <section class="block" data-block>
+        <header class="block__head">
+          <h2>Усиление скевоморфизма</h2>
+          <span class="block__count">0 из 11</span>
+        </header>
+        <ul class="list">
+        <li class="item item--todo" data-status="todo">
+          <span class="mark" aria-hidden="true"></span>
+          <div class="body">
+            <p class="text">Картотека вместо списка сверху: кромки карточек с ярлыками</p>
+            
+          </div>
+          <span class="state">впереди</span>
+        </li>
+        <li class="item item--dropped" data-status="dropped">
+          <span class="mark" aria-hidden="true"></span>
+          <div class="body">
+            <p class="text"><s>Ручка ящика стола вместо мраморной полосы «Архив»</s></p>
+            <p class="note">решили оставить мрамор</p>
+          </div>
+          <span class="state">отменено</span>
+        </li>
+        <li class="item item--todo" data-status="todo">
+          <span class="mark" aria-hidden="true"></span>
+          <div class="body">
+            <p class="text">Отрыв купона за пальцем: перфорация расходится постепенно, можно вернуть</p>
+            
+          </div>
+          <span class="state">впереди</span>
+        </li>
+        <li class="item item--todo" data-status="todo">
+          <span class="mark" aria-hidden="true"></span>
+          <div class="body">
+            <p class="text">Жесты: смахнуть в корзину, перелистнуть как раздачу карт</p>
+            
+          </div>
+          <span class="state">впереди</span>
+        </li>
+        <li class="item item--todo" data-status="todo">
+          <span class="mark" aria-hidden="true"></span>
+          <div class="body">
+            <p class="text">Лёгкий наклон карточки от мыши / гироскопа (2–3°) с бликом</p>
+            
+          </div>
+          <span class="state">впереди</span>
+        </li>
+        <li class="item item--todo" data-status="todo">
+          <span class="mark" aria-hidden="true"></span>
+          <div class="body">
+            <p class="text">Единый источник света, выверить все тени под него</p>
+            
+          </div>
+          <span class="state">впереди</span>
+        </li>
+        <li class="item item--todo" data-status="todo">
+          <span class="mark" aria-hidden="true"></span>
+          <div class="body">
+            <p class="text">Старение бумаги у долго лежащих карточек (лёгкая желтизна, мятые углы)</p>
+            
+          </div>
+          <span class="state">впереди</span>
+        </li>
+        <li class="item item--todo" data-status="todo">
+          <span class="mark" aria-hidden="true"></span>
+          <div class="body">
+            <p class="text">Красный карандаш под сроком перед дедлайном</p>
+            
+          </div>
+          <span class="state">впереди</span>
+        </li>
+        <li class="item item--todo" data-status="todo">
+          <span class="mark" aria-hidden="true"></span>
+          <div class="body">
+            <p class="text">Свет стола по времени суток (утро холоднее, вечер — тёплая лампа)</p>
+            
+          </div>
+          <span class="state">впереди</span>
+        </li>
+        <li class="item item--todo" data-status="todo">
+          <span class="mark" aria-hidden="true"></span>
+          <div class="body">
+            <p class="text">Звуки (шорох, треск перфорации, штамп) и вибрация, отключаемые</p>
+            
+          </div>
+          <span class="state">впереди</span>
+        </li>
+        <li class="item item--todo" data-status="todo">
+          <span class="mark" aria-hidden="true"></span>
+          <div class="body">
+            <p class="text">Разная бумага для разных типов: крафт, плотный картон, мелованная</p>
+            
+          </div>
+          <span class="state">впереди</span>
+        </li>
+        <li class="item item--todo" data-status="todo">
+          <span class="mark" aria-hidden="true"></span>
+          <div class="body">
+            <p class="text">Печать / штамп «Выполнено» с датой на карточках в архиве</p>
+            
+          </div>
+          <span class="state">впереди</span>
+        </li>
+        </ul>
+      </section>
+      <section class="block" data-block>
+        <header class="block__head">
+          <h2>Позже</h2>
+          <span class="block__count">2 из 6</span>
+        </header>
+        <ul class="list">
+        <li class="item item--todo" data-status="todo">
+          <span class="mark" aria-hidden="true"></span>
+          <div class="body">
+            <p class="text">Синхронизация между устройствами</p>
+            
+          </div>
+          <span class="state">впереди</span>
+        </li>
+        <li class="item item--todo" data-status="todo">
+          <span class="mark" aria-hidden="true"></span>
+          <div class="body">
+            <p class="text">Статистика и еженедельный обзор как ритуал</p>
+            
+          </div>
+          <span class="state">впереди</span>
+        </li>
+        <li class="item item--todo" data-status="todo">
+          <span class="mark" aria-hidden="true"></span>
+          <div class="body">
+            <p class="text">Подзадачи внутри одиночной задачи</p>
+            
+          </div>
+          <span class="state">впереди</span>
+        </li>
+        <li class="item item--done" data-status="done">
+          <span class="mark" aria-hidden="true"></span>
+          <div class="body">
+            <p class="text">Тяжёлые фоны сжаты: стол 11,6 МБ → 0,45 МБ, мрамор 5 МБ → 0,17 МБ</p>
+            
+          </div>
+          <span class="state">сделано</span>
+        </li>
+        <li class="item item--todo" data-status="todo">
+          <span class="mark" aria-hidden="true"></span>
+          <div class="body">
+            <p class="text">Купонные кнопки «Отмена / Сохранить» в том же тиснении</p>
+            
+          </div>
+          <span class="state">впереди</span>
+        </li>
+        <li class="item item--done" data-status="done">
+          <span class="mark" aria-hidden="true"></span>
+          <div class="body">
+            <p class="text">Цвет будущей карточки уже в черновике</p>
+            
+          </div>
+          <span class="state">сделано</span>
+        </li>
+        </ul>
+      </section>
+  </div>
+
+  <footer class="footer">
+    <strong>Не делаем.</strong> Канбан, совместная работа, вложенные проекты, экран настроек на 40 пунктов.
+  </footer>
+</main>
+
+<script>
+  (function () {
+    var buttons = document.querySelectorAll('[data-filter]');
+    var items = document.querySelectorAll('.item');
+    var blocks = document.querySelectorAll('[data-block]');
+
+    function apply(filter) {
+      items.forEach(function (item) {
+        var status = item.getAttribute('data-status');
+        item.hidden = !(
+          filter === 'all' ||
+          (filter === 'done' && status === 'done') ||
+          (filter === 'todo' && status === 'todo')
+        );
+      });
+      blocks.forEach(function (block) {
+        block.hidden = block.querySelectorAll('.item:not([hidden])').length === 0;
+      });
+      buttons.forEach(function (button) {
+        button.setAttribute('aria-pressed', String(button.getAttribute('data-filter') === filter));
+      });
+      try { localStorage.setItem('roadmap-filter', filter); } catch (e) {}
+    }
+
+    buttons.forEach(function (button) {
+      button.addEventListener('click', function () { apply(button.getAttribute('data-filter')); });
+    });
+
+    var saved = 'all';
+    try { saved = localStorage.getItem('roadmap-filter') || 'all'; } catch (e) {}
+    apply(saved === 'done' || saved === 'todo' ? saved : 'all');
+  })();
+</script>
