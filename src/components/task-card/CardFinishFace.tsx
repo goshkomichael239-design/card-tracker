@@ -16,8 +16,9 @@ const drawDelay = (ms: number): React.CSSProperties =>
 
 /**
  * "Only N of X are done: finish the series anyway?" Same card, same pressed
- * slots as the actions face. The track shows how full the coupon will be when
- * it tears off.
+ * slots as the actions face. Read top to bottom: what it is, how far it got
+ * (big number + a recessed track showing the share the slot will be filled to),
+ * the question, and the two answers.
  */
 export const CardFinishFace: React.FC<CardFinishFaceProps> = ({
   title,
@@ -49,7 +50,7 @@ export const CardFinishFace: React.FC<CardFinishFaceProps> = ({
       <p
         className="draw-in mt-6 shrink-0 truncate font-semibold leading-[1.15]"
         style={{
-          ...drawDelay(120),
+          ...drawDelay(100),
           fontSize: 20,
           color: 'rgba(40,35,29,0.62)',
           letterSpacing: '-0.015em',
@@ -58,26 +59,41 @@ export const CardFinishFace: React.FC<CardFinishFaceProps> = ({
         {title}
       </p>
 
-      <div
-        className="absolute left-0 right-0"
-        style={{ top: '45%', transform: 'translateY(-50%)' }}
-      >
+      {/* Everything below shares one left edge and sits in the free area under
+          the title, centred in it. */}
+      <div className="flex min-h-0 flex-1 flex-col justify-center pb-1">
         <p
-          className="draw-in text-[15px] leading-[1.45]"
-          style={{ ...drawDelay(180), color: 'rgba(40,35,29,0.78)' }}
+          className="draw-in font-mono text-[9px] font-bold uppercase tracking-[0.12em]"
+          style={{ ...drawDelay(160), color: '#6B6258' }}
         >
-          Выполнено только{' '}
-          <strong className="font-bold" style={{ color: palette.accentDark }}>
-            {done} из {target}
-          </strong>
-          . Всё равно завершить серию?
+          Выполнено только
         </p>
 
-        {/* Recessed track; the lit part is the share the coupon is filled to. */}
+        <p
+          className="draw-in mt-1 font-semibold leading-none"
+          style={{
+            ...drawDelay(200),
+            fontSize: 36,
+            letterSpacing: '-0.03em',
+            color: '#28231D',
+            fontVariantNumeric: 'lining-nums tabular-nums',
+          }}
+        >
+          {done}
+          <span
+            className="mx-2 text-[22px] font-medium"
+            style={{ color: 'rgba(40,35,29,0.5)', letterSpacing: 0 }}
+          >
+            из
+          </span>
+          {target}
+        </p>
+
+        {/* Recessed track; the lit part is the share the slot will be filled to. */}
         <div
           className="draw-in mt-4 h-[14px] overflow-hidden rounded-full"
           style={{
-            ...drawDelay(240),
+            ...drawDelay(250),
             background: 'rgba(60,45,30,0.09)',
             boxShadow:
               'inset 0 2px 4px rgba(40,28,16,0.26), inset 0 -1px 0 rgba(255,255,255,0.75)',
@@ -95,13 +111,20 @@ export const CardFinishFace: React.FC<CardFinishFaceProps> = ({
           />
         </div>
 
-        <div className="mt-5 flex flex-col gap-3">
+        <p
+          className="draw-in mt-5 text-[16px] font-medium leading-[1.3]"
+          style={{ ...drawDelay(300), color: 'rgba(40,35,29,0.8)' }}
+        >
+          Всё равно завершить серию?
+        </p>
+
+        <div className="mt-4 flex flex-col gap-2.5">
           <button
             type="button"
             onClick={onConfirm}
             onTouchStart={() => undefined}
-            className="etched-action draw-in"
-            style={{ ...drawDelay(300), ...glowStyle }}
+            className="etched-action etched-action--compact draw-in"
+            style={{ ...drawDelay(350), ...glowStyle }}
           >
             <span className="etched-action__text">Завершить</span>
           </button>
@@ -109,8 +132,8 @@ export const CardFinishFace: React.FC<CardFinishFaceProps> = ({
             type="button"
             onClick={onCancel}
             onTouchStart={() => undefined}
-            className="etched-action draw-in"
-            style={{ ...drawDelay(380), ...glowStyle }}
+            className="etched-action etched-action--compact draw-in"
+            style={{ ...drawDelay(420), ...glowStyle }}
           >
             <span className="etched-action__text">Вернуться</span>
           </button>

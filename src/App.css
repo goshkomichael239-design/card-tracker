@@ -186,6 +186,15 @@
     0 -0.5px 0 rgba(30, 20, 10, 0.35);
 }
 
+/* Denser variant for faces that carry more than the two slots. */
+.etched-action--compact {
+  padding: 14px 22px 15px;
+}
+
+.etched-action--compact .etched-action__text {
+  font-size: 20px;
+}
+
 /* "Are you sure?" state: the slot stays lit with a warmer pastel and the ink
    turns terracotta, until the press is confirmed or times out. */
 .etched-action--armed {
