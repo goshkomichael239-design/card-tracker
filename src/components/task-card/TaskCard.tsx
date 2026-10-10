@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 import cardboardTexture from '../../assets/cardboard.avif';
 import { getCardPalette, type VisualCard } from '../../app/cardTheme';
@@ -7,6 +7,7 @@ import { getListCompletedCount, getListProgress } from '../../app/listUtils';
 import { formatSeriesDuration } from '../../app/seriesUtils';
 import { CardActionsFace } from './CardActionsFace';
 import { CardEditFace } from './CardEditFace';
+import { CardFinishFace } from './CardFinishFace';
 import {
   CardFaceStage,
   type CardFace,
@@ -67,6 +68,22 @@ export const TaskCard: React.FC<TaskCardProps> = ({
   });
   const [isCornerKeyboardFocused, setIsCornerKeyboardFocused] =
     useState(false);
+  const articleRef = useRef<HTMLElement | null>(null);
+  const finishTimerRef = useRef<number | null>(null);
+  const currentCardIdRef = useRef(card.id);
+
+  useEffect(() => {
+    currentCardIdRef.current = card.id;
+  }, [card.id]);
+
+  useEffect(
+    () => () => {
+      if (finishTimerRef.current !== null) {
+        window.clearTimeout(finishTimerRef.current);
+      }
+    },
+    [],
+  );
   const canOpenMenu =
     Boolean(onSave || onDelete) && !card.completedAt && !isStatic;
   const face: CardFace =
@@ -118,18 +135,33 @@ export const TaskCard: React.FC<TaskCardProps> = ({
     onRecordSeriesStep?.(couponBounds);
   };
 
-  const handleManualSeriesFinish = () => {
-    if (!series || !onFinishSeries) {
+  // Confirmed on the "finish anyway?" face: turn back to the card first, so the
+  // coupon is seen in its place, then tear it off. The card id is re-checked
+  // because the user may switch cards during that short wait.
+  const handleConfirmFinish = () => {
+    if (!series || !onFinishSeries || finishTimerRef.current !== null) {
       return;
     }
 
-    if (window.confirm(`Завершить серию на ${series.entries.length} из ${series.targetCount}?`)) {
-      const coupon = document.querySelector<HTMLButtonElement>('[data-series-coupon="true"]');
+    const cardIdAtConfirm = card.id;
+
+    goToFace('view', -1);
+    finishTimerRef.current = window.setTimeout(() => {
+      finishTimerRef.current = null;
+
+      if (currentCardIdRef.current !== cardIdAtConfirm) {
+        return;
+      }
+
+      const coupon = articleRef.current?.querySelector<HTMLButtonElement>(
+        '[data-series-coupon="true"]',
+      );
       const bounds = coupon?.getBoundingClientRect();
+
       if (bounds) {
         onFinishSeries(bounds);
       }
-    }
+    }, FINISH_WIPE_WAIT_MS);
   };
 
   const viewFace = (
@@ -201,12 +233,19 @@ export const TaskCard: React.FC<TaskCardProps> = ({
               Начато · {new Date(series.startedAt).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
             </p>
           )}
-          {!card.completedAt && onFinishSeries && (
+          {!card.completedAt && onFinishSeries && canOpenMenu && (
             <button
               type="button"
-              onClick={handleManualSeriesFinish}
-              className="mt-3 border-0 bg-transparent p-0 font-mono text-[8px] uppercase tracking-[0.12em]"
-              style={{ color: palette.accentDark }}
+              onClick={() => goToFace('finish', 1)}
+              onTouchStart={() => undefined}
+              className="pill-action mt-4"
+              style={
+                {
+                  ['--pill-bg' as string]: `${palette.accent}1d`,
+                  ['--pill-ink' as string]: palette.accentDark,
+                  ['--pill-glow' as string]: palette.glow,
+                } as React.CSSProperties
+              }
             >
               Завершить серию
             </button>
@@ -291,6 +330,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
         aria-hidden="true"
       />
       <article
+        ref={articleRef}
         className="absolute inset-0 overflow-hidden border"
         style={{
           borderRadius: config.borderRadius,
@@ -320,6 +360,15 @@ export const TaskCard: React.FC<TaskCardProps> = ({
         >
           {face === 'view' ? (
             viewFace
+          ) : face === 'finish' && series ? (
+            <CardFinishFace
+              title={card.title}
+              done={series.entries.length}
+              target={series.targetCount}
+              palette={palette}
+              onConfirm={handleConfirmFinish}
+              onCancel={() => goToFace('view', -1)}
+            />
           ) : face === 'actions' ? (
             <CardActionsFace
               title={card.title}
@@ -391,6 +440,10 @@ export const TaskCard: React.FC<TaskCardProps> = ({
     </div>
   );
 };
+
+// How long the wipe back to the card face takes (see CardFaceStage), plus a
+// beat, before the coupon is torn off.
+const FINISH_WIPE_WAIT_MS = 560;
 
 // Size of the folded corner and the clip that removes it from the card body.
 const FOLD_SIZE = 46;

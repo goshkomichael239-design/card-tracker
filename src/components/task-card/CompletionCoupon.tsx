@@ -92,35 +92,40 @@ export const CompletionCoupon: React.FC<CompletionCouponProps> = ({
 
   return (
     <div className="relative h-full w-full shrink-0">
+      {/* The slot left behind when the coupon tears off. It is filled with the
+          card's accent exactly as far as the work got (5 of 10 = half), and
+          the rest stays the card's own paper. */}
       <div
         className="absolute inset-0 flex items-center justify-center overflow-hidden rounded-[8px] border"
         style={{
-          color: 'rgba(255,255,255,0.94)',
-          backgroundColor: palette.accent,
-          backgroundImage: `linear-gradient(180deg, rgba(255,255,255,0.16), rgba(0,0,0,0.12)), url(${cardboardTexture})`,
-          backgroundSize: '100% 100%, cover',
-          backgroundBlendMode: 'soft-light, multiply',
-          borderColor: palette.accentDark,
+          color: palette.accentDark,
+          backgroundColor: paperTint,
+          backgroundImage: `url(${cardboardTexture})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundBlendMode: 'multiply',
+          borderColor: 'rgba(70,59,46,0.3)',
           boxShadow: `
-            inset 3px 4px 9px rgba(0,0,0,0.48),
-            inset -1px -1px 2px rgba(255,255,255,0.12),
-            0 1px 0 rgba(255,255,255,0.08)
+            inset 3px 4px 9px rgba(40,28,16,0.34),
+            inset -1px -1px 2px rgba(255,255,255,0.5),
+            0 1px 0 rgba(255,255,255,0.5)
           `,
         }}
       >
-        {completedAt && series && (
+        {completedAt && (
           <div
-            className="pointer-events-none absolute inset-0 origin-right"
+            className="pointer-events-none absolute bottom-0 left-0 top-0"
             style={{
-              transform: `scaleX(${1 - getSeriesProgress(series)})`,
-              backgroundColor: paperTint,
-              opacity: 0.5,
+              width: `${(series ? getSeriesProgress(series) : 1) * 100}%`,
+              backgroundColor: palette.glow,
+              // Crisp light edge where the done share ends.
+              boxShadow: 'inset -2px 0 0 rgba(255,255,255,0.6)',
             }}
             aria-hidden="true"
           />
         )}
         {completedAt && (
-          <span className="px-3 text-center font-mono text-[9px] font-bold uppercase tracking-[0.13em]">
+          <span className="relative px-3 text-center font-mono text-[9px] font-bold uppercase tracking-[0.13em]">
             {series
               ? `${series.entries.length} / ${series.targetCount}`
               : completedLabel ?? `Завершено · ${formatCompletedDate(completedAt)}`}

@@ -214,6 +214,63 @@
   }
 }
 
+/* Secondary card action as a tinted pill, same family as the card's kind
+   badge. --pill-bg / --pill-ink / --pill-glow come from the card's colours; on
+   hover or press the pill lights up in the card's second accent. */
+.pill-action {
+  display: inline-flex;
+  align-items: center;
+  padding: 11px 19px;
+  border: 0;
+  border-radius: 9999px;
+  background: var(--pill-bg, rgba(160, 120, 90, 0.12));
+  color: var(--pill-ink, #6b4a3a);
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.55),
+    0 1px 0 rgba(255, 255, 255, 0.35);
+  transition:
+    background-color 200ms ease-out,
+    box-shadow 200ms ease-out,
+    transform 160ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+@media (hover: hover) {
+  .pill-action:hover {
+    background: var(--pill-glow, #ffd9c2);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.7),
+      0 0 18px -4px var(--pill-glow, #ffd9c2);
+  }
+}
+
+.pill-action:active {
+  background: var(--pill-glow, #ffd9c2);
+  transform: scale(0.97);
+  box-shadow: inset 0 2px 5px rgba(60, 40, 20, 0.25);
+}
+
+.pill-action:focus-visible {
+  outline: none;
+  background: var(--pill-glow, #ffd9c2);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pill-action {
+    transition: none;
+  }
+}
+
 /* First-run arrow: the dashes crawl slowly toward the folded corner. */
 @keyframes corner-hint-dash {
   to {
