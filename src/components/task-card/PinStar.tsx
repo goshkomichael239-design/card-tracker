@@ -163,7 +163,7 @@ export const PinStar: React.FC<PinStarProps> = ({
 }) => (
   <div
     className="pointer-events-none absolute z-30"
-    style={{ top: -16, right: 40, width: 40, height: 90 }}
+    style={{ top: -16, right: 60, width: 40, height: 90 }}
   >
     <AnimatePresence initial={false} mode="popLayout">
       {pinned ? (
