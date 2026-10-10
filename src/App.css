@@ -223,9 +223,9 @@
   }
 }
 
-/* The slot under a torn-off coupon is visible at once. On cards that count
-   something, the done share then fills in from the left, like colour poured
-   into it. */
+/* The slot under a torn-off coupon is visible at once, already filled. Only on
+   cards that count something (series, lists) does the done share pour in from
+   the left; plain tasks get no animation at all. */
 @keyframes slot-fill {
   from {
     transform: scaleX(0);
