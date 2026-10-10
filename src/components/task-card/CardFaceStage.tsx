@@ -4,7 +4,13 @@ import { AnimatePresence, motion, useIsPresent } from 'framer-motion';
 import cardboardTexture from '../../assets/cardboard.avif';
 import { INITIAL_TASK_CARD_V2_CONFIG } from './taskCardV2Config';
 
-export type CardFace = 'view' | 'actions' | 'edit' | 'finish' | 'postpone';
+export type CardFace =
+  | 'view'
+  | 'actions'
+  | 'edit'
+  | 'finish'
+  | 'postpone'
+  | 'list';
 
 /** 1 wipes left to right (going deeper), -1 right to left (going back). */
 export type FaceDirection = 1 | -1;

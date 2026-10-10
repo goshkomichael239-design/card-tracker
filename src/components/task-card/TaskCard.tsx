@@ -36,6 +36,7 @@ const getCustomPostponeStart = (card: VisualCard): Date => {
   const now = new Date();
   return new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 9, 0);
 };
+import { CardListFace } from './CardListFace';
 import { CountdownPanel } from './CountdownPanel';
 import { INITIAL_TASK_CARD_V2_CONFIG } from './taskCardV2Config';
 import { TaskListContent } from './TaskListContent';
@@ -46,7 +47,8 @@ interface TaskCardProps {
   onRecordSeriesStep?: (couponBounds: DOMRect) => void;
   onFinishSeries?: (couponBounds: DOMRect) => void;
   onToggleListItem?: (itemId: string) => void;
-  onOpenList?: () => void;
+  /** Adds an item to the end of the list. */
+  onAddListItem?: (text: string) => void;
   /** Receives the edited card; its id never changes. */
   onSave?: (card: VisualCard) => void;
   /** Puts the card off until the given moment. */
@@ -72,7 +74,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
   onRecordSeriesStep,
   onFinishSeries,
   onToggleListItem,
-  onOpenList,
+  onAddListItem,
   onSave,
   onPostpone,
   onDelete,
@@ -243,7 +245,12 @@ export const TaskCard: React.FC<TaskCardProps> = ({
             disabled={Boolean(card.completedAt)}
             onToggle={(itemId) => onToggleListItem?.(itemId)}
             maxItems={5}
-            onOpenList={onOpenList}
+            // The whole list opens on the card itself, as a face of its own.
+            onOpenList={
+              canOpenMenu && onAddListItem
+                ? () => goToFace('list', 1)
+                : undefined
+            }
           />
         </div>
       ) : series ? (
@@ -433,6 +440,14 @@ export const TaskCard: React.FC<TaskCardProps> = ({
               palette={palette}
               onConfirm={handleConfirmFinish}
               onCancel={() => goToFace('view', -1)}
+            />
+          ) : face === 'list' && list ? (
+            <CardListFace
+              list={list}
+              palette={palette}
+              onToggle={(itemId) => onToggleListItem?.(itemId)}
+              onAdd={(text) => onAddListItem?.(text)}
+              onBack={() => goToFace('view', -1)}
             />
           ) : face === 'postpone' ? (
             <CardPostponeFace

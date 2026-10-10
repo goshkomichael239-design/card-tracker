@@ -87,7 +87,6 @@ import {
   type DetachedCompletionCouponHandle,
 } from '../components/task-card/DetachedCompletionCoupon';
 import { TaskCard } from '../components/task-card/TaskCard';
-import { FullListSheet } from '../components/task-card/FullListSheet';
 import { TransientTaskCardOverlay } from '../components/task-card/TransientTaskCardOverlay';
 import { INITIAL_TASK_CARD_V2_CONFIG } from '../components/task-card/taskCardV2Config';
 const createId = (): string => {
@@ -322,9 +321,6 @@ const MainApp: React.FC = () => {
     useState<TransientOutgoingCard | null>(null);
   const [pendingCompletedCardId, setPendingCompletedCardId] =
     useState<string | null>(null);
-  const [expandedListCardId, setExpandedListCardId] = useState<string | null>(
-    null,
-  );
   const [currentDayKey, setCurrentDayKey] = useState(() =>
     getLocalDayKey(new Date()),
   );
@@ -343,12 +339,8 @@ const MainApp: React.FC = () => {
 
   const isCreating = creationState !== 'idle';
   const activeCard = cards.find((card) => card.id === activeCardId);
-  const expandedListCard = cards.find(
-    (card) => card.id === expandedListCardId && card.kind === 'list',
-  );
-  const isListSheetOpen = Boolean(expandedListCard);
   // Any sheet lying over the table blocks the table's own gestures and keys.
-  const isOverlayOpen = isListSheetOpen || isTrashOpen;
+  const isOverlayOpen = isTrashOpen;
   // Coupons torn off today, as paper colours for the slips on the spike.
   const todaySlipPapers = useMemo(
     () =>
@@ -588,12 +580,6 @@ const MainApp: React.FC = () => {
       }
     };
   }, []);
-
-  useEffect(() => {
-    if (expandedListCardId && !expandedListCard) {
-      setExpandedListCardId(null);
-    }
-  }, [expandedListCard, expandedListCardId]);
 
   useEffect(() => {
     saveTrash(trash);
@@ -847,12 +833,8 @@ const MainApp: React.FC = () => {
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (isOverlayOpen) {
-        if (event.key === 'Escape') {
-          if (isTrashOpen) {
-            setIsTrashOpen(false);
-          } else {
-            setExpandedListCardId(null);
-          }
+        if (event.key === 'Escape' && isTrashOpen) {
+          setIsTrashOpen(false);
         }
         return;
       }
@@ -2188,10 +2170,8 @@ const MainApp: React.FC = () => {
                     activeCard.id === cards[0]?.id
                   }
                   onCornerOpened={handleCornerOpened}
-                  onOpenList={
-                    activeCard.kind === 'list'
-                      ? () => setExpandedListCardId(activeCard.id)
-                      : undefined
+                  onAddListItem={(text) =>
+                    addListItem(activeCard.id, text)
                   }
                 />
               </motion.div>
@@ -2428,15 +2408,6 @@ const MainApp: React.FC = () => {
         ref={detachedCouponLayerRef}
         onFlightComplete={handleCouponFlightComplete}
       />
-
-      {expandedListCard && (
-        <FullListSheet
-          card={expandedListCard}
-          onToggleItem={toggleListItem}
-          onAddItem={addListItem}
-          onClose={() => setExpandedListCardId(null)}
-        />
-      )}
 
       {isTrashOpen && (
         <TrashSheet
