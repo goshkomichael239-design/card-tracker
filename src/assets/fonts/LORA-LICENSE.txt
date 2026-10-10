@@ -1,0 +1,11 @@
+Lora (variable, wght 400-700; subsets: latin, latin-ext, cyrillic, cyrillic-ext)
+
+Copyright 2011 The Lora Project Authors
+(https://github.com/cyrealtype/Lora-Cyrillic)
+
+This Font Software is licensed under the SIL Open Font License, Version 1.1.
+The license is available at https://openfontlicense.org
+and with an FAQ at https://openfontlicense.org/faq/
+
+Files were obtained from Google Fonts (fonts.gstatic.com) and are bundled
+locally so the app does not depend on an internet connection to render text.
