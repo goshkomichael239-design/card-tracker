@@ -11,7 +11,6 @@ import {
   type DetachedCoupon,
 } from '../../app/cardTheme';
 import { CouponPerforation } from './CompletionCoupon';
-import { INITIAL_TASK_CARD_V2_CONFIG } from './taskCardV2Config';
 
 interface DetachedCompletionCouponProps {
   onFlightComplete: () => void;
@@ -61,7 +60,7 @@ export const DetachedCompletionCoupon = forwardRef<
       couponElement.style.transformOrigin = `${originX}% ${originY}%`;
       couponElement.style.transform = 'translate3d(0, 0, 0) rotate(0deg)';
       couponElement.style.visibility = 'visible';
-      paperElement.style.backgroundColor = INITIAL_TASK_CARD_V2_CONFIG.paperTint;
+      paperElement.style.backgroundColor = coupon.palette.paper;
       if (labelRef.current) {
         labelRef.current.textContent = coupon.label ?? 'Завершить';
       }

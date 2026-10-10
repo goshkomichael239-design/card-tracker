@@ -42,6 +42,11 @@ export const CardActionsFace: React.FC<CardActionsFaceProps> = ({
     return () => window.clearTimeout(timer);
   }, [isConfirming]);
 
+  // The slots light up in this card's own second accent.
+  const glowStyle = {
+    ['--etched-glow' as string]: palette.glow,
+  } as React.CSSProperties;
+
   return (
     <div className="relative flex h-full flex-col">
       <div className="flex items-center justify-between">
@@ -69,7 +74,7 @@ export const CardActionsFace: React.FC<CardActionsFaceProps> = ({
       </p>
 
       <div
-        className="mt-5 flex shrink-0 flex-col gap-1 border-t pt-5"
+        className="mt-5 flex shrink-0 flex-col gap-3 border-t pt-5"
         style={{ borderColor: 'rgba(69,57,44,0.13)' }}
       >
         <button
@@ -78,7 +83,7 @@ export const CardActionsFace: React.FC<CardActionsFaceProps> = ({
           // iOS only applies :active when the element has a touch listener.
           onTouchStart={() => undefined}
           className="etched-action draw-in"
-          style={drawDelay(200)}
+          style={{ ...drawDelay(200), ...glowStyle }}
         >
           <span className="etched-action__text">Редактировать</span>
         </button>
@@ -95,7 +100,11 @@ export const CardActionsFace: React.FC<CardActionsFaceProps> = ({
           }}
           onTouchStart={() => undefined}
           className={`etched-action draw-in${isConfirming ? ' etched-action--armed' : ''}`}
-          style={drawDelay(290)}
+          // While armed the warm "are you sure" glow from the CSS takes over.
+          style={{
+            ...drawDelay(290),
+            ...(isConfirming ? undefined : glowStyle),
+          }}
         >
           <span className="etched-action__text">
             {isConfirming ? 'Точно удалить?' : 'Удалить'}

@@ -514,7 +514,7 @@ export const CardEditFace: React.FC<CardEditFaceProps> = ({
         />
         <CouponButton
           label="Сохранить"
-          color={palette.accent}
+          color={palette.accentDark}
           paperTint={paperTint}
           height={config.couponHeight}
           disabled={!canSave}

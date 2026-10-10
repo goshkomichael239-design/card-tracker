@@ -16,11 +16,22 @@ export interface CardPalette {
   accent: string;
   accentDark: string;
   ink: string;
+  /**
+   * Second accent: a brighter, still pastel sibling of `accent`. It "lights up"
+   * under hovered actions and fills progress, while `accent` carries lettering.
+   */
+  glow: string;
+}
+
+export interface CardColorScheme extends CardPalette {
+  id: string;
 }
 
 export interface VisualCard {
   id: string;
   title: string;
+  /** Chosen colour scheme; derived from the id for cards that have none. */
+  colorId?: string;
   kind: 'single' | 'series' | 'list';
   timeMode: TimeMode;
   deadlineAt?: string;
@@ -75,24 +86,29 @@ export const GHOST_SETTINGS: GhostSettings = {
   opacity: 0.2,
 };
 
+// Colours of the time-mode choice in the creation flow (and the "alert" tone of
+// an overdue countdown). They are not the colours of finished cards.
 export const PALETTES: Record<TimeMode, CardPalette> = {
   none: {
     paper: '#E8D9C0',
     accent: '#CD5334',
     accentDark: '#8F3025',
     ink: '#1E1C1A',
+    glow: '#FFC2A6',
   },
   deadline: {
     paper: '#CFD7E0',
     accent: '#4A6578',
     accentDark: '#2E4655',
     ink: '#1B242A',
+    glow: '#A9CBEA',
   },
   reminder: {
     paper: '#CDD9C4',
     accent: '#5C7A5A',
     accentDark: '#3E583D',
     ink: '#1D251D',
+    glow: '#B6E0B0',
   },
 };
 
@@ -101,10 +117,48 @@ export const LIST_PALETTE: CardPalette = {
   accent: '#7B6D9C',
   accentDark: '#584B76',
   ink: '#28231D',
+  glow: '#CBB8F2',
 };
 
-export const getCardPalette = (card: VisualCard): CardPalette =>
-  card.kind === 'list' ? LIST_PALETTE : PALETTES[card.timeMode];
+/**
+ * Pastel colour schemes for finished cards: a pale paper, a muted accent for
+ * lettering and a brighter pastel "glow" from the same family. Order matters
+ * only for the hash fallback below.
+ */
+export const CARD_COLOR_SCHEMES: CardColorScheme[] = [
+  { id: 'cream', paper: '#F7F2E8', accent: '#C9694B', accentDark: '#8A3F2A', ink: '#28231D', glow: '#FFBFA0' },
+  { id: 'peach', paper: '#F9ECE2', accent: '#D98B6F', accentDark: '#8F4A38', ink: '#2B211C', glow: '#FFC9A8' },
+  { id: 'mint', paper: '#E7F3EB', accent: '#6FAE8A', accentDark: '#3A6B52', ink: '#1F2A24', glow: '#9FE5C0' },
+  { id: 'sky', paper: '#E5EFF8', accent: '#6E9CC4', accentDark: '#37607F', ink: '#1E2730', glow: '#9CCBF7' },
+  { id: 'lavender', paper: '#EEE8F6', accent: '#9A86C4', accentDark: '#5C4B88', ink: '#25212E', glow: '#CBB7FF' },
+  { id: 'rose', paper: '#F8E8EE', accent: '#D07F9B', accentDark: '#86405B', ink: '#2D2025', glow: '#FFB5D0' },
+  { id: 'butter', paper: '#F8F2DA', accent: '#C9A94A', accentDark: '#765F1E', ink: '#2B2717', glow: '#FFE58C' },
+  { id: 'pistachio', paper: '#EDF2DD', accent: '#8DAA5B', accentDark: '#52703A', ink: '#232A1C', glow: '#C8ED8C' },
+  { id: 'aqua', paper: '#E2F2F1', accent: '#5FA7A3', accentDark: '#2D6966', ink: '#1B2928', glow: '#8FEAE2' },
+];
+
+const hashString = (value: string): number => {
+  let hash = 5381;
+
+  for (let index = 0; index < value.length; index += 1) {
+    hash = ((hash << 5) + hash + value.charCodeAt(index)) | 0;
+  }
+
+  return Math.abs(hash);
+};
+
+export const getCardPalette = (card: VisualCard): CardColorScheme =>
+  CARD_COLOR_SCHEMES.find((scheme) => scheme.id === card.colorId) ??
+  CARD_COLOR_SCHEMES[hashString(card.id) % CARD_COLOR_SCHEMES.length]!;
+
+/** A scheme for a new card that differs from the one used by the last card. */
+export const pickNewCardColorId = (previousColorId?: string): string => {
+  const options = CARD_COLOR_SCHEMES.filter(
+    (scheme) => scheme.id !== previousColorId,
+  );
+
+  return options[Math.floor(Math.random() * options.length)]!.id;
+};
 
 export const CARD_SHADOW = `
   18px 28px 50px -8px rgba(0,0,0,0.72),

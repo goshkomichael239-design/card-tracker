@@ -264,7 +264,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
             isReady={list && !card.completedAt ? listReady : true}
             completedLabel={list ? `${listCompletedCount} / ${list.items.length}` : undefined}
             height={config.couponHeight}
-            paperTint={config.paperTint}
+            paperTint={palette.paper}
           />
         </div>
       )}
@@ -292,7 +292,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
         className="absolute inset-0 overflow-hidden border"
         style={{
           borderRadius: config.borderRadius,
-          backgroundColor: config.paperTint,
+          backgroundColor: palette.paper,
           borderColor: 'rgba(91,76,59,0.16)',
           boxShadow:
             'inset 0 1px 0 rgba(255,255,255,0.88), inset 0 -1px 2px rgba(79,61,42,0.08)',
@@ -314,6 +314,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           face={face}
           subjectId={card.id}
           direction={faceState.direction}
+          paperTint={palette.paper}
         >
           {face === 'view' ? (
             viewFace
@@ -332,7 +333,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
             <CardEditFace
               card={card}
               palette={palette}
-              paperTint={config.paperTint}
+              paperTint={palette.paper}
               onCancel={() => goToFace('view', -1)}
               onSave={(updated) => {
                 onSave?.(updated);
@@ -366,11 +367,11 @@ export const TaskCard: React.FC<TaskCardProps> = ({
             }
             className="absolute inset-0 cursor-pointer border-0 bg-transparent p-0"
           >
-            <FoldedFlap lifted={face !== 'view'} paperTint={config.paperTint} />
+            <FoldedFlap lifted={face !== 'view'} paperTint={palette.paper} />
           </button>
         ) : (
           <div className="pointer-events-none absolute inset-0" aria-hidden="true">
-            <FoldedFlap lifted={false} paperTint={config.paperTint} />
+            <FoldedFlap lifted={false} paperTint={palette.paper} />
           </div>
         )}
       </div>

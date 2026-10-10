@@ -15,6 +15,7 @@ import {
   GHOST_SETTINGS,
   GHOST_SHADOW,
   getCardPalette,
+  pickNewCardColorId,
   PALETTES,
   PHYSICAL_SPRING,
   type CardKind,
@@ -843,8 +844,13 @@ const MainApp: React.FC = () => {
 
       const now = new Date().toISOString();
       const isSeries = selectedKind === 'series';
+      const lastCard = cardsRef.current.at(-1);
       const newCard: VisualCard = {
         id: createId(),
+        // Pastel scheme that differs from the card it will sit next to.
+        colorId: pickNewCardColorId(
+          lastCard ? getCardPalette(lastCard).id : undefined,
+        ),
         title: isList ? listTitle : draftTitle.trim(),
         kind: isSeries ? 'series' : isList ? 'list' : 'single',
         timeMode: isSeries ? 'none' : creationTimeMode!,

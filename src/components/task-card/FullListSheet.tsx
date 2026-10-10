@@ -55,7 +55,7 @@ export function FullListSheet({
         style={{
           borderRadius: config.borderRadius,
           padding: 'clamp(20px, 4vw, 34px)',
-          backgroundColor: config.paperTint,
+          backgroundColor: palette.paper,
           backgroundImage: `url(${cardboardTexture})`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',

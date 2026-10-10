@@ -1,7 +1,7 @@
 import React from 'react';
 
 import cardboardTexture from '../../assets/cardboard.avif';
-import type { VisualCard } from '../../app/cardTheme';
+import { getCardPalette, type VisualCard } from '../../app/cardTheme';
 import { INITIAL_TASK_CARD_V2_CONFIG } from '../task-card/taskCardV2Config';
 
 interface CardStackLayerProps {
@@ -29,7 +29,7 @@ export const CardStackLayer: React.FC<CardStackLayerProps> = ({
         borderRadius: `${config.borderRadius}px`,
         transform: `translate3d(${x}px, ${y}px, 0) rotate(${rotation}deg) scale(${scale})`,
         transformOrigin: 'center center',
-        backgroundColor: config.paperTint,
+        backgroundColor: getCardPalette(card).paper,
         backgroundImage: `url(${cardboardTexture})`,
         backgroundPosition: 'center',
         backgroundSize: 'cover',

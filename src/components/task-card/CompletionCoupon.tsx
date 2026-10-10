@@ -159,8 +159,8 @@ export const CompletionCoupon: React.FC<CompletionCouponProps> = ({
                 className="absolute inset-0 origin-left"
                 style={{
                   transform: `scaleX(${progress ?? getSeriesProgress(series!)})`,
-                  backgroundColor: palette.accent,
-                  opacity: 0.24,
+                  backgroundColor: palette.glow,
+                  opacity: 0.7,
                   transition: 'transform 180ms ease-out',
                   willChange: 'transform',
                 }}
@@ -170,7 +170,7 @@ export const CompletionCoupon: React.FC<CompletionCouponProps> = ({
           <CouponPerforation />
           <span
             className="absolute inset-0 flex select-none items-center justify-center font-mono text-[10px] font-bold uppercase tracking-[0.16em]"
-            style={{ color: palette.accent }}
+            style={{ color: palette.accentDark }}
           >
             {actionLabel}
           </span>

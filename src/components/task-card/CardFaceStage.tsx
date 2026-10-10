@@ -20,6 +20,7 @@ const hiddenClip = (direction: FaceDirection): string =>
 
 interface FaceLayerProps {
   direction: FaceDirection;
+  paperTint: string;
   children: React.ReactNode;
 }
 
@@ -28,7 +29,11 @@ interface FaceLayerProps {
  * can be revealed over the previous face without the two texts showing through
  * each other.
  */
-const FaceLayer: React.FC<FaceLayerProps> = ({ direction, children }) => {
+const FaceLayer: React.FC<FaceLayerProps> = ({
+  direction,
+  paperTint,
+  children,
+}) => {
   const isPresent = useIsPresent();
   const config = INITIAL_TASK_CARD_V2_CONFIG;
 
@@ -42,7 +47,7 @@ const FaceLayer: React.FC<FaceLayerProps> = ({ direction, children }) => {
       transition={{ duration: WIPE_DURATION, ease: WIPE_EASE }}
       style={{
         padding: config.contentPadding,
-        backgroundColor: config.paperTint,
+        backgroundColor: paperTint,
         pointerEvents: isPresent ? 'auto' : 'none',
       }}
     >
@@ -71,6 +76,8 @@ interface CardFaceStageProps {
    */
   subjectId: string;
   direction: FaceDirection;
+  /** Paper colour of the card, so every face is the same sheet. */
+  paperTint: string;
   children: React.ReactNode;
 }
 
@@ -83,6 +90,7 @@ export const CardFaceStage: React.FC<CardFaceStageProps> = ({
   face,
   subjectId,
   direction,
+  paperTint,
   children,
 }) => {
   // The plain face is shared by all cards (switching cards must not wipe);
@@ -96,7 +104,11 @@ export const CardFaceStage: React.FC<CardFaceStageProps> = ({
   return (
     <>
       <AnimatePresence initial={false}>
-        <FaceLayer key={layerKey} direction={direction}>
+        <FaceLayer
+          key={layerKey}
+          direction={direction}
+          paperTint={paperTint}
+        >
           {children}
         </FaceLayer>
       </AnimatePresence>
@@ -111,8 +123,8 @@ export const CardFaceStage: React.FC<CardFaceStageProps> = ({
             left: 0,
             width: SMUDGE_WIDTH,
             zIndex: 5,
-            background:
-              'linear-gradient(90deg, rgba(247,242,232,0) 0%, rgba(247,242,232,0.88) 50%, rgba(247,242,232,0) 100%)',
+            // The cloth is the card's own paper colour (8-digit hex alpha).
+            background: `linear-gradient(90deg, ${paperTint}00 0%, ${paperTint}e0 50%, ${paperTint}00 100%)`,
           }}
           initial={{ x: from, opacity: 0 }}
           animate={{ x: to, opacity: [0, 1, 1, 0] }}

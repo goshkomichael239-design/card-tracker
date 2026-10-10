@@ -1,8 +1,9 @@
-import type {
-  SeriesEntry,
-  TaskListItem,
-  TimeMode,
-  VisualCard,
+import {
+  CARD_COLOR_SCHEMES,
+  type SeriesEntry,
+  type TaskListItem,
+  type TimeMode,
+  type VisualCard,
 } from './cardTheme';
 
 /** Id prefix that marks cards created by the DEV-only debug button. */
@@ -21,6 +22,10 @@ export const createDebugCards = (now: number = Date.now()): VisualCard[] => {
   const iso = (timestamp: number) => new Date(timestamp).toISOString();
   let sequence = 0;
   const nextId = () => `${DEBUG_CARD_ID_PREFIX}${now}-${sequence++}`;
+  // Walk through the colour schemes so neighbouring cards always differ.
+  let colorIndex = 0;
+  const nextColorId = () =>
+    CARD_COLOR_SCHEMES[colorIndex++ % CARD_COLOR_SCHEMES.length]!.id;
   // Slightly different creation moments, so the footers differ as well.
   const createdAt = () => iso(now - (sequence + 1) * 47 * MINUTE);
 
@@ -33,6 +38,7 @@ export const createDebugCards = (now: number = Date.now()): VisualCard[] => {
 
     return {
       id: nextId(),
+      colorId: nextColorId(),
       title,
       kind: 'single',
       timeMode,
@@ -60,6 +66,7 @@ export const createDebugCards = (now: number = Date.now()): VisualCard[] => {
 
     return {
       id: nextId(),
+      colorId: nextColorId(),
       title,
       kind: 'series',
       timeMode: 'none',
@@ -87,6 +94,7 @@ export const createDebugCards = (now: number = Date.now()): VisualCard[] => {
 
     return {
       id: nextId(),
+      colorId: nextColorId(),
       title,
       kind: 'list',
       timeMode: 'none',
