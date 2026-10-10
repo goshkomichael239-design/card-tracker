@@ -47,6 +47,9 @@ import { ArchiveNavigation } from '../components/archive/ArchiveNavigation';
 import { ArchiveView } from '../components/archive/ArchiveView';
 import { CardStack } from '../components/card-stack/CardStack';
 import { CardSwitcher } from '../components/card-switcher/CardSwitcher';
+import { INITIAL_CARD_SWITCHER_CONFIG } from '../components/card-switcher/cardSwitcherConfig';
+import { ARCHIVE_NAVIGATION_HEIGHT } from '../components/archive/ArchiveNavigation';
+import { getCardScale, useViewportSize } from './viewportScale';
 import {
   DetachedCompletionCoupon,
   type DetachedCompletionCouponHandle,
@@ -150,27 +153,17 @@ const isSceneGestureTarget = (target: EventTarget | null): boolean => {
   );
 };
 
-const useViewportWidth = (): number => {
-  const [width, setWidth] = useState(() => {
-    if (typeof window === 'undefined') {
-      return 1280;
-    }
-
-    return window.innerWidth;
-  });
-
-  useEffect(() => {
-    const handleResize = () => setWidth(window.innerWidth);
-    window.addEventListener('resize', handleResize);
-
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  return width;
-};
+// Free space the scene must keep around the card at scale 1: the ghost card sits
+// up and to the left of it, the neighbouring stack down and to the right.
+const SCENE_TOP_OVERHANG = 70;
+const SCENE_BOTTOM_OVERHANG = 56;
+const SCENE_SIDE_OVERHANG = 44;
+const SWITCHER_TOP = 16;
+const SWITCHER_CHROME = 16;
+const SWITCHER_ROW_GAP = 2;
 
 const MainApp: React.FC = () => {
-  const viewportWidth = useViewportWidth();
+  const { width: viewportWidth, height: viewportHeight } = useViewportSize();
   const [isArchiveOpen, setIsArchiveOpen] = useState(false);
 
   const [cards, setCards] = useState<VisualCard[]>(() => {
@@ -183,7 +176,7 @@ const MainApp: React.FC = () => {
       return [
         {
           id: createId(),
-          title: 'Продумать движение новой карточки',
+          title: 'Моя первая карточка',
           kind: 'single',
           timeMode: 'none',
           createdAt: new Date().toISOString(),
@@ -328,6 +321,21 @@ const MainApp: React.FC = () => {
   // V2 deliberately replaces its former card-back rendering with CardStack.
   void completedTodayCount;
   const currentCardExitX = Math.max(520, viewportWidth * 0.72);
+  const switcherRows = Math.min(4, Math.max(1, cards.length));
+  const switcherBottom =
+    SWITCHER_TOP +
+    INITIAL_CARD_SWITCHER_CONFIG.positionY +
+    SWITCHER_CHROME +
+    switcherRows * INITIAL_CARD_SWITCHER_CONFIG.rowHeight +
+    (switcherRows - 1) * SWITCHER_ROW_GAP;
+  const sceneTopReserve = switcherBottom + SCENE_TOP_OVERHANG;
+  const sceneBottomReserve = ARCHIVE_NAVIGATION_HEIGHT + SCENE_BOTTOM_OVERHANG;
+  const sceneScale = getCardScale(
+    viewportWidth - SCENE_SIDE_OVERHANG * 2,
+    viewportHeight - sceneTopReserve - sceneBottomReserve,
+    INITIAL_TASK_CARD_V2_CONFIG.width,
+    INITIAL_TASK_CARD_V2_CONFIG.height,
+  );
   const draftPalette = PALETTES[timeMode ?? 'none'];
 
   const currentDraftDay = startOfLocalDay(new Date());
@@ -1495,17 +1503,30 @@ const MainApp: React.FC = () => {
         </div>
 
       <div
-        className="relative z-10 flex h-full w-full items-center justify-center px-4 pb-[80px] pt-[150px]"
-        style={{ touchAction: 'pan-x' }}
+        className="relative z-10 flex h-full w-full items-center justify-center px-4"
+        style={{
+          touchAction: 'pan-x',
+          paddingTop: sceneTopReserve,
+          paddingBottom: sceneBottomReserve,
+        }}
         onPointerDown={handleScenePointerDown}
         onPointerUp={handleScenePointerEnd}
         onPointerCancel={handleScenePointerCancel}
       >
         <div
-          className="relative"
+          className="relative shrink-0"
           style={{
-            width: `min(${INITIAL_TASK_CARD_V2_CONFIG.width}px, 88vw, calc(85vh - 195px))`,
-            aspectRatio: `${INITIAL_TASK_CARD_V2_CONFIG.width} / ${INITIAL_TASK_CARD_V2_CONFIG.height}`,
+            width: INITIAL_TASK_CARD_V2_CONFIG.width * sceneScale,
+            height: INITIAL_TASK_CARD_V2_CONFIG.height * sceneScale,
+          }}
+        >
+        <div
+          className="absolute left-0 top-0"
+          style={{
+            width: INITIAL_TASK_CARD_V2_CONFIG.width,
+            height: INITIAL_TASK_CARD_V2_CONFIG.height,
+            transform: `scale(${sceneScale})`,
+            transformOrigin: 'top left',
           }}
         >
           {activeCard && (
@@ -1779,6 +1800,7 @@ const MainApp: React.FC = () => {
               </div>
             )}
           </AnimatePresence>
+        </div>
         </div>
       </div>
 

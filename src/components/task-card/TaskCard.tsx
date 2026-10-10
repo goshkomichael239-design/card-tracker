@@ -152,7 +152,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
 
   return (
     <article
-      className="absolute inset-0 flex flex-col overflow-hidden border"
+      className="engraved absolute inset-0 flex flex-col overflow-hidden border"
       style={{
         borderRadius: config.borderRadius,
         padding: config.contentPadding,
@@ -423,7 +423,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
         )}
 
         <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between font-mono text-[8px] uppercase tracking-[0.15em] text-black/30">
-          <span>Task</span>
+          <span>Задача</span>
           <span>{formatShortDate(card.createdAt)}</span>
         </div>
       </div>

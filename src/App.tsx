@@ -1,12 +1,6 @@
-import React, { useState } from 'react';
+import React, { lazy, Suspense, useState } from 'react';
 
 import MainApp from './app/MainApp';
-
-import SandboxMain from './components/sandboxes/SandboxMain';
-import SandboxArchive from './components/sandboxes/SandboxArchive';
-import SandboxStack from './components/sandboxes/SandboxStack';
-import SandboxCompletionCoupon from './components/sandboxes/SandboxCompletionCoupon';
-import SandboxTaskCardV2 from './components/sandboxes/SandboxTaskCardV2';
 
 type AppMode = 'application' | 'sandboxes';
 
@@ -17,43 +11,47 @@ type SandboxId =
   | 'completion-coupon'
   | 'task-card-v2';
 
-const ENABLE_SANDBOXES = true;
+// The lab is a development tool: it is lazy-loaded and only exists in dev
+// builds, so its heavy experiment assets never ship with the production app.
+const ENABLE_SANDBOXES = import.meta.env.DEV;
 
 const SANDBOXES: Array<{
   id: SandboxId;
   label: string;
-  component: React.ComponentType;
-}> = [
-  {
-    id: 'main',
-    label: 'Карточка',
-    component: SandboxMain,
-  },
-  {
-    id: 'archive',
-    label: 'Архив',
-    component: SandboxArchive,
-  },
-  {
-    id: 'stack',
-    label: 'Стопка',
-    component: SandboxStack,
-  },
-  {
-    id: 'completion-coupon',
-    label: 'Перфорация',
-    component: SandboxCompletionCoupon,
-  },
-  ...(import.meta.env.DEV
-    ? [
-        {
-          id: 'task-card-v2' as const,
-          label: 'TaskCard V2',
-          component: SandboxTaskCardV2,
-        },
-      ]
-    : []),
-];
+  component: React.LazyExoticComponent<React.ComponentType>;
+}> = import.meta.env.DEV
+  ? [
+      {
+        id: 'main',
+        label: 'Карточка',
+        component: lazy(() => import('./components/sandboxes/SandboxMain')),
+      },
+      {
+        id: 'archive',
+        label: 'Архив',
+        component: lazy(() => import('./components/sandboxes/SandboxArchive')),
+      },
+      {
+        id: 'stack',
+        label: 'Стопка',
+        component: lazy(() => import('./components/sandboxes/SandboxStack')),
+      },
+      {
+        id: 'completion-coupon',
+        label: 'Перфорация',
+        component: lazy(
+          () => import('./components/sandboxes/SandboxCompletionCoupon'),
+        ),
+      },
+      {
+        id: 'task-card-v2',
+        label: 'TaskCard V2',
+        component: lazy(
+          () => import('./components/sandboxes/SandboxTaskCardV2'),
+        ),
+      },
+    ]
+  : [];
 
 const App: React.FC = () => {
   const [mode, setMode] =
@@ -62,15 +60,16 @@ const App: React.FC = () => {
   const [sandboxId, setSandboxId] =
     useState<SandboxId>('main');
 
-  const ActiveSandbox =
-    SANDBOXES.find(
-      (sandbox) => sandbox.id === sandboxId,
-    )?.component ?? SandboxMain;
+  const ActiveSandbox = (
+    SANDBOXES.find((sandbox) => sandbox.id === sandboxId) ?? SANDBOXES[0]
+  )?.component;
 
-  if (mode === 'sandboxes') {
+  if (mode === 'sandboxes' && ActiveSandbox) {
     return (
       <div className="fixed inset-0 overflow-hidden">
-        <ActiveSandbox />
+        <Suspense fallback={null}>
+          <ActiveSandbox />
+        </Suspense>
 
         <div
           className="

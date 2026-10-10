@@ -163,7 +163,7 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
         }}
       >
         <div
-          className="relative w-full overflow-hidden border"
+          className="engraved relative w-full overflow-hidden border"
           style={{
             borderRadius: config.borderRadius,
             padding: '7px 9px',

@@ -1,10 +1,60 @@
 import React, { useRef } from 'react';
 
 import cardboardTexture from '../../assets/cardboard.avif';
-import type { CardPalette } from '../../app/cardTheme';
+import {
+  COUPON_CORE_THICKNESS,
+  COUPON_DASH_GAP,
+  COUPON_DASH_LENGTH,
+  COUPON_RADIUS,
+  COUPON_SHOULDER_OPACITY,
+  COUPON_SHOULDER_THICKNESS,
+  COUPON_STROKE_INSET,
+  type CardPalette,
+} from '../../app/cardTheme';
 import { formatCompletedDate } from '../../app/dateTimeUtils';
 import { getSeriesProgress } from '../../app/seriesUtils';
 import type { SeriesData } from '../../app/cardTheme';
+
+/**
+ * Dashed cut line running along the coupon's own edge. It uses the same dash
+ * pattern and strokes as DetachedCompletionCoupon so the coupon looks identical
+ * before and after it tears off.
+ */
+export const CouponPerforation: React.FC = () => {
+  const dashPattern = `${COUPON_DASH_LENGTH} ${COUPON_DASH_GAP}`;
+  const geometry = {
+    x: COUPON_STROKE_INSET,
+    y: COUPON_STROKE_INSET,
+    width: `calc(100% - ${COUPON_STROKE_INSET * 2}px)`,
+    height: `calc(100% - ${COUPON_STROKE_INSET * 2}px)`,
+    rx: COUPON_RADIUS,
+  } as React.CSSProperties;
+
+  return (
+    <svg
+      className="pointer-events-none absolute inset-0 h-full w-full"
+      aria-hidden="true"
+      shapeRendering="geometricPrecision"
+    >
+      <rect
+        style={geometry}
+        fill="none"
+        stroke={`rgba(104,104,104,${COUPON_SHOULDER_OPACITY})`}
+        strokeWidth={COUPON_SHOULDER_THICKNESS}
+        strokeDasharray={dashPattern}
+        strokeLinecap="butt"
+      />
+      <rect
+        style={geometry}
+        fill="none"
+        stroke="rgba(30,24,18,0.72)"
+        strokeWidth={COUPON_CORE_THICKNESS}
+        strokeDasharray={dashPattern}
+        strokeLinecap="butt"
+      />
+    </svg>
+  );
+};
 
 interface CompletionCouponProps {
   completedAt?: string;
@@ -23,7 +73,6 @@ export const CompletionCoupon: React.FC<CompletionCouponProps> = ({
   completedAt,
   palette,
   onComplete,
-  height,
   paperTint,
   actionLabel = 'Завершить',
   series,
@@ -118,13 +167,7 @@ export const CompletionCoupon: React.FC<CompletionCouponProps> = ({
               />
             </div>
           )}
-          <div
-            className="pointer-events-none absolute rounded-[6px] border border-dashed"
-            style={{
-              inset: Math.max(1, height * 0.1),
-              borderColor: 'rgba(70,59,46,0.44)',
-            }}
-          />
+          <CouponPerforation />
           <span
             className="absolute inset-0 flex select-none items-center justify-center font-mono text-[10px] font-bold uppercase tracking-[0.16em]"
             style={{ color: palette.accent }}

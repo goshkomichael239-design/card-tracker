@@ -7,17 +7,10 @@ import {
 
 import cardboardTexture from '../../assets/cardboard.avif';
 import {
-  COUPON_CORE_THICKNESS,
-  COUPON_DASH_GAP,
-  COUPON_DASH_LENGTH,
-  COUPON_HEIGHT,
   COUPON_RADIUS,
-  COUPON_SHOULDER_OPACITY,
-  COUPON_SHOULDER_THICKNESS,
-  COUPON_STROKE_INSET,
-  COUPON_WIDTH,
   type DetachedCoupon,
 } from '../../app/cardTheme';
+import { CouponPerforation } from './CompletionCoupon';
 import { INITIAL_TASK_CARD_V2_CONFIG } from './taskCardV2Config';
 
 interface DetachedCompletionCouponProps {
@@ -32,10 +25,6 @@ export const DetachedCompletionCoupon = forwardRef<
   DetachedCompletionCouponHandle,
   DetachedCompletionCouponProps
 >(({ onFlightComplete }, ref) => {
-  const dashPattern = `${COUPON_DASH_LENGTH} ${COUPON_DASH_GAP}`;
-  const rectWidth = COUPON_WIDTH - COUPON_STROKE_INSET * 2;
-  const rectHeight = COUPON_HEIGHT - COUPON_STROKE_INSET * 2;
-  const rectRadius = Math.max(1, COUPON_RADIUS - COUPON_STROKE_INSET / 2);
   const couponRef = useRef<HTMLDivElement | null>(null);
   const paperRef = useRef<HTMLDivElement | null>(null);
   const labelRef = useRef<HTMLSpanElement | null>(null);
@@ -154,41 +143,7 @@ export const DetachedCompletionCoupon = forwardRef<
         }}
       />
 
-      <svg
-        className="pointer-events-none absolute inset-0 h-full w-full"
-        viewBox={`0 0 ${COUPON_WIDTH} ${COUPON_HEIGHT}`}
-        preserveAspectRatio="none"
-        aria-hidden="true"
-        shapeRendering="geometricPrecision"
-      >
-        <rect
-          x={COUPON_STROKE_INSET}
-          y={COUPON_STROKE_INSET}
-          width={rectWidth}
-          height={rectHeight}
-          rx={rectRadius}
-          fill="none"
-          stroke={`rgba(104,104,104,${COUPON_SHOULDER_OPACITY})`}
-          strokeWidth={COUPON_SHOULDER_THICKNESS}
-          strokeDasharray={dashPattern}
-          strokeLinecap="butt"
-          vectorEffect="non-scaling-stroke"
-        />
-
-        <rect
-          x={COUPON_STROKE_INSET}
-          y={COUPON_STROKE_INSET}
-          width={rectWidth}
-          height={rectHeight}
-          rx={rectRadius}
-          fill="none"
-          stroke="rgba(8,8,8,0.94)"
-          strokeWidth={COUPON_CORE_THICKNESS}
-          strokeDasharray={dashPattern}
-          strokeLinecap="butt"
-          vectorEffect="non-scaling-stroke"
-        />
-      </svg>
+      <CouponPerforation />
 
       <span
         ref={labelRef}

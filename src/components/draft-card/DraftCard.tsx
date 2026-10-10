@@ -115,7 +115,7 @@ export function DraftCard(props: DraftCardProps) {
       }
       exit={{ opacity: 0, scale: 0.985 }}
       transition={PHYSICAL_SPRING}
-      className="absolute inset-0 flex flex-col overflow-hidden"
+      className="engraved absolute inset-0 flex flex-col overflow-hidden"
       style={{
         zIndex: 40,
         borderRadius: `${config.borderRadius}px`,
