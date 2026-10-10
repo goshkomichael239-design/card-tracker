@@ -12,8 +12,18 @@ import { CouponFace } from './CouponFace';
 import { INITIAL_TASK_CARD_V2_CONFIG } from './taskCardV2Config';
 
 interface DetachedCompletionCouponProps {
-  onFlightComplete: () => void;
+  /** `landed` is true when the coupon ended up speared on the spike. */
+  onFlightComplete: (landed: boolean) => void;
 }
+
+/** Where a torn coupon flies to: the receipt spike on the table, if visible. */
+const findSpikeTarget = (): DOMRect | null => {
+  const rect = document
+    .querySelector('[data-coupon-spike]')
+    ?.getBoundingClientRect();
+
+  return rect && rect.width > 0 && rect.height > 0 ? rect : null;
+};
 
 export interface DetachedCompletionCouponHandle {
   launch: (coupon: DetachedCoupon) => void;
@@ -85,28 +95,60 @@ export const DetachedCompletionCoupon = forwardRef<
       const fallDistance = window.innerHeight - coupon.top + coupon.height + 80;
       const scale = coupon.width / COUPON_BASE_WIDTH;
 
+      const spike = findSpikeTarget();
+
       couponElement.style.left = `${coupon.left}px`;
       couponElement.style.top = `${coupon.top}px`;
       couponElement.style.width = `${coupon.width}px`;
       couponElement.style.height = `${coupon.height}px`;
-      couponElement.style.transformOrigin = `${originX}% ${originY}%`;
+      couponElement.style.transformOrigin = spike
+        ? '50% 50%'
+        : `${originX}% ${originY}%`;
       couponElement.style.transform = 'translate3d(0, 0, 0) rotate(0deg)';
       couponElement.style.visibility = 'visible';
       bodyElement.style.transform = `scale(${scale})`;
 
-      const animation = couponElement.animate(
-        [
-          { transform: 'translate3d(0, 0, 0) rotate(0deg)' },
+      let animation: Animation;
+
+      if (spike) {
+        // Thrown in an arc onto the spike, shrinking to a slip on the needle.
+        const dx = spike.left + spike.width / 2 - (coupon.left + coupon.width / 2);
+        const dy = spike.top + spike.height * 0.4 - (coupon.top + coupon.height / 2);
+        const endScale = Math.min(0.25, (spike.width * 0.62) / coupon.width);
+        const tilt = rotationDirection * (8 + Math.random() * 10);
+
+        animation = couponElement.animate(
+          [
+            { transform: 'translate3d(0, 0, 0) rotate(0deg) scale(1)' },
+            {
+              transform: `translate3d(${dx * 0.4}px, ${Math.min(-50, dy * 0.15 - 70)}px, 0) rotate(${tilt * 0.6}deg) scale(0.6)`,
+              offset: 0.45,
+            },
+            {
+              transform: `translate3d(${dx}px, ${dy}px, 0) rotate(${tilt}deg) scale(${endScale})`,
+            },
+          ],
           {
-            transform: `translate3d(${driftX}px, ${fallDistance}px, 0) rotate(${finalRotation}deg)`,
+            duration: 900,
+            easing: 'cubic-bezier(0.45, 0, 0.3, 1)',
+            fill: 'forwards',
           },
-        ],
-        {
-          duration: 1.15 * 1000,
-          easing: 'linear',
-          fill: 'forwards',
-        },
-      );
+        );
+      } else {
+        animation = couponElement.animate(
+          [
+            { transform: 'translate3d(0, 0, 0) rotate(0deg)' },
+            {
+              transform: `translate3d(${driftX}px, ${fallDistance}px, 0) rotate(${finalRotation}deg)`,
+            },
+          ],
+          {
+            duration: 1.15 * 1000,
+            easing: 'linear',
+            fill: 'forwards',
+          },
+        );
+      }
 
       animationRef.current = animation;
       animation.finished
@@ -117,7 +159,7 @@ export const DetachedCompletionCoupon = forwardRef<
 
           couponElement.style.visibility = 'hidden';
           animationRef.current = null;
-          onFlightCompleteRef.current();
+          onFlightCompleteRef.current(Boolean(spike));
         })
         .catch(() => undefined);
     },
@@ -135,7 +177,7 @@ export const DetachedCompletionCoupon = forwardRef<
         couponElement.style.visibility = 'hidden';
       }
 
-      onFlightCompleteRef.current();
+      onFlightCompleteRef.current(false);
     },
   }), []);
 

@@ -403,6 +403,156 @@
   }
 }
 
+/* Archive catalogue: cards stand on their edge, each tucked a little behind
+   the next one. Hover (mouse) or press (finger) pulls an edge up out of the
+   box. */
+.archive-edges {
+  padding-top: 6px;
+}
+
+.archive-edge {
+  position: relative;
+  display: flex;
+  width: 100%;
+  height: 58px;
+  margin-top: -12px;
+  padding: 0 14px 12px;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid rgba(91, 76, 59, 0.2);
+  border-bottom: 0;
+  border-radius: 14px 14px 0 0;
+  text-align: left;
+  cursor: pointer;
+  box-shadow:
+    0 -3px 8px rgba(40, 28, 16, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.85);
+  transition:
+    transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    box-shadow 220ms ease-out;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.archive-edge:first-child {
+  margin-top: 0;
+}
+
+@media (hover: hover) {
+  .archive-edge:hover {
+    transform: translateY(-10px);
+    box-shadow:
+      0 -6px 14px rgba(40, 28, 16, 0.24),
+      inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  }
+}
+
+.archive-edge:active {
+  transform: translateY(-6px);
+}
+
+.archive-edge:focus-visible {
+  outline: none;
+  transform: translateY(-10px);
+  box-shadow:
+    0 -6px 14px rgba(40, 28, 16, 0.24),
+    0 0 0 2px rgba(174, 143, 75, 0.6);
+}
+
+/* Kraft month divider: taller than the cards, with a tab sticking out. It
+   stays at the top of the box while its month scrolls by. */
+.archive-divider {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  height: 38px;
+  margin-top: 26px;
+  padding: 0 14px;
+  align-items: center;
+  border-radius: 4px 12px 4px 4px;
+  background-size: cover;
+  background-blend-mode: multiply;
+  box-shadow:
+    0 4px 8px rgba(40, 28, 16, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.55);
+}
+
+section:first-child > .archive-divider {
+  margin-top: 18px;
+}
+
+.archive-divider__tab {
+  position: absolute;
+  left: 12px;
+  top: -18px;
+  height: 20px;
+  padding: 0 12px;
+  border-radius: 8px 8px 0 0;
+  background-size: cover;
+  background-blend-mode: multiply;
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 700;
+  line-height: 20px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(70, 52, 28, 0.85);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55);
+}
+
+.archive-month-tab {
+  padding: 7px 12px 6px;
+  border: 0;
+  border-radius: 8px 8px 3px 3px;
+  background-size: cover;
+  background-blend-mode: multiply;
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(70, 52, 28, 0.85);
+  cursor: pointer;
+  box-shadow:
+    0 2px 4px rgba(40, 28, 16, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.55);
+  transition: transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@media (hover: hover) {
+  .archive-month-tab:hover {
+    transform: translateY(-2px);
+  }
+}
+
+/* A card pulled out of the box rises into view. */
+@keyframes archive-pull-out {
+  from {
+    opacity: 0;
+    transform: translateY(48px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.archive-pull-out {
+  animation: archive-pull-out 320ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .archive-edge,
+  .archive-month-tab {
+    transition: none;
+  }
+
+  .archive-pull-out {
+    animation: none;
+  }
+}
+
 /* First-run arrow: the dashes crawl slowly toward the folded corner. */
 @keyframes corner-hint-dash {
   to {

@@ -35,6 +35,7 @@ import {
 import { isStoredVisualCard } from './cardValidation';
 import { DEBUG_CARD_ID_PREFIX } from './debugCards';
 import { getListProgress } from './listUtils';
+import { reviveCard } from './archiveUtils';
 import {
   loadTrash,
   purgeExpiredTrash,
@@ -43,6 +44,7 @@ import {
 } from './trash';
 import { DebugCardsPanel } from '../components/DebugCardsPanel';
 import { TrashBin } from '../components/trash/TrashBin';
+import { CouponSpike } from '../components/table/CouponSpike';
 import { TrashSheet } from '../components/trash/TrashSheet';
 import { UndoTicket } from '../components/UndoTicket';
 import {
@@ -87,7 +89,9 @@ type TransientOutgoingKind = 'switch' | 'completion' | 'discard' | 'trash';
 /** The last destructive action, which the undo ticket can take back. */
 type UndoAction =
   | { kind: 'trash'; cardId: string }
-  | { kind: 'complete'; before: VisualCard; index: number };
+  | { kind: 'complete'; before: VisualCard; index: number }
+  /** A card thrown away from the archive; undo files it back there. */
+  | { kind: 'trash-archived'; card: VisualCard };
 
 interface UndoEntry {
   key: number;
@@ -96,6 +100,23 @@ interface UndoEntry {
 }
 
 const UNDO_DURATION_MS = 6_000;
+
+/** Whether the pending undo is about a card now in the bin (any, or `cardId`). */
+const undoIsAboutTrashedCard = (
+  action: UndoAction | undefined,
+  cardId?: string,
+): boolean =>
+  (action?.kind === 'trash' &&
+    (cardId === undefined || action.cardId === cardId)) ||
+  (action?.kind === 'trash-archived' &&
+    (cardId === undefined || action.card.id === cardId));
+
+const sortArchive = (cards: VisualCard[]): VisualCard[] =>
+  [...cards].sort(
+    (left, right) =>
+      new Date(right.completedAt ?? 0).getTime() -
+      new Date(left.completedAt ?? 0).getTime(),
+  );
 
 const insertAt = <T,>(items: T[], item: T, index: number): T[] => {
   const next = [...items];
@@ -199,6 +220,7 @@ const isSceneGestureTarget = (target: EventTarget | null): boolean => {
 const SCENE_TOP_OVERHANG = 66;
 const SCENE_BOTTOM_OVERHANG = 40;
 const SCENE_SIDE_OVERHANG = 44;
+const NARROW_SCENE_SIDE_OVERHANG = 64;
 const SWITCHER_TOP = 16;
 const SWITCHER_CHROME = 14;
 const SWITCHER_ROW_GAP = 2;
@@ -209,6 +231,7 @@ const MainApp: React.FC = () => {
   const [trash, setTrash] = useState<TrashedCard[]>(loadTrash);
   const [isTrashOpen, setIsTrashOpen] = useState(false);
   const [trashBumpKey, setTrashBumpKey] = useState(0);
+  const [spikeBumpKey, setSpikeBumpKey] = useState(0);
   const [undoEntry, setUndoEntry] = useState<UndoEntry | null>(null);
   const undoSequenceRef = useRef(0);
   const [isCornerHintDismissed, setIsCornerHintDismissed] = useState(
@@ -336,41 +359,22 @@ const MainApp: React.FC = () => {
   const isListSheetOpen = Boolean(expandedListCard);
   // Any sheet lying over the table blocks the table's own gestures and keys.
   const isOverlayOpen = isListSheetOpen || isTrashOpen;
-  const firstCardCreatedAt = useMemo(() => {
-    const earliestTimestamp = [...cards, ...archivedCards].reduce<number | null>(
-      (earliest, card) => {
-        const timestamp = new Date(card.createdAt).getTime();
-
-        if (!Number.isFinite(timestamp)) {
-          return earliest;
-        }
-
-        return earliest === null ? timestamp : Math.min(earliest, timestamp);
-      },
-      null,
-    );
-
-    return earliestTimestamp === null
-      ? undefined
-      : new Date(earliestTimestamp).toISOString();
-  }, [archivedCards, cards]);
-  const completedTodayCount = useMemo(
+  // Coupons torn off today, as paper colours for the slips on the spike.
+  const todaySlipPapers = useMemo(
     () =>
-      archivedCards.filter(
-        (card) => {
-          const completedAt = card.completedAt;
-
-          return (
-            completedAt !== undefined &&
-            getLocalDayKey(new Date(completedAt)) === currentDayKey
-          );
-        },
-      ).length,
+      archivedCards
+        .filter(
+          (card) =>
+            card.completedAt !== undefined &&
+            getLocalDayKey(new Date(card.completedAt)) === currentDayKey,
+        )
+        .map((card) => getCardPalette(card).paper),
     [archivedCards, currentDayKey],
   );
-  // The completed-day count remains part of the archive/completion state, but
-  // V2 deliberately replaces its former card-back rendering with CardStack.
-  void completedTodayCount;
+  // On narrow screens the basket and the spike stand right beside the card, so
+  // the card keeps a little more room at its sides.
+  const sceneSideOverhang =
+    viewportWidth < 640 ? NARROW_SCENE_SIDE_OVERHANG : SCENE_SIDE_OVERHANG;
   const currentCardExitX = Math.max(520, viewportWidth * 0.72);
   const switcherRows = Math.min(4, Math.max(1, cards.length));
   const switcherBottom =
@@ -382,7 +386,7 @@ const MainApp: React.FC = () => {
   const sceneTopReserve = switcherBottom + SCENE_TOP_OVERHANG;
   const sceneBottomReserve = ARCHIVE_NAVIGATION_HEIGHT + SCENE_BOTTOM_OVERHANG;
   const sceneScale = getCardScale(
-    viewportWidth - SCENE_SIDE_OVERHANG * 2,
+    viewportWidth - sceneSideOverhang * 2,
     viewportHeight - sceneTopReserve - sceneBottomReserve,
     INITIAL_TASK_CARD_V2_CONFIG.width,
     INITIAL_TASK_CARD_V2_CONFIG.height,
@@ -1529,7 +1533,7 @@ const MainApp: React.FC = () => {
 
     setActiveCardId(cardId);
     setUndoEntry((current) =>
-      current?.action.kind === 'trash' && current.action.cardId === cardId
+      undoIsAboutTrashedCard(current?.action, cardId)
         ? null
         : current,
     );
@@ -1540,7 +1544,7 @@ const MainApp: React.FC = () => {
       previous.filter((entry) => entry.card.id !== cardId),
     );
     setUndoEntry((current) =>
-      current?.action.kind === 'trash' && current.action.cardId === cardId
+      undoIsAboutTrashedCard(current?.action, cardId)
         ? null
         : current,
     );
@@ -1549,7 +1553,7 @@ const MainApp: React.FC = () => {
   const emptyTrash = () => {
     setTrash([]);
     setUndoEntry((current) =>
-      current?.action.kind === 'trash' ? null : current,
+      undoIsAboutTrashedCard(current?.action) ? null : current,
     );
   };
 
@@ -1596,9 +1600,67 @@ const MainApp: React.FC = () => {
 
     if (entry.action.kind === 'trash') {
       restoreFromTrash(entry.action.cardId);
+    } else if (entry.action.kind === 'trash-archived') {
+      const archived = entry.action.card;
+
+      setTrash((previous) =>
+        previous.filter((item) => item.card.id !== archived.id),
+      );
+      setArchivedCards((previous) =>
+        previous.some((card) => card.id === archived.id)
+          ? previous
+          : sortArchive([archived, ...previous]),
+      );
     } else {
       undoCompletion(entry.action.before, entry.action.index);
     }
+  };
+
+  // Takes a card out of the archive and puts it back on the table as a live
+  // card, at the end of the deck, and shows it.
+  const handleReturnFromArchive = (cardId: string) => {
+    const archived = archivedCards.find((card) => card.id === cardId);
+
+    if (!archived || pendingCompletedCardIdRef.current === cardId) {
+      return;
+    }
+
+    const revived = reviveCard(archived);
+
+    setArchivedCards((previous) =>
+      previous.filter((card) => card.id !== cardId),
+    );
+    setCards((previous) =>
+      previous.some((card) => card.id === cardId)
+        ? previous
+        : [...previous, revived],
+    );
+    setActiveCardId(cardId);
+    setIsArchiveOpen(false);
+  };
+
+  // Throws an archived card into the basket; undo files it back into the
+  // archive, while "Вернуть" in the basket puts it on the table.
+  const handleTrashFromArchive = (cardId: string) => {
+    const archived = archivedCards.find((card) => card.id === cardId);
+
+    if (!archived || pendingCompletedCardIdRef.current === cardId) {
+      return;
+    }
+
+    setArchivedCards((previous) =>
+      previous.filter((card) => card.id !== cardId),
+    );
+    setTrash((previous) => [
+      {
+        card: reviveCard(archived),
+        trashedAt: new Date().toISOString(),
+        index: cardsRef.current.length,
+      },
+      ...previous.filter((item) => item.card.id !== cardId),
+    ]);
+    setTrashBumpKey((previous) => previous + 1);
+    showUndo('Карточка в корзине', { kind: 'trash-archived', card: archived });
   };
 
   // Applies an edit made on the card's edit face. Identity-defining fields and
@@ -1744,8 +1806,13 @@ const MainApp: React.FC = () => {
     );
   };
 
-  const handleCouponFlightComplete = useCallback(() => {
+  const handleCouponFlightComplete = useCallback((landed: boolean) => {
     couponFlightInProgressRef.current = false;
+
+    if (landed) {
+      // The coupon has just been speared: the spike gives a little bump.
+      setSpikeBumpKey((previous) => previous + 1);
+    }
   }, []);
 
   const handleTransientOutgoingFinish = useCallback(
@@ -1765,7 +1832,9 @@ const MainApp: React.FC = () => {
       <ArchiveView
         isOpen={isArchiveOpen}
         archivedCards={archivedCards}
-        firstCardCreatedAt={firstCardCreatedAt}
+        settlingCardId={pendingCompletedCardId}
+        onReturnCard={handleReturnFromArchive}
+        onTrashCard={handleTrashFromArchive}
         onExportBackup={handleExportBackup}
         onImportBackup={handleImportBackup}
       />
@@ -2098,6 +2167,14 @@ const MainApp: React.FC = () => {
         bumpKey={trashBumpKey}
         onOpen={() => setIsTrashOpen(true)}
         style={{ left: 12, bottom: ARCHIVE_NAVIGATION_HEIGHT + 12 }}
+      />
+
+      {/* Opposite the basket: today's torn coupons, and a way into the archive. */}
+      <CouponSpike
+        slipPapers={todaySlipPapers}
+        bumpKey={spikeBumpKey}
+        onOpen={() => setIsArchiveOpen(true)}
+        style={{ right: 12, bottom: ARCHIVE_NAVIGATION_HEIGHT + 12 }}
       />
 
       <DetachedCompletionCoupon
