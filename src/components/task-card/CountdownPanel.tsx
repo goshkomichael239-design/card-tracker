@@ -22,14 +22,46 @@ export const CountdownPanel: React.FC<CountdownPanelProps> = ({
 }) => {
   const [now, setNow] = useState(() => Date.now());
 
+  // Seconds are only on screen inside the last day, so the clock ticks every
+  // second only then; it also rests while the page is hidden.
   useEffect(() => {
     if (completedAt || isStatic) {
       return;
     }
 
-    const timer = window.setInterval(() => setNow(Date.now()), 1000);
-    return () => window.clearInterval(timer);
-  }, [completedAt, isStatic]);
+    const target = new Date(targetAt).getTime();
+    let timer: number | null = null;
+
+    const schedule = () => {
+      const remaining = target - Date.now();
+      const isFine = remaining > 0 && remaining < 24 * 60 * 60 * 1000;
+
+      timer = window.setTimeout(tick, isFine ? 1_000 : 30_000);
+    };
+    const tick = () => {
+      if (document.visibilityState !== 'hidden') {
+        setNow(Date.now());
+      }
+
+      schedule();
+    };
+    const refreshWhenShown = () => {
+      if (document.visibilityState === 'visible') {
+        setNow(Date.now());
+      }
+    };
+
+    schedule();
+    document.addEventListener('visibilitychange', refreshWhenShown);
+
+    return () => {
+      if (timer !== null) {
+        window.clearTimeout(timer);
+      }
+
+      document.removeEventListener('visibilitychange', refreshWhenShown);
+    };
+  }, [completedAt, isStatic, targetAt]);
 
   const remaining = new Date(targetAt).getTime() - now;
   const isPast = !completedAt && Number.isFinite(remaining) && remaining <= 0;

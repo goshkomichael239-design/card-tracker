@@ -151,17 +151,27 @@ export const DetachedCompletionCoupon = forwardRef<
       }
 
       animationRef.current = animation;
-      animation.finished
-        .then(() => {
-          if (animationRef.current !== animation) {
-            return;
-          }
 
-          couponElement.style.visibility = 'hidden';
-          animationRef.current = null;
-          onFlightCompleteRef.current(Boolean(spike));
-        })
-        .catch(() => undefined);
+      // However the flight ends — it finishes, the browser drops it, or it
+      // never reports back — the app must hear about it once, or it would
+      // refuse every further completion.
+      const finish = () => {
+        if (animationRef.current !== animation) {
+          return;
+        }
+
+        window.clearTimeout(guard);
+        couponElement.style.visibility = 'hidden';
+        animationRef.current = null;
+        onFlightCompleteRef.current(Boolean(spike));
+      };
+
+      const guard = window.setTimeout(
+        finish,
+        (spike ? 900 : 1_150) + 1_500,
+      );
+
+      animation.finished.then(finish).catch(finish);
     },
     cancel: () => {
       const couponElement = couponRef.current;

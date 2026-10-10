@@ -247,13 +247,8 @@ export const writeValue = (key: string, value: unknown): void => {
     return;
   }
 
-  const text = serialise(value);
-
-  // The same bytes as before: nothing to store, nothing to announce.
-  if (state.stored.get(key) === text && state.memory.has(key)) {
-    return;
-  }
-
+  // Whether anything really changed is worked out once per flush, not on
+  // every write: a burst of edits costs one comparison, not one each.
   state.memory.set(key, value);
   state.dirty.add(key);
   scheduleFlush();
@@ -297,10 +292,20 @@ export const flushNow = async (): Promise<void> => {
 
   for (const key of keys) {
     if (state.memory.has(key)) {
-      entries.push([key, state.memory.get(key)]);
+      const value = state.memory.get(key);
+
+      // The same bytes as already stored: nothing to write, nothing to announce.
+      if (state.stored.get(key) !== serialise(value)) {
+        entries.push([key, value]);
+      }
     } else {
       removals.push(key);
     }
+  }
+
+  if (entries.length === 0 && removals.length === 0) {
+    state.isFlushing = false;
+    return;
   }
 
   try {
