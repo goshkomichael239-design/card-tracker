@@ -146,13 +146,16 @@ export const DetachedCompletionCoupon = forwardRef<
 
       <span
         ref={labelRef}
-        className="absolute inset-0 flex select-none items-center justify-center pt-[1px] font-mono text-[9px] font-semibold uppercase tracking-[0.18em]"
+        className="absolute inset-0 flex select-none items-center justify-center px-3 font-mono font-bold uppercase"
         style={{
-          color: 'rgba(36,30,26,0.55)',
-          textShadow: `
-            -1px -1px 1px rgba(0,0,0,0.2),
-            1px 1px 1px rgba(255,255,255,0.48)
-          `,
+          // Matches the lettering the coupon had on the card, so it does not
+          // change size or tone at the moment it tears off.
+          color: 'rgba(36,30,26,0.82)',
+          fontSize: 17,
+          letterSpacing: '0.1em',
+          lineHeight: 1.1,
+          fontVariantNumeric: 'lining-nums tabular-nums',
+          textShadow: '0 1px 0 rgba(255,255,255,0.7)',
         }}
       >
         {'\u0417\u0430\u0432\u0435\u0440\u0448\u0438\u0442\u044c'}

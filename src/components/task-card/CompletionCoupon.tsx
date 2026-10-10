@@ -164,7 +164,7 @@ export const CompletionCoupon: React.FC<CompletionCouponProps> = ({
             className="relative px-3 text-center font-mono font-bold uppercase"
             style={{
               color: palette.ink,
-              fontSize: series || completedLabel !== undefined ? 18 : 12.5,
+              fontSize: series || completedLabel !== undefined ? 20 : 12.5,
               letterSpacing:
                 series || completedLabel !== undefined ? '0.08em' : '0.1em',
               lineHeight: 1.1,
@@ -218,9 +218,17 @@ export const CompletionCoupon: React.FC<CompletionCouponProps> = ({
             </div>
           )}
           <CouponPerforation />
+          {/* Same lettering as on the slot left behind: dark ink, large and
+              clear. Words are a little smaller than a bare counter. */}
           <span
-            className="absolute inset-0 flex select-none items-center justify-center font-mono text-[10px] font-bold uppercase tracking-[0.16em]"
-            style={{ color: palette.accentDark }}
+            className="absolute inset-0 flex select-none items-center justify-center px-3 font-mono font-bold uppercase"
+            style={{
+              color: palette.ink,
+              fontSize: /^\d+\s*\/\s*\d+$/.test(actionLabel) ? 20 : 17,
+              letterSpacing: '0.1em',
+              lineHeight: 1.1,
+              fontVariantNumeric: 'lining-nums tabular-nums',
+            }}
           >
             {actionLabel}
           </span>
