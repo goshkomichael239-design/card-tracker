@@ -158,7 +158,19 @@ export const CompletionCoupon: React.FC<CompletionCouponProps> = ({
             <CouponPerforation />
           </div>
 
-          <span className="relative px-3 text-center font-mono text-[9px] font-bold uppercase tracking-[0.13em]">
+          {/* Lettering on the slot: dark ink (it sits across both the accent fill
+              and the paper), larger for a short counter than for the date. */}
+          <span
+            className="relative px-3 text-center font-mono font-bold uppercase"
+            style={{
+              color: palette.ink,
+              fontSize: series || completedLabel !== undefined ? 18 : 12.5,
+              letterSpacing:
+                series || completedLabel !== undefined ? '0.08em' : '0.1em',
+              lineHeight: 1.1,
+              fontVariantNumeric: 'lining-nums tabular-nums',
+            }}
+          >
             {series
               ? `${series.entries.length} / ${series.targetCount}`
               : completedLabel ?? `Завершено · ${formatCompletedDate(completedAt)}`}
