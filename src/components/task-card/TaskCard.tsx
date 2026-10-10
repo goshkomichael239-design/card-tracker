@@ -15,6 +15,22 @@ import {
 } from './CardFaceStage';
 import { CompletionCoupon } from './CompletionCoupon';
 import { CornerHint } from './CornerHint';
+import { CardPostponeFace } from './CardPostponeFace';
+import { PostponeStamps } from './PostponeStamps';
+import { getCardTargetAt } from '../../app/timeOps';
+
+/** A custom "put off" date starts at the card's own time if it is ahead, else tomorrow 9:00. */
+const getCustomPostponeStart = (card: VisualCard): Date => {
+  const target = getCardTargetAt(card);
+  const targetTime = target ? new Date(target).getTime() : NaN;
+
+  if (Number.isFinite(targetTime) && targetTime > Date.now()) {
+    return new Date(targetTime);
+  }
+
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 9, 0);
+};
 import { CountdownPanel } from './CountdownPanel';
 import { INITIAL_TASK_CARD_V2_CONFIG } from './taskCardV2Config';
 import { TaskListContent } from './TaskListContent';
@@ -28,6 +44,8 @@ interface TaskCardProps {
   onOpenList?: () => void;
   /** Receives the edited card; its id never changes. */
   onSave?: (card: VisualCard) => void;
+  /** Puts the card off until the given moment. */
+  onPostpone?: (until: Date) => void;
   onDelete?: () => void;
   /** Shows the first-run arrow pointing at the folded corner. */
   showCornerHint?: boolean;
@@ -51,6 +69,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
   onToggleListItem,
   onOpenList,
   onSave,
+  onPostpone,
   onDelete,
   showCornerHint = false,
   onCornerOpened,
@@ -287,6 +306,10 @@ export const TaskCard: React.FC<TaskCardProps> = ({
         </p>
       )}
 
+      {card.postponements && !card.completedAt && (
+        <PostponeStamps postponements={card.postponements} />
+      )}
+
       {(!hideCoupon || card.completedAt) && (
         <div
           className="absolute left-0 right-0"
@@ -369,12 +392,29 @@ export const TaskCard: React.FC<TaskCardProps> = ({
               onConfirm={handleConfirmFinish}
               onCancel={() => goToFace('view', -1)}
             />
+          ) : face === 'postpone' ? (
+            <CardPostponeFace
+              title={card.title}
+              palette={palette}
+              initialCustom={getCustomPostponeStart(card)}
+              onBack={() => goToFace('actions', -1)}
+              onPostpone={(until) => {
+                setFaceState({ cardId: '', face: 'view', direction: -1 });
+                onPostpone?.(until);
+              }}
+            />
           ) : face === 'actions' ? (
             <CardActionsFace
               title={card.title}
               kindLabel={kindLabel}
               palette={palette}
               onEdit={() => goToFace('edit', 1)}
+              // A series is a run of steps, not a dated task; it is not put off.
+              onPostpone={
+                onPostpone && card.kind !== 'series'
+                  ? () => goToFace('postpone', 1)
+                  : undefined
+              }
               onDelete={() => {
                 setFaceState({ cardId: '', face: 'view', direction: -1 });
                 onDelete?.();

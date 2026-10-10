@@ -7,6 +7,8 @@ interface CardActionsFaceProps {
   kindLabel: string;
   palette: CardPalette;
   onEdit: () => void;
+  /** Absent for cards that cannot be put off (series and lists have no date). */
+  onPostpone?: () => void;
   onDelete: () => void;
 }
 
@@ -25,8 +27,13 @@ export const CardActionsFace: React.FC<CardActionsFaceProps> = ({
   kindLabel,
   palette,
   onEdit,
+  onPostpone,
   onDelete,
 }) => {
+  // With three slots they are set a little denser so all of them fit.
+  const slotClass = onPostpone
+    ? 'etched-action etched-action--compact draw-in'
+    : 'etched-action draw-in';
   const [isConfirming, setIsConfirming] = useState(false);
 
   useEffect(() => {
@@ -77,18 +84,30 @@ export const CardActionsFace: React.FC<CardActionsFaceProps> = ({
           they read as the card's content and not as a list under the title. */}
       <div
         className="absolute left-0 right-0 flex flex-col gap-3"
-        style={{ top: '43%', transform: 'translateY(-50%)' }}
+        style={{ top: onPostpone ? '47%' : '43%', transform: 'translateY(-50%)' }}
       >
         <button
           type="button"
           onClick={onEdit}
           // iOS only applies :active when the element has a touch listener.
           onTouchStart={() => undefined}
-          className="etched-action draw-in"
+          className={slotClass}
           style={{ ...drawDelay(200), ...glowStyle }}
         >
           <span className="etched-action__text">Редактировать</span>
         </button>
+
+        {onPostpone && (
+          <button
+            type="button"
+            onClick={onPostpone}
+            onTouchStart={() => undefined}
+            className={slotClass}
+            style={{ ...drawDelay(245), ...glowStyle }}
+          >
+            <span className="etched-action__text">Отложить</span>
+          </button>
+        )}
 
         <button
           type="button"
@@ -101,7 +120,7 @@ export const CardActionsFace: React.FC<CardActionsFaceProps> = ({
             setIsConfirming(true);
           }}
           onTouchStart={() => undefined}
-          className={`etched-action draw-in${isConfirming ? ' etched-action--armed' : ''}`}
+          className={`${slotClass}${isConfirming ? ' etched-action--armed' : ''}`}
           // While armed the warm "are you sure" glow from the CSS takes over.
           style={{
             ...drawDelay(290),

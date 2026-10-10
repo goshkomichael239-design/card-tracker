@@ -203,6 +203,32 @@
     0 -0.5px 0 rgba(30, 20, 10, 0.35);
 }
 
+/* Slim slot for a list of choices: word on the left, a quiet hint (an exact
+   time) on the right. */
+.etched-action--slim {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 16px 12px;
+  border-radius: 12px;
+}
+
+.etched-action--slim .etched-action__text {
+  font-size: 15.5px;
+  letter-spacing: 0.08em;
+}
+
+.etched-action__hint {
+  position: relative;
+  z-index: 1;
+  font-size: 12.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  color: rgba(48, 40, 31, 0.55);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.85);
+}
+
 /* Denser variant for faces that carry more than the two slots. */
 .etched-action--compact {
   padding: 14px 22px 15px;

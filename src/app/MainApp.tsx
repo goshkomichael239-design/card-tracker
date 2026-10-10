@@ -41,6 +41,7 @@ import {
 import { DEBUG_CARD_ID_PREFIX } from './debugCards';
 import { getListProgress } from './listUtils';
 import { reviveCard } from './archiveUtils';
+import { formatPostponeMoment, postponeCard } from './timeOps';
 import {
   loadTrash,
   purgeExpiredTrash,
@@ -89,14 +90,21 @@ const createId = (): string => {
   return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 };
 
-type TransientOutgoingKind = 'switch' | 'completion' | 'discard' | 'trash';
+type TransientOutgoingKind =
+  | 'switch'
+  | 'completion'
+  | 'discard'
+  | 'trash'
+  | 'postpone';
 
 /** The last destructive action, which the undo ticket can take back. */
 type UndoAction =
   | { kind: 'trash'; cardId: string }
   | { kind: 'complete'; before: VisualCard; index: number }
   /** A card thrown away from the archive; undo files it back there. */
-  | { kind: 'trash-archived'; card: VisualCard };
+  | { kind: 'trash-archived'; card: VisualCard }
+  /** A card put off; undo returns it as it was, to its old place. */
+  | { kind: 'postpone'; before: VisualCard; index: number };
 
 interface UndoEntry {
   key: number;
@@ -1539,6 +1547,28 @@ const MainApp: React.FC = () => {
 
     if (entry.action.kind === 'trash') {
       restoreFromTrash(entry.action.cardId);
+    } else if (entry.action.kind === 'postpone') {
+      const { before, index } = entry.action;
+      const current = cardsRef.current;
+
+      if (!current.some((card) => card.id === before.id)) {
+        return;
+      }
+
+      const next = insertAt(
+        current.filter((card) => card.id !== before.id),
+        before,
+        index,
+      );
+
+      cardsRef.current = next;
+      setCards(next);
+
+      if (activeCard && activeCard.id !== before.id) {
+        createTransientOutgoing(activeCard, 'switch');
+      }
+
+      setActiveCardId(before.id);
     } else if (entry.action.kind === 'trash-archived') {
       const archived = entry.action.card;
 
@@ -1600,6 +1630,42 @@ const MainApp: React.FC = () => {
     ]);
     setTrashBumpKey((previous) => previous + 1);
     showUndo('Карточка в корзине', { kind: 'trash-archived', card: archived });
+  };
+
+  // Puts a card off: it gets its stamp and new time, slips to the back of the
+  // deck, and the next card comes forward.
+  const handlePostponeCard = (cardId: string, until: Date) => {
+    const current = cardsRef.current;
+    const index = current.findIndex((card) => card.id === cardId);
+    const before = current[index];
+
+    if (
+      !before ||
+      before.completedAt ||
+      pendingCompletedCardIdRef.current !== null ||
+      couponFlightInProgressRef.current
+    ) {
+      return;
+    }
+
+    const postponed = postponeCard(before, until);
+    const next = [...current.filter((card) => card.id !== cardId), postponed];
+    const nextActive =
+      next.length > 1 ? next[Math.min(index, next.length - 2)]! : postponed;
+
+    cardsRef.current = next;
+    setCards(next);
+
+    if (nextActive.id !== cardId) {
+      createTransientOutgoing(before, 'postpone');
+    }
+
+    setActiveCardId(nextActive.id);
+    showUndo(`Отложено: ${formatPostponeMoment(until)}`, {
+      kind: 'postpone',
+      before,
+      index,
+    });
   };
 
   // Applies an edit made on the card's edit face. Identity-defining fields and
@@ -1878,6 +1944,9 @@ const MainApp: React.FC = () => {
                   onFinishSeries={finishSeries}
                   onToggleListItem={toggleListItem}
                   onSave={handleSaveCard}
+                  onPostpone={(until) =>
+                    handlePostponeCard(activeCard.id, until)
+                  }
                   onDelete={() => handleDeleteCard(activeCard.id)}
                   showCornerHint={
                     !isCornerHintDismissed &&

@@ -176,7 +176,7 @@ interface DateTimeEditorProps {
   onChange: (value: Date) => void;
 }
 
-const DateTimeEditor: React.FC<DateTimeEditorProps> = ({
+export const DateTimeEditor: React.FC<DateTimeEditorProps> = ({
   value,
   label,
   palette,

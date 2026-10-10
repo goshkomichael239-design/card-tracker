@@ -3,7 +3,12 @@ import React, { useEffect, useRef } from 'react';
 import type { VisualCard } from '../../app/cardTheme';
 import { TaskCard } from './TaskCard';
 
-type TransientCardKind = 'switch' | 'completion' | 'discard' | 'trash';
+type TransientCardKind =
+  | 'switch'
+  | 'completion'
+  | 'discard'
+  | 'trash'
+  | 'postpone';
 
 // Silhouettes of the card being crumpled into a ball. All three have the same
 // twelve points so the browser can morph one into the next.
@@ -147,7 +152,8 @@ export const TransientTaskCardOverlay: React.FC<
         return;
       }
 
-      const exitDuration = kind === 'completion' ? 320 : 200;
+      const exitDuration =
+        kind === 'completion' ? 320 : kind === 'postpone' ? 420 : 200;
       const archiveDirectionY = Math.max(
         96,
         Math.min(180, window.innerHeight * 0.18),
@@ -160,7 +166,13 @@ export const TransientTaskCardOverlay: React.FC<
               opacity: 0,
               offset: 1,
             }
-          : {
+          : kind === 'postpone'
+            ? {
+                // Slipped to the back: down and to the right, under the stack.
+                transform: 'translate3d(22px, 34px, 0) rotate(2.4deg) scale(0.94)',
+                opacity: 0,
+              }
+            : {
               transform:
                 'translate3d(-10px, -2px, 0) rotate(-0.45deg) scale(0.995)',
               opacity: 0,
