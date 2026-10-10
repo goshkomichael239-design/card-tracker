@@ -134,6 +134,7 @@ export const CompletionCoupon: React.FC<CompletionCouponProps> = ({
         <button
           type="button"
           ref={couponRef}
+          data-coupon="true"
           data-series-coupon={series ? 'true' : undefined}
           onClick={handleComplete}
           disabled={!isReady}

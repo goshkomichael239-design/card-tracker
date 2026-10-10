@@ -167,6 +167,72 @@ export const TaskCard: React.FC<TaskCardProps> = ({
   const list = card.kind === 'list' ? card.list : undefined;
   const listCompletedCount = list ? getListCompletedCount(list) : 0;
   const listReady = Boolean(list && list.items.length > 0 && listCompletedCount === list.items.length);
+
+  // A list whose last item was just checked tears its coupon off by itself,
+  // after a short pause in which unchecking (or adding an item) cancels it.
+  // From the "all items" face the card first turns back to its front.
+  const hasList = list !== undefined;
+  const faceRef = useRef(face);
+  const onCompleteRef = useRef(onComplete);
+  const previousListReadyRef = useRef<{ cardId: string; ready: boolean } | null>(
+    null,
+  );
+
+  useEffect(() => {
+    faceRef.current = face;
+    onCompleteRef.current = onComplete;
+  });
+
+  useEffect(() => {
+    const previous = previousListReadyRef.current;
+    previousListReadyRef.current = { cardId: card.id, ready: listReady };
+
+    const justCompleted =
+      hasList &&
+      listReady &&
+      previous !== null &&
+      previous.cardId === card.id &&
+      !previous.ready;
+
+    if (!justCompleted || card.completedAt || isStatic) {
+      return;
+    }
+
+    const cardIdAtStart = card.id;
+    let tearTimer: number | null = null;
+
+    const tearOff = () => {
+      if (currentCardIdRef.current !== cardIdAtStart) {
+        return;
+      }
+
+      const bounds = articleRef.current
+        ?.querySelector<HTMLButtonElement>('[data-coupon="true"]')
+        ?.getBoundingClientRect();
+
+      if (bounds) {
+        onCompleteRef.current(bounds);
+      }
+    };
+
+    const graceTimer = window.setTimeout(() => {
+      if (faceRef.current === 'view') {
+        tearOff();
+        return;
+      }
+
+      setFaceState({ cardId: cardIdAtStart, face: 'view', direction: -1 });
+      tearTimer = window.setTimeout(tearOff, FINISH_WIPE_WAIT_MS);
+    }, LIST_AUTO_COMPLETE_DELAY_MS);
+
+    return () => {
+      window.clearTimeout(graceTimer);
+
+      if (tearTimer !== null) {
+        window.clearTimeout(tearTimer);
+      }
+    };
+  }, [card.id, card.completedAt, isStatic, hasList, listReady]);
   const kindLabel = series
     ? 'Серия'
     : list
@@ -562,3 +628,6 @@ export const TaskCard: React.FC<TaskCardProps> = ({
 // How long the wipe back to the card face takes (see CardFaceStage), plus a
 // beat, before the coupon is torn off.
 const FINISH_WIPE_WAIT_MS = 560;
+
+// Pause between the last list item being checked and the coupon tearing off.
+const LIST_AUTO_COMPLETE_DELAY_MS = 1_200;
