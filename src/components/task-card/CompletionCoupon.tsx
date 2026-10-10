@@ -92,46 +92,73 @@ export const CompletionCoupon: React.FC<CompletionCouponProps> = ({
 
   return (
     <div className="relative h-full w-full shrink-0">
-      {/* The slot left behind when the coupon tears off. It is filled with the
-          card's accent exactly as far as the work got (5 of 10 = half), and
-          the rest stays the card's own paper. */}
-      <div
-        className="absolute inset-0 flex items-center justify-center overflow-hidden rounded-[8px] border"
-        style={{
-          color: palette.accentDark,
-          backgroundColor: paperTint,
-          backgroundImage: `url(${cardboardTexture})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          backgroundBlendMode: 'multiply',
-          borderColor: 'rgba(70,59,46,0.3)',
-          boxShadow: `
-            inset 3px 4px 9px rgba(40,28,16,0.34),
-            inset -1px -1px 2px rgba(255,255,255,0.5),
-            0 1px 0 rgba(255,255,255,0.5)
-          `,
-        }}
-      >
-        {completedAt && (
+      {/* The slot left behind when the coupon tears off: a lower layer of the
+          card. Its floor is darker than the paper, it is walled by deep inner
+          shadows (light from the top-left) with a lit lip along the bottom and
+          right, and what remains of the perforation shows at its edge. It is
+          filled with the card's accent exactly as far as the work got (5 of 10
+          = half); the rest stays the card's own paper. */}
+      {completedAt && (
+        <div
+          className="absolute inset-0 flex items-center justify-center overflow-hidden rounded-[8px]"
+          style={{
+            color: palette.accentDark,
+            // The lip of the upper sheet catching the light, just below the slot.
+            boxShadow: '0 1px 0 rgba(255,255,255,0.7)',
+          }}
+        >
+          {/* Floor of the slot: the paper, but noticeably deeper in tone. */}
           <div
-            className="pointer-events-none absolute bottom-0 left-0 top-0"
+            className="absolute inset-0"
+            style={{
+              backgroundColor: paperTint,
+              backgroundImage: `linear-gradient(180deg, rgba(48,34,20,0.24), rgba(48,34,20,0.12)), url(${cardboardTexture})`,
+              backgroundSize: '100% 100%, cover',
+              backgroundPosition: 'center',
+              backgroundBlendMode: 'normal, multiply',
+            }}
+            aria-hidden="true"
+          />
+
+          <div
+            className="slot-fill pointer-events-none absolute bottom-0 left-0 top-0"
             style={{
               width: `${(series ? getSeriesProgress(series) : 1) * 100}%`,
               backgroundColor: palette.glow,
+              // The wall of the slot throws its shadow onto the fill too.
+              backgroundImage:
+                'linear-gradient(180deg, rgba(40,28,16,0.2), rgba(40,28,16,0) 60%)',
               // Crisp light edge where the done share ends.
               boxShadow: 'inset -2px 0 0 rgba(255,255,255,0.6)',
             }}
             aria-hidden="true"
           />
-        )}
-        {completedAt && (
+
+          {/* Walls of the slot, above the fill so the depth survives it. */}
+          <div
+            className="slot-depth pointer-events-none absolute inset-0 rounded-[8px]"
+            style={{
+              boxShadow: `
+                inset 5px 7px 12px -2px rgba(30,20,10,0.62),
+                inset -3px -4px 8px -3px rgba(255,255,255,0.55),
+                inset 0 0 0 1px rgba(40,28,16,0.3)
+              `,
+            }}
+            aria-hidden="true"
+          />
+
+          {/* Remains of the perforation along the torn edge. */}
+          <div className="pointer-events-none absolute inset-0 opacity-40" aria-hidden="true">
+            <CouponPerforation />
+          </div>
+
           <span className="relative px-3 text-center font-mono text-[9px] font-bold uppercase tracking-[0.13em]">
             {series
               ? `${series.entries.length} / ${series.targetCount}`
               : completedLabel ?? `Завершено · ${formatCompletedDate(completedAt)}`}
           </span>
-        )}
-      </div>
+        </div>
+      )}
 
       {!completedAt && (
         <button

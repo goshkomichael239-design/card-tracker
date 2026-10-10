@@ -223,6 +223,42 @@
   }
 }
 
+/* The slot under a torn-off coupon settles: its walls throw their shadow first,
+   then the done share fills in from the left, like colour poured into it. */
+@keyframes slot-depth {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slot-fill {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.slot-depth {
+  animation: slot-depth 360ms ease-out backwards;
+}
+
+.slot-fill {
+  transform-origin: left center;
+  animation: slot-fill 640ms cubic-bezier(0.2, 0.8, 0.2, 1) 140ms backwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .slot-depth,
+  .slot-fill {
+    animation: none;
+  }
+}
+
 /* Secondary card action as a tinted pill, same family as the card's kind
    badge. --pill-bg / --pill-ink / --pill-glow come from the card's colours; on
    hover or press the pill lights up in the card's second accent. */
