@@ -168,7 +168,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
     <div className="relative flex h-full flex-col">
       <div className="flex items-center justify-between">
         <span
-          className="rounded-full px-3 py-1.5 font-mono text-[9px] font-bold uppercase tracking-[0.12em]"
+          className="rounded-full px-3 py-1.5 font-mono text-[11.5px] font-bold uppercase tracking-[0.12em]"
           style={{
             color: palette.accentDark,
             backgroundColor: `${palette.accent}1d`,
@@ -217,19 +217,19 @@ export const TaskCard: React.FC<TaskCardProps> = ({
             borderColor: 'rgba(69,57,44,0.13)',
           }}
         >
-          <p className="font-mono text-[9px] uppercase tracking-[0.12em] text-[#6B6258]">
+          <p className="font-mono text-[11.5px] uppercase tracking-[0.12em] text-[#6B6258]">
             Выполнено
           </p>
-          <p className="mt-2 font-mono text-[25px] font-semibold tracking-[-0.04em] text-[#28231D]">
+          <p className="mt-1 font-mono text-[27px] font-semibold tracking-[-0.04em] text-[#28231D]">
             {series.entries.length} / {series.targetCount}
           </p>
           {lastSeriesEntry ? (
-            <div className="mt-3 font-mono text-[10px] leading-relaxed text-[#776E63]">
+            <div className="mt-2 font-mono text-[12.5px] leading-snug text-[#776E63]">
               <p>Последняя · {new Date(lastSeriesEntry.completedAt).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}</p>
               <p>За · {formatSeriesDuration(lastSeriesEntry.durationMs)}</p>
             </div>
           ) : (
-            <p className="mt-3 font-mono text-[10px] text-[#776E63]">
+            <p className="mt-2 font-mono text-[12.5px] text-[#776E63]">
               Начато · {new Date(series.startedAt).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
             </p>
           )}
@@ -238,7 +238,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
               type="button"
               onClick={() => goToFace('finish', 1)}
               onTouchStart={() => undefined}
-              className="pill-action mt-4"
+              className="pill-action mt-3"
               style={
                 {
                   ['--pill-bg' as string]: `${palette.accent}1d`,
@@ -259,7 +259,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
             borderColor: 'rgba(69,57,44,0.13)',
           }}
         >
-          <p className="font-mono text-[9px] uppercase tracking-[0.12em] text-[#6B6258]">
+          <p className="font-mono text-[11.5px] uppercase tracking-[0.12em] text-[#6B6258]">
             {timeLabel}
           </p>
           <div className="mt-2">
@@ -271,13 +271,13 @@ export const TaskCard: React.FC<TaskCardProps> = ({
               isStatic={isStatic}
             />
           </div>
-          <p className="mt-2 font-mono text-[11px] leading-relaxed text-[#776E63]">
+          <p className="mt-2 font-mono text-[13.5px] leading-relaxed text-[#776E63]">
             {formatHumanDate(targetAt)}
           </p>
         </div>
       ) : (
         <p
-          className="shrink-0 border-t pt-4 font-mono text-[9px] uppercase tracking-[0.12em] text-[#776E63]"
+          className="shrink-0 border-t pt-4 font-mono text-[11.5px] uppercase tracking-[0.12em] text-[#776E63]"
           style={{
             marginTop: config.infoGap,
             borderColor: 'rgba(69,57,44,0.13)',
@@ -310,7 +310,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
         </div>
       )}
 
-      <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between font-mono text-[8px] uppercase tracking-[0.15em] text-black/30">
+      <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between font-mono text-[10.5px] uppercase tracking-[0.15em] text-black/30">
         <span>Задача</span>
         <span>{formatShortDate(card.createdAt)}</span>
       </div>

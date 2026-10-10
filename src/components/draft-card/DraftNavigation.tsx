@@ -51,7 +51,7 @@ export function DraftNavigation({
             disabled={disabled}
             whileHover={hover}
             whileTap={tap}
-            className="min-h-[46px] w-full rounded-[11px] border-0 px-4 py-3 font-mono text-[9px] font-semibold uppercase tracking-[0.13em] disabled:opacity-40"
+            className="min-h-[46px] w-full rounded-[11px] border-0 px-4 py-3 font-mono text-[11.5px] font-semibold uppercase tracking-[0.13em] disabled:opacity-40"
             style={buttonStyle}
           >
             ← Назад
@@ -71,7 +71,7 @@ export function DraftNavigation({
               whileHover={hover}
               whileTap={tap}
               onClick={onNext}
-              className="min-h-[46px] w-full rounded-[11px] border-0 px-4 py-3 font-mono text-[9px] font-semibold uppercase tracking-[0.13em]"
+              className="min-h-[46px] w-full rounded-[11px] border-0 px-4 py-3 font-mono text-[11.5px] font-semibold uppercase tracking-[0.13em]"
               style={buttonStyle}
             >
               {nextLabel}

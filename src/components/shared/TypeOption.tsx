@@ -70,17 +70,17 @@ export const TypeOption: React.FC<TypeOptionProps> = ({
       }}
       aria-pressed={selected}
     >
-      <span className="block text-[11px] font-semibold leading-[1.15]">
+      <span className="block text-[13.5px] font-semibold leading-[1.15]">
         {lines[0]}
       </span>
 
-      <span className="mt-0.5 block min-h-[13px] text-[11px] font-semibold leading-[1.15]">
+      <span className="mt-0.5 block min-h-[13px] text-[13.5px] font-semibold leading-[1.15]">
         {lines[1]}
       </span>
 
       {hint && (
         <span
-          className="mt-1 block font-mono text-[6px] uppercase tracking-[0.08em]"
+          className="mt-1 block font-mono text-[8px] uppercase tracking-[0.08em]"
           style={{ color: 'rgba(30,28,26,0.3)' }}
         >
           {hint}

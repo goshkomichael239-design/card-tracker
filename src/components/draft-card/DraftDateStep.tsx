@@ -45,7 +45,7 @@ export function DraftDateStep({
   return (
     <div className="min-h-0 flex-1">
       <span
-        className="font-mono text-[13px] font-bold uppercase tracking-[0.17em]"
+        className="font-mono text-[15px] font-bold uppercase tracking-[0.17em]"
         style={{
           color: 'rgba(30,28,26,0.72)',
           textShadow: '0 1px 0 rgba(255,255,255,0.28)',
@@ -63,7 +63,7 @@ export function DraftDateStep({
         }}
       >
         <span
-          className="font-mono text-[10px] font-bold uppercase tracking-[0.1em]"
+          className="font-mono text-[12.5px] font-bold uppercase tracking-[0.1em]"
           style={{ color: palette.ink }}
         >
           {selectedDateLabel} · {formatDraftDate(selectedDraftDate)}
@@ -84,7 +84,7 @@ export function DraftDateStep({
                   'inset 0 2px 4px rgba(48,34,24,0.2), 0 1px 0 rgba(72,52,37,0.2)',
                 transition: { duration: 0.07, ease: 'easeOut' },
               }}
-              className="min-h-[43px] rounded-[10px] border-0 px-2 py-2 font-mono text-[8px] font-semibold uppercase tracking-[0.09em]"
+              className="min-h-[43px] rounded-[10px] border-0 px-2 py-2 font-mono text-[10.5px] font-semibold uppercase tracking-[0.09em]"
               style={{
                 color: 'rgba(30,28,26,0.68)',
                 backgroundColor: 'rgba(245,236,218,0.16)',
@@ -111,7 +111,7 @@ export function DraftDateStep({
                 'inset 0 2px 4px rgba(48,34,24,0.2), 0 1px 0 rgba(72,52,37,0.2)',
               transition: { duration: 0.07, ease: 'easeOut' },
             }}
-            className="min-h-[43px] rounded-[10px] border-0 px-2 py-2 font-mono text-[8px] font-semibold uppercase tracking-[0.09em]"
+            className="min-h-[43px] rounded-[10px] border-0 px-2 py-2 font-mono text-[10.5px] font-semibold uppercase tracking-[0.09em]"
             style={{
               color: 'rgba(30,28,26,0.68)',
               backgroundColor: 'rgba(245,236,218,0.16)',
@@ -141,14 +141,14 @@ export function DraftDateStep({
               type="button"
               onClick={() => onChangeYear(-1)}
               disabled={!canGoToPreviousYear}
-              className="h-[28px] rounded-[8px] border-0 bg-transparent font-mono text-[14px] disabled:opacity-0"
+              className="h-[28px] rounded-[8px] border-0 bg-transparent font-mono text-[16px] disabled:opacity-0"
               style={{ color: palette.accentDark }}
               aria-label="Предыдущий год"
             >
               ←
             </button>
             <span
-              className="text-center font-mono text-[10px] font-bold tracking-[0.14em]"
+              className="text-center font-mono text-[12.5px] font-bold tracking-[0.14em]"
               style={{ color: palette.ink }}
             >
               {calendarView.getFullYear()}
@@ -157,7 +157,7 @@ export function DraftDateStep({
               type="button"
               onClick={() => onChangeYear(1)}
               whileTap={{ y: 1, transition: { duration: 0.07 } }}
-              className="h-[28px] rounded-[8px] border-0 bg-transparent font-mono text-[14px]"
+              className="h-[28px] rounded-[8px] border-0 bg-transparent font-mono text-[16px]"
               style={{ color: palette.accentDark }}
               aria-label="Следующий год"
             >
@@ -170,14 +170,14 @@ export function DraftDateStep({
               type="button"
               onClick={() => onChangeMonth(-1)}
               disabled={!canGoToPreviousMonth}
-              className="h-[28px] rounded-[8px] border-0 bg-transparent font-mono text-[14px] disabled:opacity-0"
+              className="h-[28px] rounded-[8px] border-0 bg-transparent font-mono text-[16px] disabled:opacity-0"
               style={{ color: palette.accentDark }}
               aria-label="Предыдущий месяц"
             >
               ←
             </button>
             <span
-              className="text-center font-mono text-[9px] font-bold uppercase tracking-[0.13em]"
+              className="text-center font-mono text-[11.5px] font-bold uppercase tracking-[0.13em]"
               style={{ color: palette.ink }}
             >
               {MONTH_NAMES_RU[calendarView.getMonth()]}
@@ -186,7 +186,7 @@ export function DraftDateStep({
               type="button"
               onClick={() => onChangeMonth(1)}
               whileTap={{ y: 1, transition: { duration: 0.07 } }}
-              className="h-[28px] rounded-[8px] border-0 bg-transparent font-mono text-[14px]"
+              className="h-[28px] rounded-[8px] border-0 bg-transparent font-mono text-[16px]"
               style={{ color: palette.accentDark }}
               aria-label="Следующий месяц"
             >
@@ -198,7 +198,7 @@ export function DraftDateStep({
             {WEEKDAYS_RU.map((weekday) => (
               <span
                 key={weekday}
-                className="text-center font-mono text-[6px] font-semibold uppercase"
+                className="text-center font-mono text-[8px] font-semibold uppercase"
                 style={{ color: 'rgba(30,28,26,0.42)' }}
               >
                 {weekday}
@@ -230,7 +230,7 @@ export function DraftDateStep({
                       ? undefined
                       : { y: 1, transition: { duration: 0.06 } }
                   }
-                  className="h-[24px] rounded-[7px] border-0 p-0 text-center font-mono text-[8px] font-semibold disabled:cursor-default"
+                  className="h-[24px] rounded-[7px] border-0 p-0 text-center font-mono text-[10.5px] font-semibold disabled:cursor-default"
                   style={{
                     color: isSelected
                       ? '#FFFFFF'

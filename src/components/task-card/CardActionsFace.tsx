@@ -51,7 +51,7 @@ export const CardActionsFace: React.FC<CardActionsFaceProps> = ({
     <div className="relative flex h-full flex-col">
       <div className="flex items-center justify-between">
         <span
-          className="rounded-full px-3 py-1.5 font-mono text-[9px] font-bold uppercase tracking-[0.12em]"
+          className="rounded-full px-3 py-1.5 font-mono text-[11.5px] font-bold uppercase tracking-[0.12em]"
           style={{
             color: palette.accentDark,
             backgroundColor: `${palette.accent}1d`,
@@ -65,7 +65,7 @@ export const CardActionsFace: React.FC<CardActionsFaceProps> = ({
         className="draw-in mt-6 shrink-0 truncate font-semibold leading-[1.15]"
         style={{
           ...drawDelay(120),
-          fontSize: 20,
+          fontSize: 22,
           color: 'rgba(40,35,29,0.62)',
           letterSpacing: '-0.015em',
         }}
@@ -115,7 +115,7 @@ export const CardActionsFace: React.FC<CardActionsFaceProps> = ({
       </div>
 
       <p
-        className="draw-in absolute bottom-0 left-0 right-0 font-mono text-[8px] uppercase tracking-[0.15em]"
+        className="draw-in absolute bottom-0 left-0 right-0 font-mono text-[10.5px] uppercase tracking-[0.15em]"
         style={{ ...drawDelay(380), color: 'rgba(0,0,0,0.32)' }}
       >
         Уголок вернёт карточку обратно

@@ -28,7 +28,7 @@ interface CardEditFaceProps {
 }
 
 const FIELD_LABEL_CLASS =
-  'font-mono text-[9px] font-bold uppercase tracking-[0.12em]';
+  'font-mono text-[11.5px] font-bold uppercase tracking-[0.12em]';
 
 /** Start offset (ms) of the left-to-right "drawing" of a block on this face. */
 const drawDelay = (ms: number): React.CSSProperties =>
@@ -81,13 +81,13 @@ const StepperRow: React.FC<StepperRowProps> = ({
     </button>
     <div className="flex items-baseline justify-center gap-3 font-mono">
       <span
-        className="text-[9px] uppercase tracking-[0.14em]"
+        className="text-[11.5px] uppercase tracking-[0.14em]"
         style={{ color: 'rgba(61,55,48,0.55)' }}
       >
         {label}
       </span>
       <span
-        className="text-[14px] font-bold uppercase tracking-[0.06em]"
+        className="text-[16px] font-bold uppercase tracking-[0.06em]"
         style={{ color: '#3F3932' }}
       >
         {value}
@@ -136,11 +136,11 @@ const TitleField: React.FC<TitleFieldProps> = ({
       className="mt-1 block w-full resize-none border-0 bg-transparent p-0 font-semibold leading-[1.12] outline-none"
       style={
         {
-          fontSize: 26,
+          fontSize: 28,
           color: '#28231D',
           letterSpacing: '-0.02em',
           fieldSizing: 'content',
-          maxHeight: 26 * 1.12 * 2,
+          maxHeight: 28 * 1.12 * 2,
           borderBottom: '1px dashed rgba(69,57,44,0.42)',
           fontFamily: 'inherit',
         } as React.CSSProperties
@@ -251,7 +251,7 @@ const ListEditor: React.FC<ListEditorProps> = ({
         style={{ ...TRAY_STYLE, overscrollBehavior: 'contain' }}
       >
         {items.length === 0 && (
-          <p className="px-4 py-3 text-[14px]" style={{ color: 'rgba(40,35,29,0.45)' }}>
+          <p className="px-4 py-3 text-[16px]" style={{ color: 'rgba(40,35,29,0.45)' }}>
             Добавьте хотя бы один пункт
           </p>
         )}
@@ -274,7 +274,7 @@ const ListEditor: React.FC<ListEditorProps> = ({
                 )
               }
               aria-label="Текст пункта"
-              className="h-[40px] min-w-0 flex-1 border-0 bg-transparent p-0 text-[16px] outline-none"
+              className="h-[40px] min-w-0 flex-1 border-0 bg-transparent p-0 text-[18px] outline-none"
               style={{
                 color: item.completedAt ? 'rgba(40,35,29,0.5)' : '#28231D',
                 textDecoration: item.completedAt ? 'line-through' : 'none',
@@ -287,7 +287,7 @@ const ListEditor: React.FC<ListEditorProps> = ({
                 onChange(items.filter((current) => current.id !== item.id))
               }
               aria-label="Убрать пункт"
-              className="h-[40px] w-[40px] shrink-0 cursor-pointer border-0 bg-transparent font-mono text-[15px]"
+              className="h-[40px] w-[40px] shrink-0 cursor-pointer border-0 bg-transparent font-mono text-[17px]"
               style={{ color: 'rgba(40,35,29,0.5)' }}
             >
               ✕
@@ -308,7 +308,7 @@ const ListEditor: React.FC<ListEditorProps> = ({
             }
           }}
           aria-label="Новый пункт"
-          className="h-[38px] min-w-0 flex-1 border-0 bg-transparent p-0 text-[16px] outline-none"
+          className="h-[38px] min-w-0 flex-1 border-0 bg-transparent p-0 text-[18px] outline-none"
           style={{
             borderBottom: '1px dashed rgba(69,57,44,0.42)',
             color: '#28231D',
@@ -319,7 +319,7 @@ const ListEditor: React.FC<ListEditorProps> = ({
           type="button"
           onClick={addItem}
           disabled={!draft.trim()}
-          className="h-[38px] shrink-0 cursor-pointer border-0 bg-transparent px-1 font-mono text-[10px] font-bold uppercase tracking-[0.12em] disabled:cursor-default disabled:opacity-40"
+          className="h-[38px] shrink-0 cursor-pointer border-0 bg-transparent px-1 font-mono text-[12.5px] font-bold uppercase tracking-[0.12em] disabled:cursor-default disabled:opacity-40"
           style={{ color: palette.accentDark }}
         >
           Добавить
@@ -364,7 +364,7 @@ const TargetCountEditor: React.FC<TargetCountEditorProps> = ({
     </div>
     {completed > 0 && (
       <p
-        className="mt-2 font-mono text-[9px] uppercase tracking-[0.12em]"
+        className="mt-2 font-mono text-[11.5px] uppercase tracking-[0.12em]"
         style={{ color: 'rgba(0,0,0,0.38)' }}
       >
         Уже засчитано · {completed}
@@ -453,7 +453,7 @@ export const CardEditFace: React.FC<CardEditFaceProps> = ({
     <div className="relative flex h-full flex-col">
       <div className="flex items-center justify-between">
         <span
-          className="rounded-full px-3 py-1.5 font-mono text-[9px] font-bold uppercase tracking-[0.12em]"
+          className="rounded-full px-3 py-1.5 font-mono text-[11.5px] font-bold uppercase tracking-[0.12em]"
           style={{
             color: palette.accentDark,
             backgroundColor: `${palette.accent}1d`,

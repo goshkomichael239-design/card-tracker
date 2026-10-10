@@ -31,7 +31,7 @@ export function TaskListContent({
         style={{ overscrollBehavior: 'contain' }}
       >
         {list.items.length === 0 ? (
-          <p className="text-[15px] text-black/40">Нет пунктов</p>
+          <p className="text-[17px] text-black/40">Нет пунктов</p>
         ) : (
           visibleItems.map((item) => {
             const completed = Boolean(item.completedAt);
@@ -43,7 +43,7 @@ export function TaskListContent({
                 disabled={disabled}
                 onClick={() => onToggle(item.id)}
                 aria-pressed={completed}
-                className="flex w-full items-start gap-3 border-b py-3 text-left disabled:cursor-default"
+                className="flex w-full items-start gap-3 border-b py-2.5 text-left disabled:cursor-default"
                 style={{
                   minHeight: isSheet ? 62 : 48,
                   borderColor: isSheet
@@ -88,7 +88,7 @@ export function TaskListContent({
           <button
             type="button"
             onClick={onOpenList}
-            className="mt-2 flex min-h-[34px] items-center border-0 bg-transparent px-0 text-left font-mono text-[10px] uppercase tracking-[0.1em]"
+            className="mt-2 flex min-h-[34px] items-center border-0 bg-transparent px-0 text-left font-mono text-[12.5px] uppercase tracking-[0.1em]"
             style={{ color: palette.accentDark }}
           >
             {hasHiddenItems

@@ -40,7 +40,7 @@ export function DraftClockStep({
   return (
     <div className="min-h-0 flex-1">
       <span
-        className="font-mono text-[13px] font-bold uppercase tracking-[0.17em]"
+        className="font-mono text-[15px] font-bold uppercase tracking-[0.17em]"
         style={{
           color: 'rgba(30,28,26,0.72)',
           textShadow: '0 1px 0 rgba(255,255,255,0.28)',
@@ -117,7 +117,7 @@ export function DraftClockStep({
                   'inset 0 2px 4px rgba(48,34,24,0.2), 0 1px 0 rgba(72,52,37,0.2)',
                 transition: { duration: 0.07 },
               }}
-              className="min-h-[42px] w-full rounded-[10px] border-0 font-mono text-[18px] font-bold"
+              className="min-h-[42px] w-full rounded-[10px] border-0 font-mono text-[20px] font-bold"
               style={{
                 color: palette.ink,
                 backgroundColor: 'rgba(245,236,218,0.16)',
@@ -133,7 +133,7 @@ export function DraftClockStep({
               +
             </motion.button>
             <span
-              className="my-2 font-mono text-[8px] font-semibold uppercase tracking-[0.13em]"
+              className="my-2 font-mono text-[10.5px] font-semibold uppercase tracking-[0.13em]"
               style={{ color: 'rgba(30,28,26,0.52)' }}
             >
               {control.label}
@@ -147,7 +147,7 @@ export function DraftClockStep({
                   'inset 0 2px 4px rgba(48,34,24,0.2), 0 1px 0 rgba(72,52,37,0.2)',
                 transition: { duration: 0.07 },
               }}
-              className="min-h-[42px] w-full rounded-[10px] border-0 font-mono text-[18px] font-bold"
+              className="min-h-[42px] w-full rounded-[10px] border-0 font-mono text-[20px] font-bold"
               style={{
                 color: palette.ink,
                 backgroundColor: 'rgba(245,236,218,0.16)',
@@ -170,7 +170,7 @@ export function DraftClockStep({
         {[0, 1, 2].map((slot) => (
           <div
             key={slot}
-            className="flex min-h-[34px] items-center justify-center rounded-[9px] font-mono text-[6px] font-semibold uppercase tracking-[0.1em]"
+            className="flex min-h-[34px] items-center justify-center rounded-[9px] font-mono text-[8px] font-semibold uppercase tracking-[0.1em]"
             style={{
               color: 'rgba(30,28,26,0.28)',
               border: '1px dashed rgba(70,52,38,0.22)',
@@ -183,7 +183,7 @@ export function DraftClockStep({
       </div>
 
       <div
-        className="mt-2 min-h-[14px] text-center font-mono text-[7px] uppercase tracking-[0.08em]"
+        className="mt-2 min-h-[14px] text-center font-mono text-[9px] uppercase tracking-[0.08em]"
         style={{
           color: isSelectedDateTimeValid ? 'transparent' : palette.accentDark,
         }}

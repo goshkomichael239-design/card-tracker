@@ -11,7 +11,7 @@ export function DraftKindStep({ selectedKind, palette, onSelectKind }: DraftKind
   return (
     <div>
       <span
-        className="font-mono text-[13px] font-bold uppercase tracking-[0.17em]"
+        className="font-mono text-[15px] font-bold uppercase tracking-[0.17em]"
         style={{
           color: 'rgba(30,28,26,0.72)',
           textShadow: '0 1px 0 rgba(255,255,255,0.28)',

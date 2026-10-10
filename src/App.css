@@ -252,13 +252,13 @@
 .pill-action {
   display: inline-flex;
   align-items: center;
-  padding: 11px 19px;
+  padding: 12px 20px;
   border: 0;
   border-radius: 9999px;
   background: var(--pill-bg, rgba(160, 120, 90, 0.12));
   color: var(--pill-ink, #6b4a3a);
   font-family: inherit;
-  font-size: 11px;
+  font-size: 12.5px;
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;

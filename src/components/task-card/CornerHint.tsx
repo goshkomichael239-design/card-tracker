@@ -45,7 +45,7 @@ export const CornerHint: React.FC<CornerHintProps> = ({ palette }) => {
       </svg>
 
       <p
-        className="absolute text-right font-mono text-[11px] font-semibold leading-[1.35] tracking-[0.02em]"
+        className="absolute text-right font-mono text-[13.5px] font-semibold leading-[1.35] tracking-[0.02em]"
         style={{
           right: width - 342,
           top: 296,

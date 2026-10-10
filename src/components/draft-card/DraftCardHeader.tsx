@@ -25,7 +25,7 @@ export const DraftCardHeader: React.FC<DraftCardHeaderProps> = ({
           backgroundColor: palette.paper,
         }}
         transition={{ delay: 0.15, duration: 0.22 }}
-        className="inline-flex min-w-[158px] shrink-0 items-center justify-center whitespace-nowrap rounded-[11px] px-[20px] py-[9px] font-mono text-[10px] font-semibold uppercase tracking-[0.14em]"
+        className="inline-flex min-w-[158px] shrink-0 items-center justify-center whitespace-nowrap rounded-[11px] px-[20px] py-[9px] font-mono text-[12.5px] font-semibold uppercase tracking-[0.14em]"
         style={{
           width: 'max-content',
           minHeight: '38px',

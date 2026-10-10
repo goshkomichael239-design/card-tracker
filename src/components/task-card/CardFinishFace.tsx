@@ -37,7 +37,7 @@ export const CardFinishFace: React.FC<CardFinishFaceProps> = ({
     <div className="relative flex h-full flex-col">
       <div className="flex items-center justify-between">
         <span
-          className="rounded-full px-3 py-1.5 font-mono text-[9px] font-bold uppercase tracking-[0.12em]"
+          className="rounded-full px-3 py-1.5 font-mono text-[11.5px] font-bold uppercase tracking-[0.12em]"
           style={{
             color: palette.accentDark,
             backgroundColor: `${palette.accent}1d`,
@@ -51,7 +51,7 @@ export const CardFinishFace: React.FC<CardFinishFaceProps> = ({
         className="draw-in mt-6 shrink-0 truncate font-semibold leading-[1.15]"
         style={{
           ...drawDelay(100),
-          fontSize: 20,
+          fontSize: 22,
           color: 'rgba(40,35,29,0.62)',
           letterSpacing: '-0.015em',
         }}
@@ -63,7 +63,7 @@ export const CardFinishFace: React.FC<CardFinishFaceProps> = ({
           the title, centred in it. */}
       <div className="flex min-h-0 flex-1 flex-col justify-center pb-1">
         <p
-          className="draw-in font-mono text-[9px] font-bold uppercase tracking-[0.12em]"
+          className="draw-in font-mono text-[11.5px] font-bold uppercase tracking-[0.12em]"
           style={{ ...drawDelay(160), color: '#6B6258' }}
         >
           Выполнено только
@@ -73,7 +73,7 @@ export const CardFinishFace: React.FC<CardFinishFaceProps> = ({
           className="draw-in mt-1 font-semibold leading-none"
           style={{
             ...drawDelay(200),
-            fontSize: 36,
+            fontSize: 38,
             letterSpacing: '-0.03em',
             color: '#28231D',
             fontVariantNumeric: 'lining-nums tabular-nums',
@@ -81,7 +81,7 @@ export const CardFinishFace: React.FC<CardFinishFaceProps> = ({
         >
           {done}
           <span
-            className="mx-2 text-[22px] font-medium"
+            className="mx-2 text-[24px] font-medium"
             style={{ color: 'rgba(40,35,29,0.5)', letterSpacing: 0 }}
           >
             из
@@ -112,7 +112,7 @@ export const CardFinishFace: React.FC<CardFinishFaceProps> = ({
         </div>
 
         <p
-          className="draw-in mt-5 text-[16px] font-medium leading-[1.3]"
+          className="draw-in mt-5 text-[18px] font-medium leading-[1.3]"
           style={{ ...drawDelay(300), color: 'rgba(40,35,29,0.8)' }}
         >
           Всё равно завершить серию?

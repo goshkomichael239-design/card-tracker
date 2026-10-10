@@ -33,7 +33,7 @@ export const INITIAL_TASK_CARD_V2_CONFIG: TaskCardV2Config = {
   stackOffsetY: 9,
   stackRotation: 1.8,
   contentPadding: 28,
-  titleSize: 34,
+  titleSize: 36,
   titleGap: 26,
   infoGap: 14,
   couponHeight: 49,

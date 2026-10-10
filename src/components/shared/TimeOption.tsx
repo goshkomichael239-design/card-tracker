@@ -56,11 +56,11 @@ export const TimeOption: React.FC<TimeOptionProps> = ({
       }}
       aria-pressed={selected}
     >
-      <span className="block text-[11px] font-semibold leading-[1.12]">
+      <span className="block text-[13.5px] font-semibold leading-[1.12]">
         {lines[0]}
       </span>
 
-      <span className="mt-1 block min-h-[13px] text-[11px] font-semibold leading-[1.12]">
+      <span className="mt-1 block min-h-[13px] text-[13.5px] font-semibold leading-[1.12]">
         {lines[1]}
       </span>
     </motion.button>

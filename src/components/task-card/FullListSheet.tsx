@@ -68,7 +68,7 @@ export function FullListSheet({
           <button
             type="button"
             onClick={onClose}
-            className="min-h-[40px] border-0 bg-transparent px-0 font-mono text-[10px] font-semibold uppercase tracking-[0.12em]"
+            className="min-h-[40px] border-0 bg-transparent px-0 font-mono text-[12.5px] font-semibold uppercase tracking-[0.12em]"
             style={{ color: palette.accentDark }}
           >
             ← Назад
@@ -76,12 +76,12 @@ export function FullListSheet({
 
           <div className="min-w-0 text-center">
             <p
-              className="font-mono text-[10px] font-bold uppercase tracking-[0.16em]"
+              className="font-mono text-[12.5px] font-bold uppercase tracking-[0.16em]"
               style={{ color: palette.accentDark }}
             >
               Список
             </p>
-            <p className="mt-1 font-mono text-[13px] text-[#6B6258]">
+            <p className="mt-1 font-mono text-[15px] text-[#6B6258]">
               {completedCount} / {list.items.length}
             </p>
           </div>
@@ -90,7 +90,7 @@ export function FullListSheet({
             type="button"
             onClick={onClose}
             aria-label="Закрыть список"
-            className="flex h-10 w-10 items-center justify-center rounded-full border bg-transparent text-[23px] font-light leading-none"
+            className="flex h-10 w-10 items-center justify-center rounded-full border bg-transparent text-[25px] font-light leading-none"
             style={{
               color: palette.accentDark,
               borderColor: `${palette.accent}4d`,
@@ -126,14 +126,14 @@ export function FullListSheet({
               value={input}
               onChange={(event) => setInput(event.target.value)}
               placeholder="Добавить пункт…"
-              className="min-w-0 flex-1 border-0 bg-transparent p-0 text-[18px] leading-[1.35] outline-none placeholder:text-black/28"
+              className="min-w-0 flex-1 border-0 bg-transparent p-0 text-[20px] leading-[1.35] outline-none placeholder:text-black/28"
               style={{ color: palette.ink }}
             />
             <button
               type="submit"
               disabled={!input.trim()}
               aria-label="Добавить пункт"
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border bg-transparent text-[24px] font-light leading-none disabled:opacity-25"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border bg-transparent text-[26px] font-light leading-none disabled:opacity-25"
               style={{
                 color: palette.accentDark,
                 borderColor: `${palette.accent}5c`,

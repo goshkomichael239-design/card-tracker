@@ -157,14 +157,14 @@ export const CompletedCardStack: React.FC<CompletedCardStackProps> = ({
             <button
               type="button"
               onClick={() => setDevCompletedCount(COMPLETED_STACK_MAX_LAYERS)}
-              className="rounded-md border border-white/15 bg-black/75 px-3 py-2 font-mono text-[10px] text-white/80 shadow-lg"
+              className="rounded-md border border-white/15 bg-black/75 px-3 py-2 font-mono text-[12.5px] text-white/80 shadow-lg"
             >
               Заполнить стопку
             </button>
             <button
               type="button"
               onClick={() => setDevCompletedCount(1)}
-              className="rounded-md border border-white/15 bg-black/75 px-3 py-2 font-mono text-[10px] text-white/80 shadow-lg"
+              className="rounded-md border border-white/15 bg-black/75 px-3 py-2 font-mono text-[12.5px] text-white/80 shadow-lg"
             >
               Оставить одну
             </button>

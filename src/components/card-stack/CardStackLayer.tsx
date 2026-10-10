@@ -49,7 +49,7 @@ export const CardStackLayer: React.FC<CardStackLayerProps> = ({
           opacity: config.paperTextureOpacity,
         }}
       />
-      <span className="engraved absolute left-5 top-6 truncate font-mono text-[8px] uppercase tracking-[0.12em] text-black/20">
+      <span className="engraved absolute left-5 top-6 truncate font-mono text-[10.5px] uppercase tracking-[0.12em] text-black/20">
         {card.title}
       </span>
     </div>

@@ -1789,7 +1789,7 @@ const MainApp: React.FC = () => {
                         end of the ghost's top edge, where most of it sticks out
                         above the card. */}
                     <span
-                      className="font-serif text-[22px] font-medium leading-none"
+                      className="font-serif text-[24px] font-medium leading-none"
                       style={{
                         color: 'rgba(214,205,186,0.8)',
                         textShadow: `
@@ -1802,7 +1802,7 @@ const MainApp: React.FC = () => {
                     </span>
 
                     <span
-                      className="font-mono text-[10px] font-bold uppercase leading-none tracking-[0.16em]"
+                      className="font-mono text-[12.5px] font-bold uppercase leading-none tracking-[0.16em]"
                       style={{
                         color: 'rgba(214,205,186,0.78)',
                         textShadow: `

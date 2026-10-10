@@ -65,7 +65,7 @@ export const CountdownPanel: React.FC<CountdownPanelProps> = ({
         boxShadow: 'inset 0 1px rgba(255,255,255,0.7)',
       }}
     >
-      <div className="font-mono text-[15px] font-semibold tracking-[-0.02em]">
+      <div className="font-mono text-[17px] font-semibold tracking-[-0.02em]">
         {label}
       </div>
     </div>

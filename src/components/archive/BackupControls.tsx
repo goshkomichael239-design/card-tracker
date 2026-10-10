@@ -63,7 +63,7 @@ export const BackupControls: React.FC<BackupControlsProps> = ({
             onExport();
             setStatus('Копия сохранена в загрузки');
           }}
-          className="cursor-pointer rounded-[10px] border px-4 py-2 font-mono text-[10px] font-bold uppercase tracking-[0.12em]"
+          className="cursor-pointer rounded-[10px] border px-4 py-2 font-mono text-[12.5px] font-bold uppercase tracking-[0.12em]"
           style={BUTTON_STYLE}
         >
           Сохранить копию
@@ -71,7 +71,7 @@ export const BackupControls: React.FC<BackupControlsProps> = ({
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}
-          className="cursor-pointer rounded-[10px] border px-4 py-2 font-mono text-[10px] font-bold uppercase tracking-[0.12em]"
+          className="cursor-pointer rounded-[10px] border px-4 py-2 font-mono text-[12.5px] font-bold uppercase tracking-[0.12em]"
           style={BUTTON_STYLE}
         >
           Загрузить копию
@@ -85,7 +85,7 @@ export const BackupControls: React.FC<BackupControlsProps> = ({
         />
       </div>
       <p
-        className="min-h-[14px] font-mono text-[10px] uppercase tracking-[0.1em]"
+        className="min-h-[14px] font-mono text-[12.5px] uppercase tracking-[0.1em]"
         style={{ color: 'rgba(63,57,50,0.62)' }}
         role="status"
       >
