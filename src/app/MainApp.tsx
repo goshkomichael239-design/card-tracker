@@ -15,16 +15,9 @@ import {
   GHOST_SETTINGS,
   GHOST_SHADOW,
   getCardPalette,
-  pickNewCardColorId,
   PALETTES,
   PHYSICAL_SPRING,
-  type CardKind,
-  type CreationState,
-  type DraftStep,
-  type TimeMode,
   type VisualCard,
-  type RecurrenceRule,
-  type TaskListItem,
 } from './cardTheme';
 import {
   downloadTextFile,
@@ -62,11 +55,8 @@ import { getListProgress } from './listUtils';
 import { reviveCard } from './archiveUtils';
 import { formatPostponeMoment, getDueBucket, postponeCard } from './timeOps';
 import { OverdueBadge } from '../components/card-switcher/OverdueBadge';
-import {
-  advanceRecurringCard,
-  firstOccurrence,
-  isRecurrenceComplete,
-} from './recurrence';
+import { advanceRecurringCard } from './recurrence';
+import { useCardDraft } from './useCardDraft';
 import { purgeExpiredTrash } from './trash';
 import { DebugCardsPanel } from '../components/DebugCardsPanel';
 import { TrashBin } from '../components/trash/TrashBin';
@@ -74,16 +64,6 @@ import { CouponSpike } from '../components/table/CouponSpike';
 import { TrashSheet } from '../components/trash/TrashSheet';
 import { StorageNotice } from '../components/StorageNotice';
 import { UndoTicket } from '../components/UndoTicket';
-import {
-  addLocalDays,
-  createLocalDateTimeValue,
-  getDraftDateLabel,
-  getNextFiveMinuteSlot,
-  getNextMonday,
-  isSameLocalDay,
-  padNumber,
-  startOfLocalDay,
-} from './dateTimeUtils';
 import { DraftCard } from '../components/draft-card/DraftCard';
 import { ArchiveNavigation } from '../components/archive/ArchiveNavigation';
 import { ArchiveView } from '../components/archive/ArchiveView';
@@ -204,41 +184,6 @@ const MainApp: React.FC = () => {
 
   const [activeCardId, setActiveCardId] = useState(() => cards[0]?.id ?? '');
 
-  const [creationState, setCreationState] =
-    useState<CreationState>('idle');
-  const [draftTitle, setDraftTitle] = useState('');
-  const [seriesTargetInput, setSeriesTargetInput] = useState('');
-  const [draftListItems, setDraftListItems] = useState<TaskListItem[]>([]);
-  const [draftListInput, setDraftListInput] = useState('');
-  const [selectedKind, setSelectedKind] = useState<CardKind | null>(null);
-  const [draftStep, setDraftStep] = useState<DraftStep>('kind');
-  const [timeMode, setTimeMode] = useState<TimeMode | null>(null);
-  // Set while creating a repeating card ("Регулярно" in the time step).
-  const [draftRecurrence, setDraftRecurrence] =
-    useState<RecurrenceRule | null>(null);
-  const [dateTimeValue, setDateTimeValue] = useState('');
-  const [selectedDraftDate, setSelectedDraftDate] = useState(() =>
-    startOfLocalDay(getNextFiveMinuteSlot()),
-  );
-  const [draftHour, setDraftHour] = useState(
-    () => getNextFiveMinuteSlot().getHours(),
-  );
-  const [draftMinute, setDraftMinute] = useState(
-    () => getNextFiveMinuteSlot().getMinutes(),
-  );
-  const [draftHourInput, setDraftHourInput] = useState(
-    () => padNumber(getNextFiveMinuteSlot().getHours()),
-  );
-  const [draftMinuteInput, setDraftMinuteInput] = useState(
-    () => padNumber(getNextFiveMinuteSlot().getMinutes()),
-  );
-  const [calendarView, setCalendarView] = useState(() => {
-    const initialDate = getNextFiveMinuteSlot();
-    return new Date(initialDate.getFullYear(), initialDate.getMonth(), 1);
-  });
-  const [isManualCalendarOpen, setIsManualCalendarOpen] =
-    useState(false);
-  const [creationCycle, setCreationCycle] = useState(0);
   const [isGhostHovered, setIsGhostHovered] = useState(false);
   const [transientOutgoing, setTransientOutgoing] =
     useState<TransientOutgoingCard | null>(null);
@@ -248,8 +193,14 @@ const MainApp: React.FC = () => {
     getLocalDayKey(new Date()),
   );
 
-  const titleInputRef = useRef<HTMLTextAreaElement | null>(null);
-  const commitTimerRef = useRef<number | null>(null);
+  const draft = useCardDraft({
+    pendingCompletedCardId,
+    onCreate: (card) => {
+      setCards((previous) => [...previous, card]);
+      setActiveCardId(card.id);
+    },
+  });
+
   const couponFlightInProgressRef = useRef(false);
   const detachedCouponLayerRef =
     useRef<DetachedCompletionCouponHandle | null>(null);
@@ -259,7 +210,7 @@ const MainApp: React.FC = () => {
   const transientSequenceRef = useRef(0);
   const scenePointerRef = useRef<{ id: number; y: number } | null>(null);
 
-  const isCreating = creationState !== 'idle';
+  const isCreating = draft.isCreating;
   const activeCard = cards.find((card) => card.id === activeCardId);
   // Any sheet lying over the table blocks the table's own gestures and keys.
   const isOverlayOpen = isTrashOpen;
@@ -307,95 +258,6 @@ const MainApp: React.FC = () => {
     INITIAL_TASK_CARD_V2_CONFIG.width,
     INITIAL_TASK_CARD_V2_CONFIG.height,
   );
-  const draftPalette = PALETTES[timeMode ?? 'none'];
-
-  const currentDraftDay = startOfLocalDay(new Date());
-  const currentDraftMonth = new Date(
-    currentDraftDay.getFullYear(),
-    currentDraftDay.getMonth(),
-    1,
-  );
-  const selectedDraftDateTime = new Date(
-    selectedDraftDate.getFullYear(),
-    selectedDraftDate.getMonth(),
-    selectedDraftDate.getDate(),
-    draftHour,
-    draftMinute,
-    0,
-    0,
-  );
-  const isSelectedDateTimeValid =
-    selectedDraftDateTime.getTime() >= Date.now();
-  const selectedDateLabel = getDraftDateLabel(
-    selectedDraftDate,
-    currentDraftDay,
-  );
-  const datePresets = [
-    {
-      label: 'Завтра',
-      date: addLocalDays(currentDraftDay, 1),
-    },
-    {
-      label: 'Послезавтра',
-      date: addLocalDays(currentDraftDay, 2),
-    },
-    {
-      label: 'В понедельник',
-      date: getNextMonday(currentDraftDay),
-    },
-  ];
-  const calendarCells = useMemo(() => {
-    const year = calendarView.getFullYear();
-    const month = calendarView.getMonth();
-    const firstWeekday = (new Date(year, month, 1).getDay() + 6) % 7;
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-
-    return Array.from({ length: 42 }, (_, index) => {
-      const day = index - firstWeekday + 1;
-      return day >= 1 && day <= daysInMonth ? day : null;
-    });
-  }, [calendarView]);
-  const canGoToPreviousYear =
-    calendarView.getFullYear() > currentDraftDay.getFullYear();
-  const canGoToPreviousMonth =
-    calendarView.getTime() > currentDraftMonth.getTime();
-  const canAdvanceDraft =
-    (draftStep === 'title' && Boolean(draftTitle.trim())) ||
-    (draftStep === 'series-target' &&
-      Number.isInteger(Number(seriesTargetInput)) &&
-      Number(seriesTargetInput) >= 1) ||
-    (draftStep === 'list-items' && draftListItems.length >= 1) ||
-    draftStep === 'date' ||
-    (draftStep === 'repeat' && isRecurrenceComplete(draftRecurrence)) ||
-    // Any time of day is fine for a repeating card: its first sheet is
-    // simply the next day that time is still ahead.
-    (draftStep === 'clock' &&
-      (isSelectedDateTimeValid || draftRecurrence !== null));
-
-  const resetDraft = useCallback(() => {
-    const initialSlot = getNextFiveMinuteSlot();
-    const initialDate = startOfLocalDay(initialSlot);
-
-    setDraftTitle('');
-    setSeriesTargetInput('');
-    setDraftListItems([]);
-    setDraftListInput('');
-    setSelectedKind(null);
-    setDraftStep('kind');
-    setTimeMode(null);
-    setDraftRecurrence(null);
-    setDateTimeValue('');
-    setSelectedDraftDate(initialDate);
-    setDraftHour(initialSlot.getHours());
-    setDraftMinute(initialSlot.getMinutes());
-    setDraftHourInput(padNumber(initialSlot.getHours()));
-    setDraftMinuteInput(padNumber(initialSlot.getMinutes()));
-    setCalendarView(
-      new Date(initialDate.getFullYear(), initialDate.getMonth(), 1),
-    );
-    setIsManualCalendarOpen(false);
-  }, []);
-
   const createTransientOutgoing = useCallback(
     (card: VisualCard, kind: TransientOutgoingKind) => {
       transientSequenceRef.current += 1;
@@ -409,35 +271,7 @@ const MainApp: React.FC = () => {
   );
 
   useEffect(() => {
-    if (creationState !== 'editing' || draftStep !== 'title') {
-      return;
-    }
-
-    const focusTimer = window.setTimeout(() => {
-      titleInputRef.current?.focus({ preventScroll: true });
-    }, 430);
-
-    return () => window.clearTimeout(focusTimer);
-  }, [creationState, draftStep]);
-
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && creationState === 'editing') {
-        resetDraft();
-        setCreationState('idle');
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [creationState, resetDraft]);
-
-  useEffect(() => {
     return () => {
-      if (commitTimerRef.current !== null) {
-        window.clearTimeout(commitTimerRef.current);
-      }
-
       if (completedRemovalTimerRef.current !== null) {
         window.clearTimeout(completedRemovalTimerRef.current);
       }
@@ -674,516 +508,6 @@ const MainApp: React.FC = () => {
     isOverlayOpen,
     isTrashOpen,
   ]);
-
-  const handleStartCreating = () => {
-    if (
-      creationState !== 'idle' ||
-      pendingCompletedCardId !== null
-    ) {
-      return;
-    }
-
-    resetDraft();
-    setIsGhostHovered(false);
-    setCreationState('editing');
-  };
-
-  const handleCancelCreating = () => {
-    if (creationState !== 'editing') {
-      return;
-    }
-
-    resetDraft();
-    setCreationState('idle');
-  };
-
-  const handleSelectKind = (kind: CardKind) => {
-    if (kind === 'series') {
-      setSelectedKind('series');
-      setTimeMode('none');
-      setDateTimeValue('');
-      setDraftStep('title');
-      return;
-    }
-
-    if (kind !== 'single') {
-      if (kind === 'list') {
-        setSelectedKind('list');
-        setTimeMode(null);
-        setDateTimeValue('');
-        setDraftStep('list-items');
-      }
-      return;
-    }
-
-    setSelectedKind('single');
-    setTimeMode(null);
-    setDateTimeValue('');
-    setDraftStep('title');
-  };
-
-  const handleCreateCard = (
-    event?: React.FormEvent,
-    forcedTimeMode?: TimeMode,
-    forcedDateTimeValue?: string,
-  ) => {
-    event?.preventDefault();
-    const creationTimeMode = forcedTimeMode ?? timeMode;
-    const creationDateTimeValue =
-      forcedDateTimeValue ?? dateTimeValue;
-    const seriesTargetCount = Number(seriesTargetInput);
-    const isValidSeriesTarget =
-      Number.isInteger(seriesTargetCount) && seriesTargetCount >= 1;
-    const isList = selectedKind === 'list';
-    const listTitle = draftListItems[0]?.text.trim() || 'Список';
-    const isReadyToCreate =
-      creationState === 'editing' &&
-      ((selectedKind === 'series' &&
-        Boolean(draftTitle.trim()) &&
-        isValidSeriesTarget) ||
-        (isList && draftListItems.length >= 1) ||
-        (selectedKind === 'single' &&
-          Boolean(draftTitle.trim()) &&
-          Boolean(creationTimeMode) &&
-          (creationTimeMode === 'none' || Boolean(creationDateTimeValue))));
-
-    if (!isReadyToCreate) {
-      return;
-    }
-
-    setCreationState('committing');
-
-    commitTimerRef.current = window.setTimeout(() => {
-      const storedDate = creationDateTimeValue
-        ? new Date(creationDateTimeValue).toISOString()
-        : undefined;
-
-      const now = new Date().toISOString();
-      const isSeries = selectedKind === 'series';
-      const lastCard = getDeckState().cards.at(-1);
-      const newCard: VisualCard = {
-        id: createId(),
-        // Pastel scheme that differs from the card it will sit next to.
-        colorId: pickNewCardColorId(
-          lastCard ? getCardPalette(lastCard).id : undefined,
-        ),
-        title: isList ? listTitle : draftTitle.trim(),
-        kind: isSeries ? 'series' : isList ? 'list' : 'single',
-        timeMode: isSeries ? 'none' : creationTimeMode!,
-        deadlineAt:
-          !isSeries && creationTimeMode === 'deadline' ? storedDate : undefined,
-        reminderAt:
-          !isSeries && creationTimeMode === 'reminder' ? storedDate : undefined,
-        createdAt: now,
-        series: isSeries
-          ? {
-              targetCount: seriesTargetCount,
-              entries: [],
-              startedAt: now,
-              timingAnchorAt: now,
-            }
-          : undefined,
-        list: isList ? { items: draftListItems } : undefined,
-        recurrence:
-          !isSeries && !isList && creationTimeMode === 'reminder' && draftRecurrence
-            ? draftRecurrence
-            : undefined,
-      };
-
-      setCards((previous) => [...previous, newCard]);
-      setActiveCardId(newCard.id);
-
-      resetDraft();
-      setCreationCycle((previous) => previous + 1);
-      setCreationState('idle');
-    }, 340);
-  };
-
-  // "Регулярно": a repeating card is a reminder whose time moves on to the
-  // next sheet each time it is torn off. First choose how often.
-  const handleSelectRepeat = () => {
-    setTimeMode('reminder');
-    setDateTimeValue('');
-    setDraftRecurrence((current) => current ?? { kind: 'daily' });
-    setDraftStep('repeat');
-  };
-
-  const handleSelectTimeMode = (mode: TimeMode) => {
-    setTimeMode(mode);
-    setDraftRecurrence(null);
-
-    if (mode === 'none') {
-      setDateTimeValue('');
-      setDraftStep('confirm');
-      commitTimerRef.current = window.setTimeout(() => {
-        handleCreateCard(undefined, 'none');
-      }, 110);
-      return;
-    }
-
-    const initialSlot = getNextFiveMinuteSlot();
-    const initialDate = startOfLocalDay(initialSlot);
-
-    setSelectedDraftDate(initialDate);
-    setDraftHour(initialSlot.getHours());
-    setDraftMinute(initialSlot.getMinutes());
-    setDraftHourInput(padNumber(initialSlot.getHours()));
-    setDraftMinuteInput(padNumber(initialSlot.getMinutes()));
-    setCalendarView(
-      new Date(initialDate.getFullYear(), initialDate.getMonth(), 1),
-    );
-    setIsManualCalendarOpen(false);
-    setDateTimeValue(
-      createLocalDateTimeValue(
-        initialDate,
-        initialSlot.getHours(),
-        initialSlot.getMinutes(),
-      ),
-    );
-    setDraftStep('date');
-  };
-
-  const handleSelectDraftDate = (date: Date) => {
-    const nextDate = startOfLocalDay(date);
-
-    if (nextDate.getTime() < currentDraftDay.getTime()) {
-      return;
-    }
-
-    setSelectedDraftDate(nextDate);
-    setDateTimeValue(
-      createLocalDateTimeValue(
-        nextDate,
-        draftHour,
-        draftMinute,
-      ),
-    );
-  };
-
-  const handleOpenManualCalendar = () => {
-    setCalendarView(
-      new Date(
-        selectedDraftDate.getFullYear(),
-        selectedDraftDate.getMonth(),
-        1,
-      ),
-    );
-    setIsManualCalendarOpen(true);
-  };
-
-  const handleChangeCalendarMonth = (direction: -1 | 1) => {
-    const nextView = new Date(
-      calendarView.getFullYear(),
-      calendarView.getMonth() + direction,
-      1,
-    );
-
-    if (nextView.getTime() < currentDraftMonth.getTime()) {
-      return;
-    }
-
-    setCalendarView(nextView);
-  };
-
-  const handleChangeCalendarYear = (direction: -1 | 1) => {
-    const nextYear = calendarView.getFullYear() + direction;
-
-    if (nextYear < currentDraftDay.getFullYear()) {
-      return;
-    }
-
-    const nextMonth =
-      nextYear === currentDraftDay.getFullYear()
-        ? currentDraftDay.getMonth()
-        : 0;
-
-    setCalendarView(new Date(nextYear, nextMonth, 1));
-  };
-
-  const applyDraftTime = (
-    nextHour: number,
-    nextMinute: number,
-    direction: number,
-  ) => {
-    const candidate = new Date(
-      selectedDraftDate.getFullYear(),
-      selectedDraftDate.getMonth(),
-      selectedDraftDate.getDate(),
-      nextHour,
-      nextMinute,
-      0,
-      0,
-    );
-
-    if (candidate.getTime() < Date.now()) {
-      if (direction > 0) {
-        const minimumSlot = getNextFiveMinuteSlot();
-
-        if (isSameLocalDay(minimumSlot, selectedDraftDate)) {
-          setDraftHour(minimumSlot.getHours());
-          setDraftMinute(minimumSlot.getMinutes());
-          setDraftHourInput(padNumber(minimumSlot.getHours()));
-          setDraftMinuteInput(padNumber(minimumSlot.getMinutes()));
-          setDateTimeValue(
-            createLocalDateTimeValue(
-              selectedDraftDate,
-              minimumSlot.getHours(),
-              minimumSlot.getMinutes(),
-            ),
-          );
-        }
-      }
-
-      return;
-    }
-
-    setDraftHour(nextHour);
-    setDraftMinute(nextMinute);
-    setDraftHourInput(padNumber(nextHour));
-    setDraftMinuteInput(padNumber(nextMinute));
-    setDateTimeValue(
-      createLocalDateTimeValue(
-        selectedDraftDate,
-        nextHour,
-        nextMinute,
-      ),
-    );
-  };
-
-  const handleAdjustDraftHour = (direction: -1 | 1) => {
-    const nextHour = (draftHour + direction + 24) % 24;
-    applyDraftTime(nextHour, draftMinute, direction);
-  };
-
-  const handleAdjustDraftMinute = (direction: -5 | 5) => {
-    const nextMinute = (draftMinute + direction + 60) % 60;
-    applyDraftTime(draftHour, nextMinute, direction);
-  };
-
-  const handleDraftTimeInputChange = (
-    part: 'hour' | 'minute',
-    value: string,
-  ) => {
-    const numericValue = value.replace(/[^0-9]/g, '').slice(0, 2);
-
-    if (part === 'hour') {
-      setDraftHourInput(numericValue);
-      return;
-    }
-
-    setDraftMinuteInput(numericValue);
-  };
-
-  const handleCommitDraftTimeInput = (
-    part: 'hour' | 'minute',
-  ) => {
-    const rawValue =
-      part === 'hour' ? draftHourInput : draftMinuteInput;
-    const fallbackValue =
-      part === 'hour' ? draftHour : draftMinute;
-    const maximumValue = part === 'hour' ? 23 : 59;
-    const parsedValue =
-      rawValue === '' ? fallbackValue : Number(rawValue);
-    const normalizedValue = Math.min(
-      maximumValue,
-      Math.max(0, parsedValue),
-    );
-    let nextHour =
-      part === 'hour' ? normalizedValue : draftHour;
-    let nextMinute =
-      part === 'minute' ? normalizedValue : draftMinute;
-    const candidate = new Date(
-      selectedDraftDate.getFullYear(),
-      selectedDraftDate.getMonth(),
-      selectedDraftDate.getDate(),
-      nextHour,
-      nextMinute,
-      0,
-      0,
-    );
-
-    if (candidate.getTime() < Date.now()) {
-      const minimumSlot = getNextFiveMinuteSlot();
-
-      if (isSameLocalDay(minimumSlot, selectedDraftDate)) {
-        nextHour = minimumSlot.getHours();
-        nextMinute = minimumSlot.getMinutes();
-      } else {
-        nextHour = draftHour;
-        nextMinute = draftMinute;
-      }
-    }
-
-    setDraftHour(nextHour);
-    setDraftMinute(nextMinute);
-    setDraftHourInput(padNumber(nextHour));
-    setDraftMinuteInput(padNumber(nextMinute));
-    setDateTimeValue(
-      createLocalDateTimeValue(
-        selectedDraftDate,
-        nextHour,
-        nextMinute,
-      ),
-    );
-  };
-
-  const handleAddDraftListItem = () => {
-    const text = draftListInput.trim();
-    if (!text) {
-      return;
-    }
-    setDraftListItems((previous) => [...previous, { id: createId(), text }]);
-    setDraftListInput('');
-  };
-
-  const handleRemoveDraftListItem = (itemId: string) => {
-    setDraftListItems((previous) =>
-      previous.filter((item) => item.id !== itemId),
-    );
-  };
-
-  const handleDraftBack = () => {
-    if (draftStep === 'title') {
-      setSelectedKind(null);
-      setSeriesTargetInput('');
-      setDraftStep('kind');
-      return;
-    }
-
-    if (draftStep === 'time') {
-      setTimeMode(null);
-      setDateTimeValue('');
-      setDraftStep(selectedKind === 'list' ? 'list-items' : 'title');
-      return;
-    }
-
-    if (draftStep === 'series-target') {
-      setSeriesTargetInput('');
-      setDraftStep('title');
-      return;
-    }
-
-    if (draftStep === 'list-items') {
-      setSelectedKind(null);
-      setDraftStep('kind');
-      return;
-    }
-
-    if (draftStep === 'date') {
-      setTimeMode(null);
-      setDraftStep('time');
-      return;
-    }
-
-    if (draftStep === 'repeat') {
-      setTimeMode(null);
-      setDraftRecurrence(null);
-      setDraftStep('time');
-      return;
-    }
-
-    if (draftStep === 'clock') {
-      setDraftStep(draftRecurrence ? 'repeat' : 'date');
-    }
-  };
-
-  const handleDraftNext = () => {
-    if (draftStep === 'title' && draftTitle.trim()) {
-      setDraftStep(
-        selectedKind === 'series'
-          ? 'series-target'
-          : selectedKind === 'list'
-            ? 'list-items'
-            : 'time',
-      );
-      return;
-    }
-
-    if (draftStep === 'list-items' && draftListItems.length >= 1) {
-      handleCreateCard(undefined, 'none');
-      return;
-    }
-
-    if (draftStep === 'repeat' && isRecurrenceComplete(draftRecurrence)) {
-      // The clock works on tomorrow's date so every time of day is allowed;
-      // the real first sheet is worked out when the card is created.
-      const tomorrow = addLocalDays(startOfLocalDay(new Date()), 1);
-
-      setSelectedDraftDate(tomorrow);
-      setDraftHour(9);
-      setDraftMinute(0);
-      setDraftHourInput(padNumber(9));
-      setDraftMinuteInput(padNumber(0));
-      setDraftStep('clock');
-      return;
-    }
-
-    if (draftStep === 'clock' && draftRecurrence) {
-      const first = firstOccurrence(draftRecurrence, draftHour, draftMinute);
-      const firstValue = createLocalDateTimeValue(
-        first,
-        first.getHours(),
-        first.getMinutes(),
-      );
-
-      setDateTimeValue(firstValue);
-      setDraftStep('confirm');
-      commitTimerRef.current = window.setTimeout(() => {
-        handleCreateCard(undefined, 'reminder', firstValue);
-      }, 110);
-      return;
-    }
-
-    if (draftStep === 'date') {
-      setDateTimeValue(
-        createLocalDateTimeValue(
-          selectedDraftDate,
-          draftHour,
-          draftMinute,
-        ),
-      );
-      setDraftStep('clock');
-      return;
-    }
-
-    if (
-      draftStep === 'series-target' &&
-      selectedKind === 'series' &&
-      Number.isInteger(Number(seriesTargetInput)) &&
-      Number(seriesTargetInput) >= 1
-    ) {
-      setDraftStep('confirm');
-      commitTimerRef.current = window.setTimeout(() => {
-        handleCreateCard();
-      }, 110);
-      return;
-    }
-
-    if (draftStep !== 'clock' || !timeMode) {
-      return;
-    }
-
-    const finalDateTimeValue = createLocalDateTimeValue(
-      selectedDraftDate,
-      draftHour,
-      draftMinute,
-    );
-    const finalDateTime = new Date(finalDateTimeValue);
-
-    if (finalDateTime.getTime() < Date.now()) {
-      return;
-    }
-
-    setDateTimeValue(finalDateTimeValue);
-    setDraftStep('confirm');
-    commitTimerRef.current = window.setTimeout(() => {
-      handleCreateCard(
-        undefined,
-        timeMode,
-        finalDateTimeValue,
-      );
-    }, 110);
-  };
 
   // `cardBefore` is the card exactly as it was before the press that completed
   // it (for a series that is before its last step was counted); undo returns
@@ -1839,7 +1163,7 @@ const MainApp: React.FC = () => {
           <AnimatePresence initial={false} mode="popLayout">
             {activeCard && (
               <motion.div
-                key={creationCycle}
+                key={draft.creationCycle}
                 initial={{
                   opacity: 0,
                   y: 18,
@@ -1919,9 +1243,9 @@ const MainApp: React.FC = () => {
           )}
 
           <AnimatePresence initial={false}>
-            {creationState === 'idle' && (
+            {draft.creationState === 'idle' && (
               <motion.div
-                key={`ghost-border-${creationCycle}`}
+                key={`ghost-border-${draft.creationCycle}`}
                 initial={{
                   x: GHOST_SETTINGS.x,
                   y: GHOST_SETTINGS.y,
@@ -1955,9 +1279,9 @@ const MainApp: React.FC = () => {
           </AnimatePresence>
 
           <AnimatePresence initial={false} mode="sync">
-            {creationState === 'idle' ? (
+            {draft.creationState === 'idle' ? (
               <motion.div
-                key={`ghost-${creationCycle}`}
+                key={`ghost-${draft.creationCycle}`}
                 initial={{
                   opacity: 0,
                   x: GHOST_SETTINGS.x,
@@ -2012,7 +1336,11 @@ const MainApp: React.FC = () => {
 
                 <button
                   type="button"
-                  onClick={handleStartCreating}
+                  onClick={() => {
+                    if (draft.startCreating()) {
+                      setIsGhostHovered(false);
+                    }
+                  }}
                   onFocus={() => setIsGhostHovered(true)}
                   onBlur={() => setIsGhostHovered(false)}
                   className="absolute inset-0 cursor-pointer border-0 bg-transparent p-0"
@@ -2064,54 +1392,7 @@ const MainApp: React.FC = () => {
               <div
                 className="absolute inset-0 z-40"
               >
-                <DraftCard
-                  creationCycle={creationCycle}
-                  creationState={creationState}
-                  palette={draftPalette}
-                  draftStep={draftStep}
-                  canAdvanceDraft={canAdvanceDraft}
-                  titleInputRef={titleInputRef}
-                  draftTitle={draftTitle}
-                  seriesTargetInput={seriesTargetInput}
-                  draftListItems={draftListItems}
-                  draftListInput={draftListInput}
-                  selectedKind={selectedKind}
-                  timeMode={timeMode}
-                  selectedDateLabel={selectedDateLabel}
-                  selectedDraftDate={selectedDraftDate}
-                  isManualCalendarOpen={isManualCalendarOpen}
-                  datePresets={datePresets}
-                  calendarView={calendarView}
-                  calendarCells={calendarCells}
-                  currentDraftDay={currentDraftDay}
-                  canGoToPreviousYear={canGoToPreviousYear}
-                  canGoToPreviousMonth={canGoToPreviousMonth}
-                  draftHourInput={draftHourInput}
-                  draftMinuteInput={draftMinuteInput}
-                  isSelectedDateTimeValid={isSelectedDateTimeValid}
-                  onSubmit={handleCreateCard}
-                  onCancel={handleCancelCreating}
-                  onTitleChange={setDraftTitle}
-                  onSeriesTargetChange={setSeriesTargetInput}
-                  onListInputChange={setDraftListInput}
-                  onAddListItem={handleAddDraftListItem}
-                  onRemoveListItem={handleRemoveDraftListItem}
-                  onSelectKind={handleSelectKind}
-                  onSelectTimeMode={handleSelectTimeMode}
-                  onSelectRepeat={handleSelectRepeat}
-                  onRecurrenceChange={setDraftRecurrence}
-                  draftRecurrence={draftRecurrence}
-                  onSelectDate={handleSelectDraftDate}
-                  onOpenManualCalendar={handleOpenManualCalendar}
-                  onChangeYear={handleChangeCalendarYear}
-                  onChangeMonth={handleChangeCalendarMonth}
-                  onTimeInputChange={handleDraftTimeInputChange}
-                  onCommitTimeInput={handleCommitDraftTimeInput}
-                  onAdjustHour={handleAdjustDraftHour}
-                  onAdjustMinute={handleAdjustDraftMinute}
-                  onBack={handleDraftBack}
-                  onNext={handleDraftNext}
-                />
+                <DraftCard {...draft.draftCardProps} />
               </div>
             )}
           </AnimatePresence>
