@@ -32,7 +32,12 @@ import {
   serializeBackup,
   type BackupImportResult,
 } from './backupUtils';
-import { isStoredVisualCard } from './cardValidation';
+import {
+  loadActiveCards,
+  loadArchivedCards,
+  saveActiveCards,
+  saveArchivedCards,
+} from './persistence';
 import { DEBUG_CARD_ID_PREFIX } from './debugCards';
 import { getListProgress } from './listUtils';
 import { reviveCard } from './archiveUtils';
@@ -124,8 +129,6 @@ const insertAt = <T,>(items: T[], item: T, index: number): T[] => {
   return next;
 };
 
-const ARCHIVE_STORAGE_KEY = 'card-tracker.archive.v1';
-const ACTIVE_CARDS_STORAGE_KEY = 'card-tracker.active-cards.v1';
 const CORNER_HINT_STORAGE_KEY = 'card-tracker.corner-hint-dismissed.v1';
 
 const loadCornerHintDismissed = (): boolean => {
@@ -144,56 +147,6 @@ interface TransientOutgoingCard {
 
 const getLocalDayKey = (date: Date): string =>
   `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
-
-const loadArchivedCards = (): VisualCard[] => {
-  if (typeof window === 'undefined') {
-    return [];
-  }
-
-  try {
-    const storedCards = window.localStorage.getItem(ARCHIVE_STORAGE_KEY);
-
-    if (!storedCards) {
-      return [];
-    }
-
-    const parsedCards: unknown = JSON.parse(storedCards);
-
-    if (!Array.isArray(parsedCards)) {
-      return [];
-    }
-
-    return parsedCards
-      .filter(isStoredVisualCard)
-      .sort(
-        (left, right) =>
-          new Date(right.completedAt ?? 0).getTime() -
-          new Date(left.completedAt ?? 0).getTime(),
-      );
-  } catch {
-    return [];
-  }
-};
-
-const loadActiveCards = (): VisualCard[] | null => {
-  if (typeof window === 'undefined') {
-    return null;
-  }
-
-  try {
-    const storedCards = window.localStorage.getItem(ACTIVE_CARDS_STORAGE_KEY);
-    if (!storedCards) {
-      return null;
-    }
-
-    const parsedCards: unknown = JSON.parse(storedCards);
-    return Array.isArray(parsedCards)
-      ? parsedCards.filter(isStoredVisualCard).filter((card) => !card.completedAt)
-      : null;
-  } catch {
-    return null;
-  }
-};
 
 const isEditableTarget = (target: EventTarget | null): boolean => {
   if (!(target instanceof Element)) {
@@ -492,14 +445,7 @@ const MainApp: React.FC = () => {
   }, [cards]);
 
   useEffect(() => {
-    try {
-      window.localStorage.setItem(
-        ACTIVE_CARDS_STORAGE_KEY,
-        JSON.stringify(cards.filter((card) => !card.completedAt)),
-      );
-    } catch {
-      // The active scene must remain usable when browser storage is unavailable.
-    }
+    saveActiveCards(cards);
   }, [cards]);
 
   useEffect(() => {
@@ -549,14 +495,7 @@ const MainApp: React.FC = () => {
   }, [trash]);
 
   useEffect(() => {
-    try {
-      window.localStorage.setItem(
-        ARCHIVE_STORAGE_KEY,
-        JSON.stringify(archivedCards),
-      );
-    } catch {
-      // The active scene must remain usable when browser storage is unavailable.
-    }
+    saveArchivedCards(archivedCards);
   }, [archivedCards]);
 
   useEffect(() => {

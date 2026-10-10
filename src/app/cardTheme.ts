@@ -40,6 +40,36 @@ export interface VisualCard {
   completedAt?: string;
   series?: SeriesData;
   list?: TaskListData;
+  /** Every time the card was put off, oldest first (each leaves a stamp). */
+  postponements?: Postponement[];
+  /**
+   * For a card without its own time: the day it was put off to. Cards with a
+   * deadline or reminder move that time instead.
+   */
+  postponedUntil?: string;
+  /** Repeats on a schedule; the next occurrence is kept in `reminderAt`. */
+  recurrence?: RecurrenceRule;
+}
+
+export interface Postponement {
+  /** When it was put off. */
+  at: string;
+  /** What it was put off to. */
+  until: string;
+}
+
+/**
+ * - daily: every day
+ * - weekdays: Monday to Friday
+ * - weekly: on the given days of the week (0 = Monday … 6 = Sunday)
+ * - interval: every N days
+ */
+export type RecurrenceKind = 'daily' | 'weekdays' | 'weekly' | 'interval';
+
+export interface RecurrenceRule {
+  kind: RecurrenceKind;
+  weekdays?: number[];
+  intervalDays?: number;
 }
 
 export interface SeriesEntry {

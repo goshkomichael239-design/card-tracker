@@ -1,10 +1,10 @@
 import type { VisualCard } from './cardTheme';
-import { isStoredVisualCard } from './cardValidation';
+import { isStoredVisualCard, sanitizeStoredCard } from './cardValidation';
 import { isTrashedCard, purgeExpiredTrash, type TrashedCard } from './trash';
 
 const BACKUP_APP_ID = 'card-tracker';
-// v2 adds the bin; v1 files (without it) still import.
-const BACKUP_VERSION = 2;
+// v2 adds the bin, v3 postponements and repeat rules; older files still import.
+const BACKUP_VERSION = 3;
 
 export interface BackupPayload {
   cards: VisualCard[];
@@ -60,12 +60,16 @@ export const parseBackup = (text: string): BackupPayload | null => {
     return {
       cards: backup.cards
         .filter(isStoredVisualCard)
-        .filter((card) => !card.completedAt),
+        .filter((card) => !card.completedAt)
+        .map(sanitizeStoredCard),
       archive: backup.archive
         .filter(isStoredVisualCard)
-        .filter((card) => Boolean(card.completedAt)),
+        .filter((card) => Boolean(card.completedAt))
+        .map(sanitizeStoredCard),
       trash: Array.isArray(backup.trash)
-        ? purgeExpiredTrash(backup.trash.filter(isTrashedCard))
+        ? purgeExpiredTrash(backup.trash.filter(isTrashedCard)).map(
+            (item) => ({ ...item, card: sanitizeStoredCard(item.card) }),
+          )
         : [],
     };
   } catch {

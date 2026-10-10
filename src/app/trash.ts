@@ -1,5 +1,5 @@
 import type { VisualCard } from './cardTheme';
-import { isStoredVisualCard } from './cardValidation';
+import { isStoredVisualCard, sanitizeStoredCard } from './cardValidation';
 
 /** A card thrown into the bin: it keeps its place in the deck for a restore. */
 export interface TrashedCard {
@@ -51,7 +51,10 @@ export const loadTrash = (): TrashedCard[] => {
     const parsed: unknown = JSON.parse(stored);
 
     return Array.isArray(parsed)
-      ? purgeExpiredTrash(parsed.filter(isTrashedCard))
+      ? purgeExpiredTrash(parsed.filter(isTrashedCard)).map((item) => ({
+          ...item,
+          card: sanitizeStoredCard(item.card),
+        }))
       : [];
   } catch {
     return [];
