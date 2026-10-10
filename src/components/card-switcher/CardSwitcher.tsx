@@ -168,7 +168,7 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
           className="engraved relative w-full overflow-hidden border"
           style={{
             borderRadius: config.borderRadius,
-            padding: '7px 9px',
+            padding: '6px 8px',
             backgroundColor: 'rgba(247,242,232,0.84)',
             borderColor: 'rgba(103,86,65,0.2)',
             boxShadow:
@@ -197,10 +197,10 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
                     key={card.id}
                     type="button"
                     onClick={() => onSelectCard(card.id)}
-                    className="relative flex w-full items-center overflow-hidden border-0 px-3 text-left"
+                    className="relative flex w-full items-center overflow-hidden border-0 px-2.5 text-left"
                     style={{
                       height: config.rowHeight,
-                      borderRadius: 9,
+                      borderRadius: 8,
                       backgroundColor: isActive
                         ? `${palette.accent}1f`
                         : 'transparent',

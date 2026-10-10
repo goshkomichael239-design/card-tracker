@@ -26,11 +26,11 @@ export interface CardSwitcherConfig {
 }
 
 export const INITIAL_CARD_SWITCHER_CONFIG: CardSwitcherConfig = {
-  width: 480,
+  width: 408,
   positionX: -1,
-  positionY: 43,
+  positionY: 37,
   height: 131,
-  borderRadius: 18,
+  borderRadius: 15,
   backgroundSize: 502,
   backgroundX: -13,
   backgroundY: -142,
@@ -38,9 +38,9 @@ export const INITIAL_CARD_SWITCHER_CONFIG: CardSwitcherConfig = {
   paddingRight: 87,
   paddingTop: 8,
   paddingBottom: 56,
-  rowHeight: 31,
+  rowHeight: 26,
   rowGap: -2,
-  fontSize: 14,
+  fontSize: 12,
   textX: -4,
   dotsX: 376,
   dotSize: 7,

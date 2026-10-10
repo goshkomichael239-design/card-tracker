@@ -41,11 +41,13 @@ export const useViewportSize = (): ViewportSize => {
 };
 
 export const MIN_CARD_SCALE = 0.55;
+/** The card scene may grow 15% past its design size when there is room. */
+export const MAX_CARD_SCALE = 1.15;
 
 /**
- * Uniform scale that fits the fixed-size card scene into the free area. The
- * scene is designed at 1:1 and never grows past it, so the baseline look of the
- * card is unchanged on normal screens.
+ * Uniform scale that fits the fixed-size card scene into the free area: shrinks
+ * on small screens and grows up to MAX_CARD_SCALE on roomy ones. Everything on
+ * the card scales with it, since the scene is scaled as one piece.
  */
 export const getCardScale = (
   availableWidth: number,
@@ -54,7 +56,7 @@ export const getCardScale = (
   cardHeight: number,
 ): number => {
   const scale = Math.min(
-    1,
+    MAX_CARD_SCALE,
     availableWidth / cardWidth,
     availableHeight / cardHeight,
   );

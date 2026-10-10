@@ -172,7 +172,7 @@ const SCENE_TOP_OVERHANG = 66;
 const SCENE_BOTTOM_OVERHANG = 40;
 const SCENE_SIDE_OVERHANG = 44;
 const SWITCHER_TOP = 16;
-const SWITCHER_CHROME = 16;
+const SWITCHER_CHROME = 14;
 const SWITCHER_ROW_GAP = 2;
 
 const MainApp: React.FC = () => {
