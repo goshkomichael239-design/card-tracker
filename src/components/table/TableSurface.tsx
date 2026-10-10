@@ -2,11 +2,11 @@ import React from 'react';
 
 import baizeTexture from '../../assets/baize.webp';
 
-/** The cloth itself: a small seamless tile, repeated. */
+/** The cloth itself: a seamless tile drawn at twice its size (1024 px shown at 512), so it stays fine-grained on dense screens. */
 const BAIZE_STYLE: React.CSSProperties = {
   backgroundColor: '#1f3e30',
   backgroundImage: `url(${baizeTexture})`,
-  backgroundSize: '384px 384px',
+  backgroundSize: '512px 512px',
   backgroundRepeat: 'repeat',
 };
 
