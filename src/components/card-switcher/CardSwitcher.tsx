@@ -7,6 +7,13 @@ import {
   INITIAL_CARD_SWITCHER_CONFIG,
   type CardSwitcherConfig,
 } from './cardSwitcherConfig';
+import { DeckDivider } from './DeckDivider';
+import {
+  buildSwitcherItems,
+  groupStyle,
+  type DeckFilter,
+  type DeckGroup,
+} from './switcherItems';
 
 interface CardSwitcherProps {
   cards: VisualCard[];
@@ -15,11 +22,14 @@ interface CardSwitcherProps {
   onNextCard: () => void;
   onPreviousCard: () => void;
   mode?: 'main' | 'archive';
-  /** Rendered under the panel and moves with it. */
-  footer?: React.ReactNode;
+  /** When given, the list is split by dividers into these groups. */
+  groupOf?: (card: VisualCard) => DeckGroup;
+  groupCounts?: Record<'overdue' | 'today' | 'soon', number>;
+  /** The group the list is narrowed to ("all" for the whole deck). */
+  activeFilter?: DeckFilter;
+  onSelectFilter?: (filter: DeckFilter) => void;
 }
 
-const MAX_VISIBLE_ROWS = 4;
 const WHEEL_INTENT_THRESHOLD = 6;
 const WHEEL_GESTURE_END_MS = 90;
 const SHOW_CARD_SWITCHER_DEBUG = false;
@@ -44,7 +54,10 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
   onNextCard,
   onPreviousCard,
   mode = 'main',
-  footer,
+  groupOf,
+  groupCounts,
+  activeFilter = 'all',
+  onSelectFilter,
 }) => {
   const [config, setConfig] = useState<CardSwitcherConfig>(() => ({
     ...INITIAL_CARD_SWITCHER_CONFIG,
@@ -63,17 +76,9 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
     onPreviousCardRef.current = onPreviousCard;
   }, [cards, onNextCard, onPreviousCard]);
 
-  const activeIndex = Math.max(
-    0,
-    cards.findIndex((card) => card.id === activeCardId),
-  );
-  const windowStart = Math.min(
-    Math.max(0, activeIndex - (MAX_VISIBLE_ROWS - 1)),
-    Math.max(0, cards.length - MAX_VISIBLE_ROWS),
-  );
-  const visibleCards = useMemo(
-    () => cards.slice(windowStart, windowStart + MAX_VISIBLE_ROWS),
-    [cards, windowStart],
+  const items = useMemo(
+    () => buildSwitcherItems(cards, activeCardId, groupOf),
+    [cards, activeCardId, groupOf],
   );
 
   useEffect(() => {
@@ -171,7 +176,6 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
           className="engraved relative w-full overflow-hidden border"
           style={{
             borderRadius: config.borderRadius,
-            zIndex: 1,
             padding: '6px 8px',
             backgroundColor: 'rgba(247,242,232,0.84)',
             borderColor: 'rgba(103,86,65,0.2)',
@@ -192,9 +196,41 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
 
           <div className="relative">
             <div className="flex flex-col gap-0.5">
-              {visibleCards.map((card) => {
+              {items.map((item) => {
+                if (item.type === 'divider') {
+                  const dated = item.group !== null;
+
+                  return (
+                    <DeckDivider
+                      key={`divider-${item.group ?? 'rest'}`}
+                      group={item.group}
+                      count={
+                        item.group
+                          ? (groupCounts?.[item.group] ?? 0)
+                          : cards.filter((card) => groupOf?.(card) === null)
+                              .length
+                      }
+                      isFiltered={dated && activeFilter === item.group}
+                      onPress={
+                        dated && onSelectFilter
+                          ? () =>
+                              onSelectFilter(
+                                activeFilter === item.group
+                                  ? 'all'
+                                  : item.group!,
+                              )
+                          : undefined
+                      }
+                    />
+                  );
+                }
+
+                const { card } = item;
                 const isActive = card.id === activeCardId;
                 const palette = getCardPalette(card);
+                const mark = groupOf
+                  ? groupStyle(groupOf(card)).mark
+                  : 'transparent';
 
                 return (
                   <button
@@ -211,6 +247,11 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
                     }}
                     aria-pressed={isActive}
                   >
+                    <span
+                      className="absolute bottom-1 left-0 top-1 w-[3px] rounded-r-[2px]"
+                      style={{ backgroundColor: mark }}
+                      aria-hidden="true"
+                    />
                     <span
                       className="relative z-10 block min-w-0 flex-1 truncate font-mono font-semibold"
                       style={{
@@ -229,9 +270,6 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
             </div>
           </div>
         </div>
-
-        {/* Index tabs hanging from the bottom edge of the panel. */}
-        {footer}
       </div>
 
       {import.meta.env.DEV && SHOW_CARD_SWITCHER_DEBUG && (

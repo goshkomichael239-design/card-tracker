@@ -346,66 +346,6 @@
   }
 }
 
-/* Index tabs hanging from the bottom edge of the card list. */
-.deck-tab {
-  position: relative;
-  z-index: 0;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  height: 26px;
-  margin-top: -1px;
-  padding: 0 10px 1px;
-  border: 1px solid rgba(103, 86, 65, 0.2);
-  border-top: 0;
-  border-radius: 0 0 9px 9px;
-  background-color: #ebe5d6;
-  background-size: cover;
-  background-blend-mode: multiply;
-  font-family: inherit;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  cursor: pointer;
-  box-shadow:
-    0 5px 9px rgba(20, 17, 14, 0.2),
-    inset 0 -1px 0 rgba(255, 255, 255, 0.6);
-  transition:
-    transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1),
-    background-color 180ms ease-out;
-  -webkit-tap-highlight-color: transparent;
-  touch-action: manipulation;
-}
-
-.deck-tab:disabled {
-  cursor: default;
-  opacity: 0.45;
-}
-
-@media (hover: hover) {
-  .deck-tab:not(:disabled):hover {
-    transform: translateY(2px);
-  }
-}
-
-.deck-tab--active {
-  transform: translateY(3px);
-  background-color: #f1d9a8;
-  box-shadow:
-    0 7px 12px rgba(20, 17, 14, 0.26),
-    inset 0 2px 4px rgba(90, 60, 20, 0.18);
-}
-
-.deck-tab__count {
-  min-width: 16px;
-  padding: 0 4px;
-  border-radius: 8px;
-  background: rgba(60, 45, 30, 0.1);
-  text-align: center;
-  font-variant-numeric: lining-nums tabular-nums;
-}
-
 /* Waste-paper basket on the table: lifts a little under the cursor and gives
    a short bump when a card lands in it. */
 .trash-bin {
@@ -726,4 +666,68 @@ body {
       0 20px 60px rgba(0,0,0,0.6),
       inset 0 0 0 1px rgba(255,255,255,0.03);
   }
+}
+/* Card-index dividers inside the switcher list: a kraft strip that names a
+   group of cards (overdue / today / soon / the rest). */
+.deck-divider {
+  position: relative;
+  display: flex;
+  width: 100%;
+  height: 24px;
+  margin: 3px 0 1px;
+  padding: 0 8px 0 14px;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  border-radius: 3px 9px 3px 3px;
+  background-color: #d8c59f;
+  background-size: cover;
+  background-blend-mode: multiply;
+  font-family: inherit;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-align: left;
+  text-transform: uppercase;
+  box-shadow:
+    0 2px 4px rgba(40, 28, 16, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+button.deck-divider {
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.deck-divider--active {
+  background-color: #e6cf9c;
+  box-shadow:
+    0 1px 2px rgba(40, 28, 16, 0.2),
+    inset 0 2px 3px rgba(90, 60, 20, 0.22);
+}
+
+.deck-divider__mark {
+  position: absolute;
+  left: 4px;
+  top: 4px;
+  bottom: 4px;
+  width: 4px;
+  border-radius: 2px;
+}
+
+.deck-divider__count {
+  min-width: 16px;
+  padding: 0 4px;
+  border-radius: 8px;
+  background: rgba(60, 45, 30, 0.1);
+  text-align: center;
+  font-variant-numeric: lining-nums tabular-nums;
+}
+
+.deck-divider__all {
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  opacity: 0.7;
 }

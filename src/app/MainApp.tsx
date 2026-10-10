@@ -43,7 +43,11 @@ import { DEBUG_CARD_ID_PREFIX } from './debugCards';
 import { getListProgress } from './listUtils';
 import { reviveCard } from './archiveUtils';
 import { formatPostponeMoment, getDueBucket, postponeCard } from './timeOps';
-import { DeckTabs, type DeckFilter } from '../components/card-switcher/DeckTabs';
+import {
+  buildSwitcherItems,
+  DIVIDER_HEIGHT,
+  type DeckFilter,
+} from '../components/card-switcher/switcherItems';
 import {
   advanceRecurringCard,
   firstOccurrence,
@@ -196,7 +200,6 @@ const SCENE_BOTTOM_OVERHANG = 40;
 const SCENE_SIDE_OVERHANG = 44;
 const NARROW_SCENE_SIDE_OVERHANG = 64;
 // The overview tabs hanging under the card list.
-const DECK_TABS_HEIGHT = 30;
 const SWITCHER_TOP = 16;
 const SWITCHER_CHROME = 14;
 const SWITCHER_ROW_GAP = 2;
@@ -391,19 +394,48 @@ const MainApp: React.FC = () => {
     filteredCards.some((card) => card.id === activeCardId)
       ? deckFilter
       : 'all';
-  const visibleCards = effectiveFilter === 'all' ? cards : filteredCards;
-  const showDeckTabs =
+  const showDeckGroups =
     effectiveFilter !== 'all' ||
     dueCounts.overdue + dueCounts.today + dueCounts.soon > 0;
+  // The whole deck reads in groups: overdue, today, soon, then the rest. The
+  // order inside a group is the deck's own.
+  const visibleCards = useMemo(() => {
+    if (effectiveFilter !== 'all') {
+      return filteredCards;
+    }
 
-  const switcherRows = Math.min(4, Math.max(1, visibleCards.length));
+    if (!showDeckGroups) {
+      return cards;
+    }
+
+    const rank = (card: VisualCard) => {
+      const bucket = dueBuckets.get(card.id);
+      return bucket === 'overdue' ? 0 : bucket === 'today' ? 1 : bucket === 'soon' ? 2 : 3;
+    };
+
+    return [...cards].sort((a, b) => rank(a) - rank(b));
+  }, [cards, dueBuckets, effectiveFilter, filteredCards, showDeckGroups]);
+  const groupOf = useCallback(
+    (card: VisualCard) => dueBuckets.get(card.id) ?? null,
+    [dueBuckets],
+  );
+
+  const switcherItems = buildSwitcherItems(
+    visibleCards,
+    activeCardId,
+    showDeckGroups ? groupOf : undefined,
+  );
+  const switcherCardRows = switcherItems.filter(
+    (item) => item.type === 'card',
+  ).length;
+  const switcherDividerRows = switcherItems.length - switcherCardRows;
   const switcherBottom =
     SWITCHER_TOP +
     INITIAL_CARD_SWITCHER_CONFIG.positionY +
     SWITCHER_CHROME +
-    switcherRows * INITIAL_CARD_SWITCHER_CONFIG.rowHeight +
-    (switcherRows - 1) * SWITCHER_ROW_GAP +
-    (showDeckTabs ? DECK_TABS_HEIGHT : 0);
+    Math.max(1, switcherCardRows) * INITIAL_CARD_SWITCHER_CONFIG.rowHeight +
+    (Math.max(1, switcherItems.length) - 1) * SWITCHER_ROW_GAP +
+    switcherDividerRows * DIVIDER_HEIGHT;
   const sceneTopReserve = switcherBottom + SCENE_TOP_OVERHANG;
   const sceneBottomReserve = ARCHIVE_NAVIGATION_HEIGHT + SCENE_BOTTOM_OVERHANG;
   const sceneScale = getCardScale(
@@ -2054,15 +2086,10 @@ const MainApp: React.FC = () => {
             onSelectCard={handleSelectCard}
             onNextCard={handleNextCard}
             onPreviousCard={handlePreviousCard}
-            footer={
-              showDeckTabs ? (
-                <DeckTabs
-                  counts={dueCounts}
-                  active={effectiveFilter}
-                  onSelect={handleSelectDeckFilter}
-                />
-              ) : undefined
-            }
+            groupOf={showDeckGroups ? groupOf : undefined}
+            groupCounts={dueCounts}
+            activeFilter={effectiveFilter}
+            onSelectFilter={handleSelectDeckFilter}
           />
         </div>
 
