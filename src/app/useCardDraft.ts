@@ -11,8 +11,8 @@ import type { DraftCard } from '../components/draft-card/DraftCard';
 import { createId } from './cardOps';
 import {
   getCardPalette,
+  getColorSchemeById,
   pickNewCardColorId,
-  PALETTES,
   type CardKind,
   type CreationState,
   type DraftStep,
@@ -34,6 +34,12 @@ import {
 import { getDeckState } from './deckStore';
 import { firstOccurrence, isRecurrenceComplete } from './recurrence';
 
+/** The colour scheme of the last card in the deck (the new one sits next to it). */
+const pickLastColorId = (): string | undefined => {
+  const last = getDeckState().cards.at(-1);
+  return last ? getCardPalette(last).id : undefined;
+};
+
 interface UseCardDraftOptions {
   /** A completion is still settling on the table: a new card must wait. */
   pendingCompletedCardId: string | null;
@@ -53,6 +59,11 @@ export function useCardDraft({
   // "Now" while a draft is open, so validity is worked out in render without
   // reading the clock there; it is refreshed when a draft starts and while open.
   const [clockMs, setClockMs] = useState(() => Date.now());
+  // The colour the new card will have: chosen when the draft opens, so the
+  // paper is already that colour while it is being filled in.
+  const [draftColorId, setDraftColorId] = useState(() =>
+    pickNewCardColorId(pickLastColorId()),
+  );
   const [creationState, setCreationState] =
     useState<CreationState>('idle');
   const [draftTitle, setDraftTitle] = useState('');
@@ -92,7 +103,7 @@ export function useCardDraft({
   const titleInputRef = useRef<HTMLTextAreaElement | null>(null);
   const commitTimerRef = useRef<number | null>(null);
 
-  const draftPalette = PALETTES[timeMode ?? 'none'];
+  const draftPalette = getColorSchemeById(draftColorId);
 
   const currentDraftDay = startOfLocalDay(new Date());
   const currentDraftMonth = new Date(
@@ -233,6 +244,7 @@ export function useCardDraft({
 
     resetDraft();
     setClockMs(Date.now());
+    setDraftColorId(pickNewCardColorId(pickLastColorId()));
     setCreationState('editing');
     return true;
   };
@@ -309,13 +321,10 @@ export function useCardDraft({
 
       const now = new Date().toISOString();
       const isSeries = selectedKind === 'series';
-      const lastCard = getDeckState().cards.at(-1);
       const newCard: VisualCard = {
         id: createId(),
-        // Pastel scheme that differs from the card it will sit next to.
-        colorId: pickNewCardColorId(
-          lastCard ? getCardPalette(lastCard).id : undefined,
-        ),
+        // The scheme the paper already had while it was being filled in.
+        colorId: draftColorId,
         title: isList ? listTitle : draftTitle.trim(),
         kind: isSeries ? 'series' : isList ? 'list' : 'single',
         timeMode: isSeries ? 'none' : creationTimeMode!,

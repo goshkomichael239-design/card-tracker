@@ -1,40 +1,98 @@
-import { CARD_COLOR_SCHEMES, PALETTES, type TimeMode } from '../../app/cardTheme';
-import { TimeOption } from '../shared/TimeOption';
+import React from 'react';
+
+import type { CardPalette, TimeMode } from '../../app/cardTheme';
 
 export interface DraftTimeModeStepProps {
   timeMode: TimeMode | null;
   /** True once "Регулярно" was chosen (a repeating card is a reminder). */
   isRepeating: boolean;
+  palette: CardPalette;
   onSelectTimeMode: (mode: TimeMode) => void;
   onSelectRepeat: () => void;
 }
 
-// "Регулярно" gets its own colour so it is not mistaken for a reminder.
-const REPEAT_PALETTE =
-  CARD_COLOR_SCHEMES.find((scheme) => scheme.id === 'lavender') ?? PALETTES.reminder;
+const drawDelay = (ms: number): React.CSSProperties =>
+  ({ ['--draw-delay' as string]: `${ms}ms` }) as React.CSSProperties;
 
+/**
+ * When the card is due: four slots pressed into the paper, a word on the
+ * left and a quiet hint on the right, like the choices of "put off".
+ */
 export function DraftTimeModeStep({
   timeMode,
   isRepeating,
+  palette,
   onSelectTimeMode,
   onSelectRepeat,
 }: DraftTimeModeStepProps) {
+  const glowStyle = {
+    ['--etched-glow' as string]: palette.glow,
+  } as React.CSSProperties;
+  const options: Array<{
+    id: string;
+    title: string;
+    hint: string;
+    selected: boolean;
+    onPick: () => void;
+  }> = [
+    {
+      id: 'none',
+      title: 'Без времени',
+      hint: 'просто дело',
+      selected: timeMode === 'none',
+      onPick: () => onSelectTimeMode('none'),
+    },
+    {
+      id: 'deadline',
+      title: 'Выполнить до',
+      hint: 'срок',
+      selected: timeMode === 'deadline',
+      onPick: () => onSelectTimeMode('deadline'),
+    },
+    {
+      id: 'reminder',
+      title: 'Напоминание',
+      hint: 'в нужный час',
+      selected: timeMode === 'reminder' && !isRepeating,
+      onPick: () => onSelectTimeMode('reminder'),
+    },
+    {
+      id: 'repeat',
+      title: 'Регулярно',
+      hint: 'по расписанию',
+      selected: isRepeating,
+      onPick: onSelectRepeat,
+    },
+  ];
+
   return (
-    <div>
-      <span
-        className="font-mono text-[15px] font-bold uppercase tracking-[0.17em]"
+    <div className="flex flex-col">
+      <p
+        className="draw-in shrink-0 font-semibold leading-[1.15]"
         style={{
-          color: 'rgba(30,28,26,0.72)',
-          textShadow: '0 1px 0 rgba(255,255,255,0.28)',
+          ...drawDelay(60),
+          fontSize: 22,
+          color: 'rgba(40,35,29,0.62)',
+          letterSpacing: '-0.015em',
         }}
       >
         Когда?
-      </span>
-      <div className="mt-4 grid grid-cols-2 gap-2">
-        <TimeOption index={0} lines={['Без', 'времени']} selected={timeMode === 'none'} palette={PALETTES.none} onClick={() => onSelectTimeMode('none')} />
-        <TimeOption index={1} lines={['Выполнить', 'до:']} selected={timeMode === 'deadline'} palette={PALETTES.deadline} onClick={() => onSelectTimeMode('deadline')} />
-        <TimeOption index={2} lines={['Напоминание', '']} selected={timeMode === 'reminder' && !isRepeating} palette={PALETTES.reminder} onClick={() => onSelectTimeMode('reminder')} />
-        <TimeOption index={3} lines={['Регулярно', '']} selected={isRepeating} palette={REPEAT_PALETTE} onClick={onSelectRepeat} />
+      </p>
+
+      <div className="mt-4 flex flex-col gap-2.5">
+        {options.map((option, index) => (
+          <button
+            key={option.id}
+            type="button"
+            onClick={option.onPick}
+            onTouchStart={() => undefined}
+            className={`etched-action etched-action--slim etched-action--roomy draw-in${option.selected ? ' etched-action--selected' : ''}`}
+            style={{ ...drawDelay(120 + index * 50), ...glowStyle }}
+          >
+            <span className="etched-action__text">{option.title}</span>
+            <span className="etched-action__hint">{option.hint}</span>
+          </button>
+        ))}
       </div>
     </div>
   );

@@ -37,6 +37,7 @@ const getCustomPostponeStart = (card: VisualCard): Date => {
   return new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 9, 0);
 };
 import { CardListFace } from './CardListFace';
+import { FOLD_CUT_PATH, FOLD_SIZE, FoldedFlap } from './FoldedCorner';
 import { CountdownPanel } from './CountdownPanel';
 import { INITIAL_TASK_CARD_V2_CONFIG } from './taskCardV2Config';
 import { TaskListContent } from './TaskListContent';
@@ -561,35 +562,3 @@ export const TaskCard: React.FC<TaskCardProps> = ({
 // How long the wipe back to the card face takes (see CardFaceStage), plus a
 // beat, before the coupon is torn off.
 const FINISH_WIPE_WAIT_MS = 560;
-
-// Size of the folded corner and the clip that removes it from the card body.
-const FOLD_SIZE = 46;
-const FOLD_CUT_PATH = `polygon(0 0, calc(100% - ${FOLD_SIZE}px) 0, 100% ${FOLD_SIZE}px, 100% 100%, 0 100%)`;
-
-const FoldedFlap: React.FC<{ lifted: boolean; paperTint: string }> = ({
-  lifted,
-  paperTint,
-}) => (
-  <span
-    className="absolute right-0 top-0 block"
-    style={{
-      width: FOLD_SIZE,
-      height: FOLD_SIZE,
-      filter: lifted
-        ? 'drop-shadow(-2px 4px 3.5px rgba(38,27,16,0.5))'
-        : 'drop-shadow(-1px 2px 2px rgba(38,27,16,0.36))',
-      transition: 'filter 160ms ease-out',
-    }}
-  >
-    <span
-      className="absolute inset-0 block"
-      style={{
-        clipPath: 'polygon(0 0, 100% 100%, 0 100%)',
-        backgroundColor: paperTint,
-        backgroundImage: `linear-gradient(to bottom left, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.7) 50%, rgba(70,55,38,0.3) 100%), url(${cardboardTexture})`,
-        backgroundSize: '100% 100%, cover',
-        backgroundBlendMode: 'normal, multiply',
-      }}
-    />
-  </span>
-);

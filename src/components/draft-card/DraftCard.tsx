@@ -15,6 +15,11 @@ import {
   type TimeMode,
 } from '../../app/cardTheme';
 import { INITIAL_TASK_CARD_V2_CONFIG } from '../task-card/taskCardV2Config';
+import {
+  FOLD_CUT_PATH,
+  FOLD_SIZE,
+  FoldedFlap,
+} from '../task-card/FoldedCorner';
 import { DraftCardHeader } from './DraftCardHeader';
 import { DraftClockStep } from './DraftClockStep';
 import { DraftDateStep } from './DraftDateStep';
@@ -92,8 +97,6 @@ export function DraftCard(props: DraftCardProps) {
         scale: GHOST_SETTINGS.scale,
         opacity: GHOST_SETTINGS.opacity,
         filter: 'saturate(0.45) brightness(0.96)',
-        boxShadow: GHOST_SHADOW,
-        backgroundColor: config.paperTint,
       }}
       animate={
         props.creationState === 'committing'
@@ -104,8 +107,6 @@ export function DraftCard(props: DraftCardProps) {
               scale: 0.988,
               opacity: 1,
               filter: 'saturate(1) brightness(1)',
-              boxShadow: CARD_SHADOW,
-              backgroundColor: config.paperTint,
             }
           : {
               x: 0,
@@ -114,17 +115,38 @@ export function DraftCard(props: DraftCardProps) {
               scale: 1,
               opacity: 1,
               filter: 'saturate(1) brightness(1)',
-              boxShadow: DRAFT_SHADOW,
-              backgroundColor: config.paperTint,
             }
       }
       exit={{ opacity: 0, scale: 0.985 }}
       transition={PHYSICAL_SPRING}
-      className="engraved absolute inset-0 flex flex-col overflow-hidden"
-      style={{
-        zIndex: 40,
+      className="absolute inset-0"
+      style={{ zIndex: 40, transformOrigin: 'center center' }}
+    >
+      {/* The cast shadow has its own layer: the paper above is cut along the
+          crease of the folded corner, which would clip it. */}
+      <motion.div
+        className="pointer-events-none absolute inset-0"
+        initial={{ boxShadow: GHOST_SHADOW }}
+        animate={{
+          boxShadow:
+            props.creationState === 'committing' ? CARD_SHADOW : DRAFT_SHADOW,
+        }}
+        transition={PHYSICAL_SPRING}
+        style={{ borderRadius: `${config.borderRadius}px` }}
+        aria-hidden="true"
+      />
+
+      {/* The paper itself, laid out like a finished card (same padding, the
+          same cut corner), already in the colour the card will have. */}
+      <motion.div
+        className="engraved absolute inset-0 flex flex-col overflow-hidden"
+        initial={{ backgroundColor: config.paperTint }}
+        animate={{ backgroundColor: props.palette.paper }}
+        transition={{ duration: 0.3 }}
+        style={{
         borderRadius: `${config.borderRadius}px`,
-        padding: '23px 20px 20px',
+        padding: `${config.contentPadding}px`,
+        clipPath: FOLD_CUT_PATH,
         backgroundImage: `
           radial-gradient(
             circle at 14% 8%,
@@ -143,11 +165,13 @@ export function DraftCard(props: DraftCardProps) {
         backgroundPosition: 'center, center, center',
         backgroundSize: '100% 100%, 100% 100%, cover',
         backgroundBlendMode: 'soft-light, multiply, multiply',
-        border: '1px solid rgba(70,52,38,0.24)',
-        transformOrigin: 'center center',
+        border: '1px solid rgba(91,76,59,0.16)',
       }}
     >
-      <DraftCardHeader palette={props.palette} onCancel={props.onCancel} disabled={disabled} />
+      <DraftCardHeader
+        palette={props.palette}
+        selectedKind={props.selectedKind}
+      />
 
       <div className="relative mt-5 min-h-0 flex-1 overflow-hidden">
         <AnimatePresence initial={false} mode="wait">
@@ -185,7 +209,13 @@ export function DraftCard(props: DraftCardProps) {
               />
             )}
             {props.draftStep === 'time' && (
-              <DraftTimeModeStep timeMode={props.timeMode} isRepeating={props.draftRecurrence !== null} onSelectTimeMode={props.onSelectTimeMode} onSelectRepeat={props.onSelectRepeat} />
+              <DraftTimeModeStep
+                timeMode={props.timeMode}
+                isRepeating={props.draftRecurrence !== null}
+                palette={props.palette}
+                onSelectTimeMode={props.onSelectTimeMode}
+                onSelectRepeat={props.onSelectRepeat}
+              />
             )}
             {props.draftStep === 'date' && (
               <DraftDateStep
@@ -239,6 +269,24 @@ export function DraftCard(props: DraftCardProps) {
             />
           </motion.div>
         </AnimatePresence>
+      </div>
+      </motion.div>
+
+      {/* The folded corner is the way out, as on every card. */}
+      <div
+        className="absolute right-0 top-0 z-30"
+        style={{ width: FOLD_SIZE + 10, height: FOLD_SIZE + 10 }}
+      >
+        <button
+          type="button"
+          onClick={props.onCancel}
+          disabled={disabled}
+          aria-label="Отменить создание"
+          title="Отменить создание"
+          className="absolute inset-0 cursor-pointer border-0 bg-transparent p-0 outline-none disabled:cursor-default disabled:opacity-40"
+        >
+          <FoldedFlap lifted={false} paperTint={props.palette.paper} />
+        </button>
       </div>
     </motion.form>
   );

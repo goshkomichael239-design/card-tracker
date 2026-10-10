@@ -1,5 +1,6 @@
+import React from 'react';
+
 import type { CardKind, CardPalette } from '../../app/cardTheme';
-import { TypeOption } from '../shared/TypeOption';
 
 export interface DraftKindStepProps {
   selectedKind: CardKind | null;
@@ -7,22 +8,56 @@ export interface DraftKindStepProps {
   onSelectKind: (kind: CardKind) => void;
 }
 
-export function DraftKindStep({ selectedKind, palette, onSelectKind }: DraftKindStepProps) {
+const OPTIONS: Array<{ kind: CardKind; title: string; hint: string }> = [
+  { kind: 'single', title: 'Одна задача', hint: 'название и срок' },
+  { kind: 'series', title: 'Серия', hint: 'название и цель' },
+  { kind: 'list', title: 'Список', hint: 'пункты по одному' },
+];
+
+const drawDelay = (ms: number): React.CSSProperties =>
+  ({ ['--draw-delay' as string]: `${ms}ms` }) as React.CSSProperties;
+
+/**
+ * The first thing on a new card: what it will be. Three slots pressed into
+ * the paper, like the actions of a finished card, each with a short hint.
+ */
+export function DraftKindStep({
+  selectedKind,
+  palette,
+  onSelectKind,
+}: DraftKindStepProps) {
+  const glowStyle = {
+    ['--etched-glow' as string]: palette.glow,
+  } as React.CSSProperties;
+
   return (
-    <div>
-      <span
-        className="font-mono text-[15px] font-bold uppercase tracking-[0.17em]"
+    <div className="flex flex-col">
+      <p
+        className="draw-in shrink-0 font-semibold leading-[1.15]"
         style={{
-          color: 'rgba(30,28,26,0.72)',
-          textShadow: '0 1px 0 rgba(255,255,255,0.28)',
+          ...drawDelay(60),
+          fontSize: 22,
+          color: 'rgba(40,35,29,0.62)',
+          letterSpacing: '-0.015em',
         }}
       >
-        Выберите тип
-      </span>
-      <div className="mt-5 grid grid-cols-3 gap-3">
-        <TypeOption index={0} lines={['Одна', 'задача']} selected={selectedKind === 'single'} palette={palette} onClick={() => onSelectKind('single')} />
-        <TypeOption index={1} lines={['Серия', '']} selected={selectedKind === 'series'} palette={palette} onClick={() => onSelectKind('series')} />
-        <TypeOption index={2} lines={['Список', '']} selected={selectedKind === 'list'} palette={palette} onClick={() => onSelectKind('list')} />
+        Что создаём?
+      </p>
+
+      <div className="mt-5 flex flex-col gap-3">
+        {OPTIONS.map((option, index) => (
+          <button
+            key={option.kind}
+            type="button"
+            onClick={() => onSelectKind(option.kind)}
+            onTouchStart={() => undefined}
+            className={`etched-action etched-action--stacked draw-in${selectedKind === option.kind ? ' etched-action--selected' : ''}`}
+            style={{ ...drawDelay(140 + index * 55), ...glowStyle }}
+          >
+            <span className="etched-action__text">{option.title}</span>
+            <span className="etched-action__hint">{option.hint}</span>
+          </button>
+        ))}
       </div>
     </div>
   );

@@ -186,6 +186,11 @@ export const getCardPalette = (card: VisualCard): CardColorScheme =>
   CARD_COLOR_SCHEMES.find((scheme) => scheme.id === card.colorId) ??
   CARD_COLOR_SCHEMES[hashString(card.id) % CARD_COLOR_SCHEMES.length]!;
 
+/** A colour scheme by its id (the first one when the id is unknown). */
+export const getColorSchemeById = (colorId: string): CardColorScheme =>
+  CARD_COLOR_SCHEMES.find((scheme) => scheme.id === colorId) ??
+  CARD_COLOR_SCHEMES[0]!;
+
 /** A scheme for a new card that differs from the one used by the last card. */
 export const pickNewCardColorId = (previousColorId?: string): string => {
   const options = CARD_COLOR_SCHEMES.filter(
