@@ -223,17 +223,9 @@
   }
 }
 
-/* The slot under a torn-off coupon settles: its walls throw their shadow first,
-   then the done share fills in from the left, like colour poured into it. */
-@keyframes slot-depth {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
+/* The slot under a torn-off coupon is visible at once. On cards that count
+   something, the done share then fills in from the left, like colour poured
+   into it. */
 @keyframes slot-fill {
   from {
     transform: scaleX(0);
@@ -243,17 +235,12 @@
   }
 }
 
-.slot-depth {
-  animation: slot-depth 360ms ease-out backwards;
-}
-
 .slot-fill {
   transform-origin: left center;
   animation: slot-fill 640ms cubic-bezier(0.2, 0.8, 0.2, 1) 140ms backwards;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .slot-depth,
   .slot-fill {
     animation: none;
   }

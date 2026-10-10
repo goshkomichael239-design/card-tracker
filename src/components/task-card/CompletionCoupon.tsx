@@ -120,23 +120,27 @@ export const CompletionCoupon: React.FC<CompletionCouponProps> = ({
             aria-hidden="true"
           />
 
-          <div
-            className="slot-fill pointer-events-none absolute bottom-0 left-0 top-0"
-            style={{
-              width: `${(series ? getSeriesProgress(series) : 1) * 100}%`,
-              backgroundColor: palette.glow,
-              // The wall of the slot throws its shadow onto the fill too.
-              backgroundImage:
-                'linear-gradient(180deg, rgba(40,28,16,0.2), rgba(40,28,16,0) 60%)',
-              // Crisp light edge where the done share ends.
-              boxShadow: 'inset -2px 0 0 rgba(255,255,255,0.6)',
-            }}
-            aria-hidden="true"
-          />
+          {/* Only cards that count something get a fill; a plain task leaves
+              just the empty slot, visible the moment the coupon is gone. */}
+          {(series || completedLabel !== undefined) && (
+            <div
+              className="slot-fill pointer-events-none absolute bottom-0 left-0 top-0"
+              style={{
+                width: `${(series ? getSeriesProgress(series) : 1) * 100}%`,
+                backgroundColor: palette.glow,
+                // The wall of the slot throws its shadow onto the fill too.
+                backgroundImage:
+                  'linear-gradient(180deg, rgba(40,28,16,0.2), rgba(40,28,16,0) 60%)',
+                // Crisp light edge where the done share ends.
+                boxShadow: 'inset -2px 0 0 rgba(255,255,255,0.6)',
+              }}
+              aria-hidden="true"
+            />
+          )}
 
           {/* Walls of the slot, above the fill so the depth survives it. */}
           <div
-            className="slot-depth pointer-events-none absolute inset-0 rounded-[8px]"
+            className="pointer-events-none absolute inset-0 rounded-[8px]"
             style={{
               boxShadow: `
                 inset 5px 7px 12px -2px rgba(30,20,10,0.62),
