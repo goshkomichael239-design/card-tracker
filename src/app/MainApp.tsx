@@ -1832,6 +1832,7 @@ const MainApp: React.FC = () => {
       <ArchiveView
         isOpen={isArchiveOpen}
         archivedCards={archivedCards}
+        liveCards={cards}
         settlingCardId={pendingCompletedCardId}
         onReturnCard={handleReturnFromArchive}
         onTrashCard={handleTrashFromArchive}

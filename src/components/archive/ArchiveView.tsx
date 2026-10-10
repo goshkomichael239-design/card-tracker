@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 
 import whiteMarbleTexture from '../../assets/white_marble.png';
-import { summarizeArchive } from '../../app/archiveUtils';
+import { pluralDays, summarizeArchive } from '../../app/archiveUtils';
 import type { BackupImportResult } from '../../app/backupUtils';
 import type { VisualCard } from '../../app/cardTheme';
 import { ArchiveCardViewer } from './ArchiveCardViewer';
@@ -12,6 +12,8 @@ import { BackupControls } from './BackupControls';
 interface ArchiveViewProps {
   isOpen: boolean;
   archivedCards: VisualCard[];
+  /** Cards still on the table: their series steps and checked items count as activity. */
+  liveCards: VisualCard[];
   /** Ids that cannot be returned yet (their completion is still settling). */
   settlingCardId: string | null;
   onReturnCard: (cardId: string) => void;
@@ -34,6 +36,7 @@ const TITLE_STYLE: React.CSSProperties = {
  */
 const ArchiveContents: React.FC<Omit<ArchiveViewProps, 'isOpen'>> = ({
   archivedCards,
+  liveCards,
   settlingCardId,
   onReturnCard,
   onTrashCard,
@@ -43,8 +46,8 @@ const ArchiveContents: React.FC<Omit<ArchiveViewProps, 'isOpen'>> = ({
   const [openCardId, setOpenCardId] = useState<string | null>(null);
   const [summaryNow] = useState(() => Date.now());
   const summary = useMemo(
-    () => summarizeArchive(archivedCards, summaryNow),
-    [archivedCards, summaryNow],
+    () => summarizeArchive(archivedCards, liveCards, summaryNow),
+    [archivedCards, liveCards, summaryNow],
   );
   const openCard = archivedCards.find((card) => card.id === openCardId);
   const closeViewer = useCallback(() => setOpenCardId(null), []);
@@ -66,6 +69,16 @@ const ArchiveContents: React.FC<Omit<ArchiveViewProps, 'isOpen'>> = ({
         За неделю {summary.week} · В {summary.monthName} {summary.month} · Всего{' '}
         {summary.total}
       </p>
+
+      {/* The run of active days, only once it is a run (two days or more). */}
+      {summary.streak >= 2 && (
+        <p
+          className="mt-1.5 shrink-0 font-mono text-[12.5px] font-bold uppercase tracking-[0.12em]"
+          style={{ ...TITLE_STYLE, color: 'rgba(150,104,40,0.85)' }}
+        >
+          {summary.streak} {pluralDays(summary.streak)} подряд
+        </p>
+      )}
 
       <ArchiveCatalog cards={archivedCards} onOpenCard={setOpenCardId} />
 

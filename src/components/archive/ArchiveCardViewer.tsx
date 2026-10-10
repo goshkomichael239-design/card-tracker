@@ -4,6 +4,7 @@ import { getCardPalette, type VisualCard } from '../../app/cardTheme';
 import { getCardScale, useViewportSize } from '../../app/viewportScale';
 import { TaskCard } from '../task-card/TaskCard';
 import { INITIAL_TASK_CARD_V2_CONFIG } from '../task-card/taskCardV2Config';
+import { SeriesHistorySheet } from './SeriesHistorySheet';
 
 interface ArchiveCardViewerProps {
   card: VisualCard;
@@ -37,6 +38,9 @@ export const ArchiveCardViewer: React.FC<ArchiveCardViewerProps> = ({
     height,
   );
   const [isConfirmingTrash, setIsConfirmingTrash] = useState(false);
+  // A series can be turned over to read the log of its steps.
+  const [isShowingHistory, setIsShowingHistory] = useState(false);
+  const hasHistory = card.kind === 'series' && Boolean(card.series);
 
   useEffect(() => {
     if (!isConfirmingTrash) {
@@ -63,7 +67,8 @@ export const ArchiveCardViewer: React.FC<ArchiveCardViewerProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-5 px-4"
+      // text-left: the archive page centres its text, the card must not inherit it.
+      className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-5 px-4 text-left"
       style={{ backgroundColor: 'rgba(48,38,26,0.28)' }}
       role="dialog"
       aria-modal="true"
@@ -90,11 +95,12 @@ export const ArchiveCardViewer: React.FC<ArchiveCardViewerProps> = ({
 
       {/* The card, pulled up out of the box. */}
       <div
+        key={isShowingHistory ? 'history' : 'card'}
         className="archive-pull-out relative shrink-0"
         style={{ width: width * scale, height: height * scale }}
       >
         <div
-          className="pointer-events-none absolute left-0 top-0"
+          className={`absolute left-0 top-0${isShowingHistory ? '' : ' pointer-events-none'}`}
           style={{
             width,
             height,
@@ -102,11 +108,32 @@ export const ArchiveCardViewer: React.FC<ArchiveCardViewerProps> = ({
             transformOrigin: 'top left',
           }}
         >
-          <TaskCard card={card} onComplete={() => undefined} isStatic />
+          {isShowingHistory ? (
+            <SeriesHistorySheet card={card} />
+          ) : (
+            <TaskCard card={card} onComplete={() => undefined} isStatic />
+          )}
         </div>
       </div>
 
       <div className="engraved flex flex-wrap items-center justify-center gap-3">
+        {hasHistory && (
+          <button
+            type="button"
+            onClick={() => setIsShowingHistory((previous) => !previous)}
+            onTouchStart={() => undefined}
+            className="pill-action"
+            style={
+              {
+                ['--pill-bg' as string]: 'rgba(247,242,232,0.9)',
+                ['--pill-ink' as string]: palette.accentDark,
+                ['--pill-glow' as string]: palette.glow,
+              } as React.CSSProperties
+            }
+          >
+            {isShowingHistory ? 'Карточка' : 'История шагов'}
+          </button>
+        )}
         <button
           type="button"
           disabled={!canReturn}
