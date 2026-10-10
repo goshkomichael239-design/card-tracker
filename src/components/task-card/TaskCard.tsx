@@ -396,7 +396,11 @@ export const TaskCard: React.FC<TaskCardProps> = ({
       </article>
 
       {showCornerHint && face === 'view' && canOpenMenu && (
-        <CornerHint palette={palette} />
+        <CornerHint
+          palette={palette}
+          // "Seen" is the same state as having used the corner.
+          onDismiss={() => onCornerOpened?.()}
+        />
       )}
 
       {/* Folded top-right corner. The article above is cut along the crease; the
