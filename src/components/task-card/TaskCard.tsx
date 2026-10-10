@@ -322,7 +322,6 @@ export const TaskCard: React.FC<TaskCardProps> = ({
               title={card.title}
               kindLabel={kindLabel}
               palette={palette}
-              paperTint={config.paperTint}
               onEdit={() => goToFace('edit', 1)}
               onDelete={() => {
                 setFaceState({ cardId: '', face: 'view', direction: -1 });

@@ -1,28 +1,29 @@
 import React, { useEffect, useState } from 'react';
 
-import { PALETTES, type CardPalette } from '../../app/cardTheme';
-import { CouponButton } from './CouponButton';
+import type { CardPalette } from '../../app/cardTheme';
 
 interface CardActionsFaceProps {
   title: string;
   kindLabel: string;
   palette: CardPalette;
-  paperTint: string;
   onEdit: () => void;
   onDelete: () => void;
 }
 
 const CONFIRM_TIMEOUT_MS = 3_500;
 
+const drawDelay = (ms: number): React.CSSProperties =>
+  ({ ['--draw-delay' as string]: `${ms}ms` }) as React.CSSProperties;
+
 /**
- * The card "turns into itself" with its actions printed on it: the same sheet,
- * two perforated pads. Delete needs a second press, which rearms by itself.
+ * The card "turns into itself" with its actions pressed into the paper: two
+ * words, no buttons around them. Delete needs a second press and rearms by
+ * itself.
  */
 export const CardActionsFace: React.FC<CardActionsFaceProps> = ({
   title,
   kindLabel,
   palette,
-  paperTint,
   onEdit,
   onDelete,
 }) => {
@@ -41,8 +42,6 @@ export const CardActionsFace: React.FC<CardActionsFaceProps> = ({
     return () => window.clearTimeout(timer);
   }, [isConfirming]);
 
-  const dangerInk = PALETTES.none.accentDark;
-
   return (
     <div className="relative flex h-full flex-col">
       <div className="flex items-center justify-between">
@@ -58,8 +57,9 @@ export const CardActionsFace: React.FC<CardActionsFaceProps> = ({
       </div>
 
       <p
-        className="mt-6 shrink-0 truncate font-semibold leading-[1.15]"
+        className="draw-in mt-6 shrink-0 truncate font-semibold leading-[1.15]"
         style={{
+          ...drawDelay(120),
           fontSize: 20,
           color: 'rgba(40,35,29,0.62)',
           letterSpacing: '-0.015em',
@@ -69,40 +69,43 @@ export const CardActionsFace: React.FC<CardActionsFaceProps> = ({
       </p>
 
       <div
-        className="mt-5 shrink-0 border-t pt-6"
+        className="mt-5 flex shrink-0 flex-col gap-1 border-t pt-5"
         style={{ borderColor: 'rgba(69,57,44,0.13)' }}
       >
-        <div className="flex flex-col gap-4">
-          <CouponButton
-            label="Редактировать"
-            color={palette.accentDark}
-            paperTint={paperTint}
-            height={64}
-            fontSize={13}
-            onClick={onEdit}
-          />
-          <CouponButton
-            label={isConfirming ? 'Точно удалить?' : 'Удалить'}
-            color={isConfirming ? dangerInk : 'rgba(40,35,29,0.7)'}
-            paperTint={paperTint}
-            height={64}
-            fontSize={13}
-            filled={isConfirming}
-            onClick={() => {
-              if (isConfirming) {
-                onDelete();
-                return;
-              }
+        <button
+          type="button"
+          onClick={onEdit}
+          // iOS only applies :active when the element has a touch listener.
+          onTouchStart={() => undefined}
+          className="etched-action draw-in"
+          style={drawDelay(200)}
+        >
+          <span className="etched-action__text">Редактировать</span>
+        </button>
 
-              setIsConfirming(true);
-            }}
-          />
-        </div>
+        <button
+          type="button"
+          onClick={() => {
+            if (isConfirming) {
+              onDelete();
+              return;
+            }
+
+            setIsConfirming(true);
+          }}
+          onTouchStart={() => undefined}
+          className={`etched-action draw-in${isConfirming ? ' etched-action--armed' : ''}`}
+          style={drawDelay(290)}
+        >
+          <span className="etched-action__text">
+            {isConfirming ? 'Точно удалить?' : 'Удалить'}
+          </span>
+        </button>
       </div>
 
       <p
-        className="absolute bottom-0 left-0 right-0 font-mono text-[8px] uppercase tracking-[0.15em]"
-        style={{ color: 'rgba(0,0,0,0.32)' }}
+        className="draw-in absolute bottom-0 left-0 right-0 font-mono text-[8px] uppercase tracking-[0.15em]"
+        style={{ ...drawDelay(380), color: 'rgba(0,0,0,0.32)' }}
       >
         Уголок вернёт карточку обратно
       </p>

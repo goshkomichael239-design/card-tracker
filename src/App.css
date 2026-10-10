@@ -59,6 +59,157 @@
   text-rendering: optimizeLegibility;
 }
 
+/* Elements of a freshly turned card face are "drawn" one after another: each is
+   revealed left to right, like the wipe that brought the face in. */
+@keyframes draw-in {
+  from {
+    clip-path: inset(0 100% 0 0);
+    opacity: 0;
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+    opacity: 1;
+  }
+}
+
+.draw-in {
+  /* `backwards`, not `both`: once drawn, the element must drop the clip-path or
+     it would keep clipping its own shadows and focus ring. */
+  animation: draw-in 420ms cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+  animation-delay: var(--draw-delay, 0ms);
+}
+
+/* Card actions: lettering pressed into the paper. No pad around it; the words
+   themselves are the control. Hover (mouse) and :active (finger) sink and dim
+   the word and open a shallow recess under it. */
+.etched-action {
+  position: relative;
+  display: block;
+  width: 100%;
+  padding: 20px 6px 22px;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.etched-action__text {
+  display: inline-block;
+  font-size: 23px;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--etched-ink, rgba(48, 40, 31, 0.72));
+  /* Light edge below the glyph, dark edge above it: a letterpress deboss. */
+  text-shadow:
+    0 1.2px 0 rgba(255, 255, 255, 0.92),
+    0 -1px 0 rgba(30, 20, 10, 0.5),
+    0 0 1px rgba(0, 0, 0, 0.16);
+  transition:
+    transform 240ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    color 180ms ease-out,
+    text-shadow 180ms ease-out;
+}
+
+/* Shallow recess that fades in under the word. */
+.etched-action::before {
+  content: '';
+  position: absolute;
+  inset: 5px -4px;
+  border-radius: 10px;
+  background: linear-gradient(180deg, rgba(60, 45, 30, 0.1), rgba(60, 45, 30, 0.03));
+  box-shadow:
+    inset 0 2px 5px rgba(40, 28, 16, 0.28),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.75);
+  opacity: 0;
+  transition: opacity 200ms ease-out, box-shadow 160ms ease-out;
+  pointer-events: none;
+}
+
+/* Pressed groove under the word: dark edge above, light edge below. */
+.etched-action::after {
+  content: '';
+  position: absolute;
+  left: 6px;
+  right: 6px;
+  bottom: 0;
+  height: 3px;
+  border-top: 1px solid rgba(40, 30, 20, 0.26);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.85);
+  transform-origin: left center;
+  transition: transform 320ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.etched-action:focus-visible {
+  outline: none;
+}
+
+.etched-action:focus-visible::before {
+  opacity: 1;
+}
+
+@media (hover: hover) {
+  .etched-action:hover::before {
+    opacity: 1;
+  }
+
+  .etched-action:hover .etched-action__text {
+    transform: translateX(7px);
+    color: var(--etched-ink-hover, rgba(34, 27, 19, 0.92));
+  }
+
+  .etched-action:hover::after {
+    transform: scaleX(0.94);
+  }
+}
+
+.etched-action:active::before {
+  opacity: 1;
+  box-shadow:
+    inset 0 3px 8px rgba(40, 28, 16, 0.42),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.7);
+}
+
+.etched-action:active .etched-action__text {
+  transform: translate(3px, 1.5px) scale(0.985);
+  color: var(--etched-ink-hover, rgba(30, 22, 14, 0.96));
+  text-shadow:
+    0 0.5px 0 rgba(255, 255, 255, 0.7),
+    0 -0.5px 0 rgba(30, 20, 10, 0.35);
+}
+
+/* "Are you sure?" state: ink turns terracotta and the recess stays open. */
+.etched-action--armed {
+  --etched-ink: #8f3025;
+  --etched-ink-hover: #7a2519;
+}
+
+.etched-action--armed::before {
+  opacity: 0.75;
+}
+
+.etched-action--armed .etched-action__text {
+  font-size: 20px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .draw-in {
+    animation: none;
+  }
+
+  .etched-action__text,
+  .etched-action::before,
+  .etched-action::after {
+    transition: none;
+  }
+}
+
 /* First-run arrow: the dashes crawl slowly toward the folded corner. */
 @keyframes corner-hint-dash {
   to {

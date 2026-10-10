@@ -32,6 +32,8 @@ import {
   type BackupImportResult,
 } from './backupUtils';
 import { isStoredVisualCard } from './cardValidation';
+import { DEBUG_CARD_ID_PREFIX } from './debugCards';
+import { DebugCardsPanel } from '../components/DebugCardsPanel';
 import {
   addLocalDays,
   createLocalDateTimeValue,
@@ -1497,6 +1499,30 @@ const MainApp: React.FC = () => {
     };
   };
 
+  // DEV-only: append test cards (never replaces existing data) and select the
+  // first of them; the second handler removes only what the first one added.
+  const handleAddDebugCards = (created: VisualCard[]) => {
+    if (created.length === 0) {
+      return;
+    }
+
+    setCards((previous) => [...previous, ...created]);
+    setActiveCardId(created[0]!.id);
+  };
+
+  const handleRemoveDebugCards = () => {
+    const remaining = cardsRef.current.filter(
+      (card) => !card.id.startsWith(DEBUG_CARD_ID_PREFIX),
+    );
+
+    setCards(remaining);
+    setActiveCardId(
+      remaining.some((card) => card.id === activeCardId)
+        ? activeCardId
+        : (remaining[0]?.id ?? ''),
+    );
+  };
+
   const handleCouponFlightComplete = useCallback(() => {
     couponFlightInProgressRef.current = false;
   }, []);
@@ -1859,6 +1885,14 @@ const MainApp: React.FC = () => {
         isArchiveOpen={isArchiveOpen}
         onToggle={() => setIsArchiveOpen((previous) => !previous)}
       />
+
+      {import.meta.env.DEV && (
+        <DebugCardsPanel
+          disabled={isCreating || pendingCompletedCardId !== null}
+          onAddCards={handleAddDebugCards}
+          onRemoveDebugCards={handleRemoveDebugCards}
+        />
+      )}
 
     </main>
   );

@@ -30,6 +30,10 @@ interface CardEditFaceProps {
 const FIELD_LABEL_CLASS =
   'font-mono text-[9px] font-bold uppercase tracking-[0.12em]';
 
+/** Start offset (ms) of the left-to-right "drawing" of a block on this face. */
+const drawDelay = (ms: number): React.CSSProperties =>
+  ({ ['--draw-delay' as string]: `${ms}ms` }) as React.CSSProperties;
+
 const TRAY_STYLE: React.CSSProperties = {
   borderColor: 'rgba(82,69,56,0.2)',
   backgroundColor: 'rgba(235,229,214,0.72)',
@@ -113,7 +117,7 @@ const TitleField: React.FC<TitleFieldProps> = ({
   palette,
   onChange,
 }) => (
-  <div className="shrink-0">
+  <div className="draw-in shrink-0" style={drawDelay(150)}>
     <p className={FIELD_LABEL_CLASS} style={{ color: palette.accentDark }}>
       Название
     </p>
@@ -178,7 +182,7 @@ const DateTimeEditor: React.FC<DateTimeEditorProps> = ({
   palette,
   onChange,
 }) => (
-  <div className="mt-4 shrink-0">
+  <div className="draw-in mt-4 shrink-0" style={drawDelay(250)}>
     <p className={FIELD_LABEL_CLASS} style={{ color: palette.accentDark }}>
       {label}
     </p>
@@ -234,7 +238,10 @@ const ListEditor: React.FC<ListEditorProps> = ({
   };
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
+    <div
+      className="draw-in flex min-h-0 flex-1 flex-col"
+      style={drawDelay(150)}
+    >
       <p className={FIELD_LABEL_CLASS} style={{ color: palette.accentDark }}>
         Пункты списка
       </p>
@@ -337,7 +344,7 @@ const TargetCountEditor: React.FC<TargetCountEditorProps> = ({
   palette,
   onChange,
 }) => (
-  <div className="mt-4 shrink-0">
+  <div className="draw-in mt-4 shrink-0" style={drawDelay(250)}>
     <p className={FIELD_LABEL_CLASS} style={{ color: palette.accentDark }}>
       Цель серии
     </p>
@@ -491,8 +498,12 @@ export const CardEditFace: React.FC<CardEditFaceProps> = ({
       </div>
 
       <div
-        className="absolute left-0 right-0 grid grid-cols-[1fr_2fr] gap-2.5"
-        style={{ bottom: config.couponBottom, height: config.couponHeight }}
+        className="draw-in absolute left-0 right-0 grid grid-cols-[1fr_2fr] gap-2.5"
+        style={{
+          ...drawDelay(340),
+          bottom: config.couponBottom,
+          height: config.couponHeight,
+        }}
       >
         <CouponButton
           label="Отмена"
