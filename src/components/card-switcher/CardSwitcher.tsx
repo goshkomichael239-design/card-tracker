@@ -15,6 +15,8 @@ interface CardSwitcherProps {
   onNextCard: () => void;
   onPreviousCard: () => void;
   mode?: 'main' | 'archive';
+  /** Rendered under the panel and moves with it. */
+  footer?: React.ReactNode;
 }
 
 const MAX_VISIBLE_ROWS = 4;
@@ -42,6 +44,7 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
   onNextCard,
   onPreviousCard,
   mode = 'main',
+  footer,
 }) => {
   const [config, setConfig] = useState<CardSwitcherConfig>(() => ({
     ...INITIAL_CARD_SWITCHER_CONFIG,
@@ -225,6 +228,9 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
             </div>
           </div>
         </div>
+
+        {/* Index tabs hanging from the bottom edge of the panel. */}
+        {footer}
       </div>
 
       {import.meta.env.DEV && SHOW_CARD_SWITCHER_DEBUG && (

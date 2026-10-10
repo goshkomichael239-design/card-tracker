@@ -116,3 +116,50 @@ export const formatStampDay = (iso: string): string =>
   new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'short' })
     .format(new Date(iso))
     .replace('.', '');
+
+export type DueBucket = 'overdue' | 'today' | 'soon';
+
+const SOON_DAYS = 7;
+
+const dayStart = (time: number): number => {
+  const date = new Date(time);
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+};
+
+/**
+ * Where a live card stands in time:
+ * - overdue: a deadline that has passed, or anything due on an earlier day;
+ * - today: due today (including a reminder whose time has come);
+ * - soon: due within the next seven days.
+ * Cards without a date of any kind are in none of them.
+ */
+export const getDueBucket = (
+  card: VisualCard,
+  now: number = Date.now(),
+): DueBucket | null => {
+  const target = getCardTargetAt(card);
+
+  // A card whose coupon was just torn still counts until it leaves the deck,
+  // so an overview tab does not drop it mid-way.
+  if (!target) {
+    return null;
+  }
+
+  const due = new Date(target).getTime();
+
+  if (!Number.isFinite(due)) {
+    return null;
+  }
+
+  const days = Math.round((dayStart(due) - dayStart(now)) / (24 * HOUR));
+
+  if (days < 0 || (card.timeMode === 'deadline' && due < now)) {
+    return 'overdue';
+  }
+
+  if (days === 0) {
+    return 'today';
+  }
+
+  return days <= SOON_DAYS ? 'soon' : null;
+};
