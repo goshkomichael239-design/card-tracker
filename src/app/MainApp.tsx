@@ -155,8 +155,8 @@ const isSceneGestureTarget = (target: EventTarget | null): boolean => {
 
 // Free space the scene must keep around the card at scale 1: the ghost card sits
 // up and to the left of it, the neighbouring stack down and to the right.
-const SCENE_TOP_OVERHANG = 70;
-const SCENE_BOTTOM_OVERHANG = 56;
+const SCENE_TOP_OVERHANG = 66;
+const SCENE_BOTTOM_OVERHANG = 40;
 const SCENE_SIDE_OVERHANG = 44;
 const SWITCHER_TOP = 16;
 const SWITCHER_CHROME = 16;
@@ -1492,7 +1492,7 @@ const MainApp: React.FC = () => {
       <div className="absolute inset-0 z-20 h-full w-full">
         <TableBackground />
 
-        <div className="absolute left-1/2 top-4 z-30 -translate-x-1/2">
+        <div className="absolute inset-x-3 top-4 z-30 flex justify-center">
           <CardSwitcher
             cards={cards}
             activeCardId={activeCardId}
@@ -1716,34 +1716,30 @@ const MainApp: React.FC = () => {
                       scale: isGhostHovered ? 1.015 : 1,
                     }}
                     transition={{ duration: 0.18 }}
-                    className="absolute left-[17px] top-[15px] flex select-none items-center gap-2 text-left"
+                    className="absolute right-[18px] top-[13px] flex select-none items-center gap-2 whitespace-nowrap text-left"
                   >
+                    {/* Light lettering with a dark under-edge: the ghost is a
+                        translucent sheet over the dark table, so dark ink on it
+                        disappears. Sits at the right end of the ghost's top
+                        edge, where the most of it sticks out above the card. */}
                     <span
-                      className="font-serif text-[26px] font-light leading-none"
+                      className="font-serif text-[22px] font-medium leading-none"
                       style={{
-                        color: 'rgba(20,18,16,0.48)',
-                        textShadow: `
-                          -1px -1px 1px rgba(0,0,0,0.44),
-                          1px 1px 1px rgba(255,255,255,0.54)
-                        `,
+                        color: 'rgba(239,232,216,0.92)',
+                        textShadow: '0 1px 2px rgba(0,0,0,0.8)',
                       }}
                     >
                       +
                     </span>
 
                     <span
-                      className="max-w-[88px] font-mono text-[8px] font-semibold uppercase leading-[1.2] tracking-[0.11em]"
+                      className="font-mono text-[10px] font-bold uppercase leading-none tracking-[0.16em]"
                       style={{
-                        color: 'rgba(20,18,16,0.48)',
-                        textShadow: `
-                          -1px -1px 1px rgba(0,0,0,0.42),
-                          1px 1px 1px rgba(255,255,255,0.52)
-                        `,
+                        color: 'rgba(239,232,216,0.9)',
+                        textShadow: '0 1px 2px rgba(0,0,0,0.8)',
                       }}
                     >
-                      Добавить
-                      <br />
-                      карту
+                      Добавить карту
                     </span>
                   </motion.span>
                 </button>

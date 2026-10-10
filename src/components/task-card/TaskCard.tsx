@@ -150,15 +150,30 @@ export const TaskCard: React.FC<TaskCardProps> = ({
     }
   };
 
+  const canOpenMenu = hasMenu && !card.completedAt;
+
   return (
+    <div className="engraved absolute inset-0">
+      {/* Cast shadow lives on its own layer: the article below is clipped to
+          cut the folded corner, which would otherwise clip the shadow too. */}
+      <div
+        className="pointer-events-none absolute inset-0"
+        style={{
+          borderRadius: config.borderRadius,
+          boxShadow: `${config.shadowX}px ${config.shadowY}px ${config.shadowBlur}px rgba(20,17,14,${config.shadowOpacity})`,
+        }}
+        aria-hidden="true"
+      />
     <article
-      className="engraved absolute inset-0 flex flex-col overflow-hidden border"
+      className="absolute inset-0 flex flex-col overflow-hidden border"
       style={{
         borderRadius: config.borderRadius,
         padding: config.contentPadding,
         backgroundColor: config.paperTint,
         borderColor: 'rgba(91,76,59,0.16)',
-        boxShadow: `${config.shadowX}px ${config.shadowY}px ${config.shadowBlur}px rgba(20,17,14,${config.shadowOpacity}), inset 0 1px 0 rgba(255,255,255,0.88), inset 0 -1px 2px rgba(79,61,42,0.08)`,
+        boxShadow:
+          'inset 0 1px 0 rgba(255,255,255,0.88), inset 0 -1px 2px rgba(79,61,42,0.08)',
+        clipPath: FOLD_CUT_PATH,
       }}
     >
       <div
@@ -183,85 +198,6 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           >
             {series ? 'Серия' : list ? 'Список' : 'Одна задача'}
           </span>
-          <div ref={menuRef} className="relative">
-            {hasMenu && !card.completedAt ? (
-              <button
-                type="button"
-                onClick={() => {
-                  setMenuForId(isMenuOpen ? null : card.id);
-                  setConfirmDeleteForId(null);
-                }}
-                aria-haspopup="menu"
-                aria-expanded={isMenuOpen}
-                aria-label="Действия с карточкой"
-                className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border-0 text-sm"
-                style={{
-                  color: palette.accentDark,
-                  backgroundColor: `${palette.accent}${isMenuOpen ? '30' : '18'}`,
-                }}
-              >
-                ⋯
-              </button>
-            ) : (
-              <span
-                className="flex h-8 w-8 items-center justify-center rounded-full text-sm"
-                style={{
-                  color: palette.accentDark,
-                  backgroundColor: `${palette.accent}18`,
-                }}
-                aria-hidden="true"
-              >
-                ⋯
-              </span>
-            )}
-
-            {isMenuOpen && (
-              <div
-                role="menu"
-                className="absolute right-0 top-10 z-30 w-[196px] overflow-hidden rounded-[12px] border"
-                style={{
-                  backgroundColor: config.paperTint,
-                  backgroundImage: `url(${cardboardTexture})`,
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center',
-                  backgroundBlendMode: 'multiply',
-                  borderColor: 'rgba(91,76,59,0.26)',
-                  boxShadow:
-                    '0 10px 22px rgba(20,17,14,0.3), inset 0 1px 0 rgba(255,255,255,0.82)',
-                }}
-              >
-                {canRename && (
-                  <button
-                    type="button"
-                    role="menuitem"
-                    onClick={startEditingTitle}
-                    className="block w-full cursor-pointer border-0 bg-transparent px-4 py-3 text-left font-mono text-[10px] font-bold uppercase tracking-[0.12em]"
-                    style={{ color: palette.accentDark }}
-                  >
-                    Править название
-                  </button>
-                )}
-                {onDelete && (
-                  <button
-                    type="button"
-                    role="menuitem"
-                    onClick={handleDeleteClick}
-                    className="block w-full cursor-pointer border-0 bg-transparent px-4 py-3 text-left font-mono text-[10px] font-bold uppercase tracking-[0.12em]"
-                    style={{
-                      color: isConfirmingDelete
-                        ? PALETTES.none.accentDark
-                        : 'rgba(40,35,29,0.68)',
-                      borderTop: canRename
-                        ? '1px dashed rgba(70,59,46,0.3)'
-                        : undefined,
-                    }}
-                  >
-                    {isConfirmingDelete ? 'Точно выбросить?' : 'Выбросить'}
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
         </div>
 
         {!list &&
@@ -428,5 +364,124 @@ export const TaskCard: React.FC<TaskCardProps> = ({
         </div>
       </div>
     </article>
+
+      {/* Folded top-right corner. The article above is cut along the crease; the
+          flap lying on the face is the cut corner mirrored across it. When the
+          card has actions the whole corner is the handle for them. */}
+      <div
+        ref={menuRef}
+        className="absolute right-0 top-0 z-30"
+        style={{ width: FOLD_SIZE + 10, height: FOLD_SIZE + 10 }}
+      >
+        {canOpenMenu ? (
+          <button
+            type="button"
+            onClick={() => {
+              setMenuForId(isMenuOpen ? null : card.id);
+              setConfirmDeleteForId(null);
+            }}
+            aria-haspopup="menu"
+            aria-expanded={isMenuOpen}
+            aria-label="Действия с карточкой"
+            className="group absolute inset-0 cursor-pointer border-0 bg-transparent p-0"
+          >
+            <FoldedFlap lifted={isMenuOpen} paperTint={config.paperTint} />
+          </button>
+        ) : (
+          <div className="pointer-events-none absolute inset-0" aria-hidden="true">
+            <FoldedFlap lifted={false} paperTint={config.paperTint} />
+          </div>
+        )}
+
+        {isMenuOpen && (
+          <div
+            role="menu"
+            className="absolute flex flex-col items-end gap-2"
+            style={{ top: FOLD_SIZE + 6, right: 20 }}
+          >
+            {canRename && (
+              <button
+                type="button"
+                role="menuitem"
+                onClick={startEditingTitle}
+                className="tag-drop cursor-pointer whitespace-nowrap border font-mono text-[10px] font-bold uppercase tracking-[0.14em]"
+                style={{
+                  ...TAG_STYLE,
+                  ['--tag-tilt' as string]: '-1.2deg',
+                  backgroundColor: config.paperTint,
+                  color: palette.accentDark,
+                }}
+              >
+                Править название
+              </button>
+            )}
+            {onDelete && (
+              <button
+                type="button"
+                role="menuitem"
+                onClick={handleDeleteClick}
+                className="tag-drop cursor-pointer whitespace-nowrap border font-mono text-[10px] font-bold uppercase tracking-[0.14em]"
+                style={{
+                  ...TAG_STYLE,
+                  ['--tag-tilt' as string]: '0.9deg',
+                  animationDelay: '40ms',
+                  backgroundColor: config.paperTint,
+                  color: isConfirmingDelete
+                    ? PALETTES.none.accentDark
+                    : 'rgba(40,35,29,0.72)',
+                }}
+              >
+                {isConfirmingDelete ? 'Точно выбросить?' : 'Выбросить'}
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
   );
 };
+
+// Size of the folded corner and the clip that removes it from the card body.
+const FOLD_SIZE = 46;
+const FOLD_CUT_PATH = `polygon(0 0, calc(100% - ${FOLD_SIZE}px) 0, 100% ${FOLD_SIZE}px, 100% 100%, 0 100%)`;
+
+const TAG_STYLE: React.CSSProperties = {
+  padding: '11px 18px',
+  borderRadius: 8,
+  borderColor: 'rgba(70,59,46,0.42)',
+  borderStyle: 'dashed',
+  backgroundImage: `url(${cardboardTexture})`,
+  backgroundSize: 'cover',
+  backgroundPosition: 'center',
+  backgroundBlendMode: 'multiply',
+  boxShadow:
+    '0 7px 14px rgba(20,17,14,0.3), 0 1px 0 rgba(20,17,14,0.2), inset 0 1px 0 rgba(255,255,255,0.85)',
+};
+
+const FoldedFlap: React.FC<{ lifted: boolean; paperTint: string }> = ({
+  lifted,
+  paperTint,
+}) => (
+  <span
+    className="absolute right-0 top-0 block"
+    style={{
+      width: FOLD_SIZE,
+      height: FOLD_SIZE,
+      filter: lifted
+        ? 'drop-shadow(-2px 4px 3.5px rgba(38,27,16,0.5))'
+        : 'drop-shadow(-1px 2px 2px rgba(38,27,16,0.36))',
+      transition: 'filter 160ms ease-out',
+    }}
+  >
+    <span
+      className="absolute inset-0 block"
+      style={{
+        clipPath: 'polygon(0 0, 100% 100%, 0 100%)',
+        backgroundColor: paperTint,
+        backgroundImage: `linear-gradient(to bottom left, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.7) 50%, rgba(70,55,38,0.3) 100%), url(${cardboardTexture})`,
+        backgroundSize: '100% 100%, cover',
+        backgroundBlendMode: 'normal, multiply',
+      }}
+    />
+  </span>
+);

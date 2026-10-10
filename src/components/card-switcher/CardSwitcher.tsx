@@ -154,7 +154,9 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
         ref={switcherRef}
         className="relative"
         style={{
-          width: `min(${config.width}px, calc(100vw - 24px))`,
+          // Sized by the container (not 100vw) so it can never overflow the
+          // window, whatever the page zoom or scrollbar situation.
+          width: `min(${config.width}px, 100%)`,
           display: cards.length > 0 ? 'block' : 'none',
           transform:
             mode === 'archive'
