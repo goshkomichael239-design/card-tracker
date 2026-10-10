@@ -1,11 +1,19 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 import cardboardTexture from '../../assets/cardboard.avif';
-import { getCardPalette, PALETTES, type VisualCard } from '../../app/cardTheme';
+import { getCardPalette, type VisualCard } from '../../app/cardTheme';
 import { formatHumanDate, formatShortDate } from '../../app/dateTimeUtils';
 import { getListCompletedCount, getListProgress } from '../../app/listUtils';
 import { formatSeriesDuration } from '../../app/seriesUtils';
+import { CardActionsFace } from './CardActionsFace';
+import { CardEditFace } from './CardEditFace';
+import {
+  CardFaceStage,
+  type CardFace,
+  type FaceDirection,
+} from './CardFaceStage';
 import { CompletionCoupon } from './CompletionCoupon';
+import { CornerHint } from './CornerHint';
 import { CountdownPanel } from './CountdownPanel';
 import { INITIAL_TASK_CARD_V2_CONFIG } from './taskCardV2Config';
 import { TaskListContent } from './TaskListContent';
@@ -17,10 +25,21 @@ interface TaskCardProps {
   onFinishSeries?: (couponBounds: DOMRect) => void;
   onToggleListItem?: (itemId: string) => void;
   onOpenList?: () => void;
-  onRename?: (title: string) => void;
+  /** Receives the edited card; its id never changes. */
+  onSave?: (card: VisualCard) => void;
   onDelete?: () => void;
+  /** Shows the first-run arrow pointing at the folded corner. */
+  showCornerHint?: boolean;
+  /** Fired the first time the folded corner is used. */
+  onCornerOpened?: () => void;
   isStatic?: boolean;
   hideCoupon?: boolean;
+}
+
+interface FaceState {
+  cardId: string;
+  face: CardFace;
+  direction: FaceDirection;
 }
 
 export const TaskCard: React.FC<TaskCardProps> = ({
@@ -30,96 +49,56 @@ export const TaskCard: React.FC<TaskCardProps> = ({
   onFinishSeries,
   onToggleListItem,
   onOpenList,
-  onRename,
+  onSave,
   onDelete,
+  showCornerHint = false,
+  onCornerOpened,
   isStatic = false,
   hideCoupon = false,
 }) => {
   const palette = getCardPalette(card);
   const config = INITIAL_TASK_CARD_V2_CONFIG;
   // The same TaskCard instance is reused while the active card changes, so the
-  // menu/edit/confirm state is keyed by card id instead of plain booleans.
-  const [menuForId, setMenuForId] = useState<string | null>(null);
-  const [editingForId, setEditingForId] = useState<string | null>(null);
-  const [confirmDeleteForId, setConfirmDeleteForId] = useState<string | null>(
-    null,
-  );
-  const [titleDraft, setTitleDraft] = useState('');
-  const menuRef = useRef<HTMLDivElement | null>(null);
-  const titleInputRef = useRef<HTMLTextAreaElement | null>(null);
-  const titleEditCancelledRef = useRef(false);
-  const isMenuOpen = menuForId === card.id;
-  const isEditingTitle = editingForId === card.id;
-  const isConfirmingDelete = confirmDeleteForId === card.id;
-  const canRename = Boolean(onRename) && card.kind !== 'list';
-  const hasMenu = canRename || Boolean(onDelete);
+  // face is remembered together with the id of the card it belongs to.
+  const [faceState, setFaceState] = useState<FaceState>({
+    cardId: '',
+    face: 'view',
+    direction: 1,
+  });
+  const canOpenMenu =
+    Boolean(onSave || onDelete) && !card.completedAt && !isStatic;
+  const face: CardFace =
+    canOpenMenu && faceState.cardId === card.id ? faceState.face : 'view';
+
+  const goToFace = (next: CardFace, direction: FaceDirection) =>
+    setFaceState({ cardId: card.id, face: next, direction });
 
   useEffect(() => {
-    if (!isMenuOpen) {
+    if (face === 'view') {
       return;
     }
 
-    const closeMenu = () => {
-      setMenuForId(null);
-      setConfirmDeleteForId(null);
-    };
-    const handlePointerDown = (event: PointerEvent) => {
-      if (!menuRef.current?.contains(event.target as Node)) {
-        closeMenu();
-      }
-    };
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
-        closeMenu();
+        setFaceState({ cardId: card.id, face: 'view', direction: -1 });
       }
     };
 
-    document.addEventListener('pointerdown', handlePointerDown);
     window.addEventListener('keydown', handleKeyDown);
 
-    return () => {
-      document.removeEventListener('pointerdown', handlePointerDown);
-      window.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [isMenuOpen]);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [card.id, face]);
 
-  useEffect(() => {
-    if (!isEditingTitle) {
+  const handleCornerClick = () => {
+    if (face === 'view') {
+      goToFace('actions', 1);
+      onCornerOpened?.();
       return;
     }
 
-    const input = titleInputRef.current;
-    input?.focus({ preventScroll: true });
-    input?.setSelectionRange(input.value.length, input.value.length);
-  }, [isEditingTitle]);
-
-  const startEditingTitle = () => {
-    titleEditCancelledRef.current = false;
-    setTitleDraft(card.title);
-    setEditingForId(card.id);
-    setMenuForId(null);
+    goToFace('view', -1);
   };
 
-  const commitTitle = () => {
-    const nextTitle = titleDraft.trim();
-
-    setEditingForId(null);
-
-    if (!titleEditCancelledRef.current && nextTitle && nextTitle !== card.title) {
-      onRename?.(nextTitle);
-    }
-  };
-
-  const handleDeleteClick = () => {
-    if (!isConfirmingDelete) {
-      setConfirmDeleteForId(card.id);
-      return;
-    }
-
-    setMenuForId(null);
-    setConfirmDeleteForId(null);
-    onDelete?.();
-  };
   const targetAt =
     card.timeMode === 'deadline'
       ? card.deadlineAt
@@ -132,6 +111,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
   const list = card.kind === 'list' ? card.list : undefined;
   const listCompletedCount = list ? getListCompletedCount(list) : 0;
   const listReady = Boolean(list && list.items.length > 0 && listCompletedCount === list.items.length);
+  const kindLabel = series ? 'Серия' : list ? 'Список' : 'Одна задача';
   const seriesAction = (couponBounds: DOMRect) => {
     onRecordSeriesStep?.(couponBounds);
   };
@@ -150,7 +130,151 @@ export const TaskCard: React.FC<TaskCardProps> = ({
     }
   };
 
-  const canOpenMenu = hasMenu && !card.completedAt;
+  const viewFace = (
+    <div className="relative flex h-full flex-col">
+      <div className="flex items-center justify-between">
+        <span
+          className="rounded-full px-3 py-1.5 font-mono text-[9px] font-bold uppercase tracking-[0.12em]"
+          style={{
+            color: palette.accentDark,
+            backgroundColor: `${palette.accent}1d`,
+          }}
+        >
+          {kindLabel}
+        </span>
+      </div>
+
+      {!list && (
+        <h2
+          className="shrink-0 font-semibold leading-[1.08]"
+          style={{
+            marginTop: config.titleGap,
+            fontSize: config.titleSize,
+            color: '#28231D',
+            letterSpacing: '-0.025em',
+          }}
+        >
+          {card.title}
+        </h2>
+      )}
+
+      {list ? (
+        <div
+          className="mt-5 flex min-h-0 flex-1 flex-col"
+          style={{
+            paddingBottom:
+              config.couponBottom + config.couponHeight + 4,
+          }}
+        >
+          <TaskListContent
+            list={list}
+            palette={palette}
+            disabled={Boolean(card.completedAt)}
+            onToggle={(itemId) => onToggleListItem?.(itemId)}
+            maxItems={5}
+            onOpenList={onOpenList}
+          />
+        </div>
+      ) : series ? (
+        <div
+          className="shrink-0 border-t pt-4"
+          style={{
+            marginTop: config.infoGap,
+            borderColor: 'rgba(69,57,44,0.13)',
+          }}
+        >
+          <p className="font-mono text-[9px] uppercase tracking-[0.12em] text-[#6B6258]">
+            Выполнено
+          </p>
+          <p className="mt-2 font-mono text-[25px] font-semibold tracking-[-0.04em] text-[#28231D]">
+            {series.entries.length} / {series.targetCount}
+          </p>
+          {lastSeriesEntry ? (
+            <div className="mt-3 font-mono text-[10px] leading-relaxed text-[#776E63]">
+              <p>Последняя · {new Date(lastSeriesEntry.completedAt).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}</p>
+              <p>За · {formatSeriesDuration(lastSeriesEntry.durationMs)}</p>
+            </div>
+          ) : (
+            <p className="mt-3 font-mono text-[10px] text-[#776E63]">
+              Начато · {new Date(series.startedAt).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
+            </p>
+          )}
+          {!card.completedAt && onFinishSeries && (
+            <button
+              type="button"
+              onClick={handleManualSeriesFinish}
+              className="mt-3 border-0 bg-transparent p-0 font-mono text-[8px] uppercase tracking-[0.12em]"
+              style={{ color: palette.accentDark }}
+            >
+              Завершить серию
+            </button>
+          )}
+        </div>
+      ) : targetAt ? (
+        <div
+          className="shrink-0 border-t pt-4"
+          style={{
+            marginTop: config.infoGap,
+            borderColor: 'rgba(69,57,44,0.13)',
+          }}
+        >
+          <p className="font-mono text-[9px] uppercase tracking-[0.12em] text-[#6B6258]">
+            {timeLabel}
+          </p>
+          <div className="mt-2">
+            <CountdownPanel
+              targetAt={targetAt}
+              mode={card.timeMode === 'deadline' ? 'deadline' : 'reminder'}
+              completedAt={card.completedAt}
+              palette={palette}
+              isStatic={isStatic}
+            />
+          </div>
+          <p className="mt-2 font-mono text-[11px] leading-relaxed text-[#776E63]">
+            {formatHumanDate(targetAt)}
+          </p>
+        </div>
+      ) : (
+        <p
+          className="shrink-0 border-t pt-4 font-mono text-[9px] uppercase tracking-[0.12em] text-[#776E63]"
+          style={{
+            marginTop: config.infoGap,
+            borderColor: 'rgba(69,57,44,0.13)',
+          }}
+        >
+          Без срока
+        </p>
+      )}
+
+      {(!hideCoupon || card.completedAt) && (
+        <div
+          className="absolute left-0 right-0"
+          style={{
+            bottom: config.couponBottom,
+            height: config.couponHeight,
+          }}
+        >
+          <CompletionCoupon
+            completedAt={card.completedAt}
+            palette={palette}
+            onComplete={series && !card.completedAt ? seriesAction : onComplete}
+            actionLabel={series ? 'Засчитать +1' : list && !card.completedAt && !listReady ? `${listCompletedCount} / ${list.items.length}` : undefined}
+            series={series}
+            progress={list ? getListProgress(list) : undefined}
+            isReady={list && !card.completedAt ? listReady : true}
+            completedLabel={list ? `${listCompletedCount} / ${list.items.length}` : undefined}
+            height={config.couponHeight}
+            paperTint={config.paperTint}
+          />
+        </div>
+      )}
+
+      <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between font-mono text-[8px] uppercase tracking-[0.15em] text-black/30">
+        <span>Задача</span>
+        <span>{formatShortDate(card.createdAt)}</span>
+      </div>
+    </div>
+  );
 
   return (
     <div className="engraved absolute inset-0">
@@ -164,276 +288,90 @@ export const TaskCard: React.FC<TaskCardProps> = ({
         }}
         aria-hidden="true"
       />
-    <article
-      className="absolute inset-0 flex flex-col overflow-hidden border"
-      style={{
-        borderRadius: config.borderRadius,
-        padding: config.contentPadding,
-        backgroundColor: config.paperTint,
-        borderColor: 'rgba(91,76,59,0.16)',
-        boxShadow:
-          'inset 0 1px 0 rgba(255,255,255,0.88), inset 0 -1px 2px rgba(79,61,42,0.08)',
-        clipPath: FOLD_CUT_PATH,
-      }}
-    >
-      <div
-        className="pointer-events-none absolute inset-0"
+      <article
+        className="absolute inset-0 overflow-hidden border"
         style={{
-          backgroundImage: `url(${cardboardTexture})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          mixBlendMode: 'multiply',
-          opacity: config.paperTextureOpacity,
+          borderRadius: config.borderRadius,
+          backgroundColor: config.paperTint,
+          borderColor: 'rgba(91,76,59,0.16)',
+          boxShadow:
+            'inset 0 1px 0 rgba(255,255,255,0.88), inset 0 -1px 2px rgba(79,61,42,0.08)',
+          clipPath: FOLD_CUT_PATH,
         }}
-      />
+      >
+        <div
+          className="pointer-events-none absolute inset-0"
+          style={{
+            backgroundImage: `url(${cardboardTexture})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            mixBlendMode: 'multiply',
+            opacity: config.paperTextureOpacity,
+          }}
+        />
 
-      <div className="relative flex h-full flex-col">
-        <div className="flex items-center justify-between">
-          <span
-            className="rounded-full px-3 py-1.5 font-mono text-[9px] font-bold uppercase tracking-[0.12em]"
-            style={{
-              color: palette.accentDark,
-              backgroundColor: `${palette.accent}1d`,
-            }}
-          >
-            {series ? 'Серия' : list ? 'Список' : 'Одна задача'}
-          </span>
-        </div>
-
-        {!list &&
-          (isEditingTitle ? (
-            <textarea
-              ref={titleInputRef}
-              value={titleDraft}
-              rows={1}
-              maxLength={120}
-              onChange={(event) => setTitleDraft(event.target.value)}
-              onBlur={commitTitle}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter' && !event.shiftKey) {
-                  event.preventDefault();
-                  event.currentTarget.blur();
-                } else if (event.key === 'Escape') {
-                  titleEditCancelledRef.current = true;
-                  event.currentTarget.blur();
-                }
+        <CardFaceStage
+          face={face}
+          subjectId={card.id}
+          direction={faceState.direction}
+        >
+          {face === 'view' ? (
+            viewFace
+          ) : face === 'actions' ? (
+            <CardActionsFace
+              title={card.title}
+              kindLabel={kindLabel}
+              palette={palette}
+              paperTint={config.paperTint}
+              onEdit={() => goToFace('edit', 1)}
+              onDelete={() => {
+                setFaceState({ cardId: '', face: 'view', direction: -1 });
+                onDelete?.();
               }}
-              aria-label="Название карточки"
-              className="block w-full shrink-0 resize-none border-0 bg-transparent p-0 font-semibold leading-[1.08] outline-none"
-              style={
-                {
-                  marginTop: config.titleGap,
-                  fontSize: config.titleSize,
-                  color: '#28231D',
-                  letterSpacing: '-0.025em',
-                  fieldSizing: 'content',
-                  maxHeight: config.titleSize * 1.08 * 4,
-                  borderBottom: '1px dashed rgba(69,57,44,0.42)',
-                  fontFamily: 'inherit',
-                } as React.CSSProperties
-              }
             />
           ) : (
-            <h2
-              className="shrink-0 font-semibold leading-[1.08]"
-              style={{
-                marginTop: config.titleGap,
-                fontSize: config.titleSize,
-                color: '#28231D',
-                letterSpacing: '-0.025em',
-              }}
-            >
-              {card.title}
-            </h2>
-          ))}
-
-        {list ? (
-          <div
-            className="mt-5 flex min-h-0 flex-1 flex-col"
-            style={{
-              paddingBottom:
-                config.couponBottom + config.couponHeight + 4,
-            }}
-          >
-            <TaskListContent
-              list={list}
+            <CardEditFace
+              card={card}
               palette={palette}
-              disabled={Boolean(card.completedAt)}
-              onToggle={(itemId) => onToggleListItem?.(itemId)}
-              maxItems={5}
-              onOpenList={onOpenList}
-            />
-          </div>
-        ) : series ? (
-          <div
-            className="shrink-0 border-t pt-4"
-            style={{
-              marginTop: config.infoGap,
-              borderColor: 'rgba(69,57,44,0.13)',
-            }}
-          >
-            <p className="font-mono text-[9px] uppercase tracking-[0.12em] text-[#6B6258]">
-              Выполнено
-            </p>
-            <p className="mt-2 font-mono text-[25px] font-semibold tracking-[-0.04em] text-[#28231D]">
-              {series.entries.length} / {series.targetCount}
-            </p>
-            {lastSeriesEntry ? (
-              <div className="mt-3 font-mono text-[10px] leading-relaxed text-[#776E63]">
-                <p>Последняя · {new Date(lastSeriesEntry.completedAt).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}</p>
-                <p>За · {formatSeriesDuration(lastSeriesEntry.durationMs)}</p>
-              </div>
-            ) : (
-              <p className="mt-3 font-mono text-[10px] text-[#776E63]">
-                Начато · {new Date(series.startedAt).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
-              </p>
-            )}
-            {!card.completedAt && onFinishSeries && (
-              <button
-                type="button"
-                onClick={handleManualSeriesFinish}
-                className="mt-3 border-0 bg-transparent p-0 font-mono text-[8px] uppercase tracking-[0.12em]"
-                style={{ color: palette.accentDark }}
-              >
-                Завершить серию
-              </button>
-            )}
-          </div>
-        ) : targetAt ? (
-          <div
-            className="shrink-0 border-t pt-4"
-            style={{
-              marginTop: config.infoGap,
-              borderColor: 'rgba(69,57,44,0.13)',
-            }}
-          >
-            <p className="font-mono text-[9px] uppercase tracking-[0.12em] text-[#6B6258]">
-              {timeLabel}
-            </p>
-            <div className="mt-2">
-              <CountdownPanel
-                targetAt={targetAt}
-                mode={card.timeMode === 'deadline' ? 'deadline' : 'reminder'}
-                completedAt={card.completedAt}
-                palette={palette}
-                isStatic={isStatic}
-              />
-            </div>
-            <p className="mt-2 font-mono text-[11px] leading-relaxed text-[#776E63]">
-              {formatHumanDate(targetAt)}
-            </p>
-          </div>
-        ) : (
-          <p
-            className="shrink-0 border-t pt-4 font-mono text-[9px] uppercase tracking-[0.12em] text-[#776E63]"
-            style={{
-              marginTop: config.infoGap,
-              borderColor: 'rgba(69,57,44,0.13)',
-            }}
-          >
-            Без срока
-          </p>
-        )}
-
-        {(!hideCoupon || card.completedAt) && (
-          <div
-            className="absolute left-0 right-0"
-            style={{
-              bottom: config.couponBottom,
-              height: config.couponHeight,
-            }}
-          >
-            <CompletionCoupon
-              completedAt={card.completedAt}
-              palette={palette}
-              onComplete={series && !card.completedAt ? seriesAction : onComplete}
-              actionLabel={series ? 'Засчитать +1' : list && !card.completedAt && !listReady ? `${listCompletedCount} / ${list.items.length}` : undefined}
-              series={series}
-              progress={list ? getListProgress(list) : undefined}
-              isReady={list && !card.completedAt ? listReady : true}
-              completedLabel={list ? `${listCompletedCount} / ${list.items.length}` : undefined}
-              height={config.couponHeight}
               paperTint={config.paperTint}
+              onCancel={() => goToFace('view', -1)}
+              onSave={(updated) => {
+                onSave?.(updated);
+                goToFace('view', -1);
+              }}
             />
-          </div>
-        )}
+          )}
+        </CardFaceStage>
+      </article>
 
-        <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between font-mono text-[8px] uppercase tracking-[0.15em] text-black/30">
-          <span>Задача</span>
-          <span>{formatShortDate(card.createdAt)}</span>
-        </div>
-      </div>
-    </article>
+      {showCornerHint && face === 'view' && canOpenMenu && (
+        <CornerHint palette={palette} />
+      )}
 
       {/* Folded top-right corner. The article above is cut along the crease; the
           flap lying on the face is the cut corner mirrored across it. When the
-          card has actions the whole corner is the handle for them. */}
+          card has actions, the whole corner is the handle for them. */}
       <div
-        ref={menuRef}
         className="absolute right-0 top-0 z-30"
         style={{ width: FOLD_SIZE + 10, height: FOLD_SIZE + 10 }}
       >
         {canOpenMenu ? (
           <button
             type="button"
-            onClick={() => {
-              setMenuForId(isMenuOpen ? null : card.id);
-              setConfirmDeleteForId(null);
-            }}
-            aria-haspopup="menu"
-            aria-expanded={isMenuOpen}
-            aria-label="Действия с карточкой"
-            className="group absolute inset-0 cursor-pointer border-0 bg-transparent p-0"
+            onClick={handleCornerClick}
+            aria-expanded={face !== 'view'}
+            aria-label={
+              face === 'view'
+                ? 'Действия с карточкой'
+                : 'Вернуть карточку'
+            }
+            className="absolute inset-0 cursor-pointer border-0 bg-transparent p-0"
           >
-            <FoldedFlap lifted={isMenuOpen} paperTint={config.paperTint} />
+            <FoldedFlap lifted={face !== 'view'} paperTint={config.paperTint} />
           </button>
         ) : (
           <div className="pointer-events-none absolute inset-0" aria-hidden="true">
             <FoldedFlap lifted={false} paperTint={config.paperTint} />
-          </div>
-        )}
-
-        {isMenuOpen && (
-          <div
-            role="menu"
-            className="absolute flex flex-col items-end gap-2"
-            style={{ top: FOLD_SIZE + 6, right: 20 }}
-          >
-            {canRename && (
-              <button
-                type="button"
-                role="menuitem"
-                onClick={startEditingTitle}
-                className="tag-drop cursor-pointer whitespace-nowrap border font-mono text-[10px] font-bold uppercase tracking-[0.14em]"
-                style={{
-                  ...TAG_STYLE,
-                  ['--tag-tilt' as string]: '-1.2deg',
-                  backgroundColor: config.paperTint,
-                  color: palette.accentDark,
-                }}
-              >
-                Править название
-              </button>
-            )}
-            {onDelete && (
-              <button
-                type="button"
-                role="menuitem"
-                onClick={handleDeleteClick}
-                className="tag-drop cursor-pointer whitespace-nowrap border font-mono text-[10px] font-bold uppercase tracking-[0.14em]"
-                style={{
-                  ...TAG_STYLE,
-                  ['--tag-tilt' as string]: '0.9deg',
-                  animationDelay: '40ms',
-                  backgroundColor: config.paperTint,
-                  color: isConfirmingDelete
-                    ? PALETTES.none.accentDark
-                    : 'rgba(40,35,29,0.72)',
-                }}
-              >
-                {isConfirmingDelete ? 'Точно выбросить?' : 'Выбросить'}
-              </button>
-            )}
           </div>
         )}
       </div>
@@ -444,19 +382,6 @@ export const TaskCard: React.FC<TaskCardProps> = ({
 // Size of the folded corner and the clip that removes it from the card body.
 const FOLD_SIZE = 46;
 const FOLD_CUT_PATH = `polygon(0 0, calc(100% - ${FOLD_SIZE}px) 0, 100% ${FOLD_SIZE}px, 100% 100%, 0 100%)`;
-
-const TAG_STYLE: React.CSSProperties = {
-  padding: '11px 18px',
-  borderRadius: 8,
-  borderColor: 'rgba(70,59,46,0.42)',
-  borderStyle: 'dashed',
-  backgroundImage: `url(${cardboardTexture})`,
-  backgroundSize: 'cover',
-  backgroundPosition: 'center',
-  backgroundBlendMode: 'multiply',
-  boxShadow:
-    '0 7px 14px rgba(20,17,14,0.3), 0 1px 0 rgba(20,17,14,0.2), inset 0 1px 0 rgba(255,255,255,0.85)',
-};
 
 const FoldedFlap: React.FC<{ lifted: boolean; paperTint: string }> = ({
   lifted,

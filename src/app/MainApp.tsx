@@ -73,6 +73,15 @@ type TransientOutgoingKind = 'switch' | 'completion' | 'discard';
 
 const ARCHIVE_STORAGE_KEY = 'card-tracker.archive.v1';
 const ACTIVE_CARDS_STORAGE_KEY = 'card-tracker.active-cards.v1';
+const CORNER_HINT_STORAGE_KEY = 'card-tracker.corner-hint-dismissed.v1';
+
+const loadCornerHintDismissed = (): boolean => {
+  try {
+    return window.localStorage.getItem(CORNER_HINT_STORAGE_KEY) === '1';
+  } catch {
+    return false;
+  }
+};
 
 interface TransientOutgoingCard {
   key: number;
@@ -165,6 +174,9 @@ const SWITCHER_ROW_GAP = 2;
 const MainApp: React.FC = () => {
   const { width: viewportWidth, height: viewportHeight } = useViewportSize();
   const [isArchiveOpen, setIsArchiveOpen] = useState(false);
+  const [isCornerHintDismissed, setIsCornerHintDismissed] = useState(
+    loadCornerHintDismissed,
+  );
 
   const [cards, setCards] = useState<VisualCard[]>(() => {
     const storedCards = loadActiveCards();
@@ -1392,20 +1404,37 @@ const MainApp: React.FC = () => {
     setActiveCardId(nextCard?.id ?? '');
   };
 
-  const handleRenameCard = (cardId: string, rawTitle: string) => {
-    const title = rawTitle.trim();
-
-    if (!title) {
-      return;
-    }
-
+  // Applies an edit made on the card's edit face. Identity-defining fields and
+  // completion state always come from the stored card, never from the edit.
+  const handleSaveCard = (edited: VisualCard) => {
     setCards((previous) =>
       previous.map((card) =>
-        card.id === cardId && card.kind !== 'list' && !card.completedAt
-          ? { ...card, title }
+        card.id === edited.id && !card.completedAt
+          ? {
+              ...edited,
+              id: card.id,
+              kind: card.kind,
+              timeMode: card.timeMode,
+              createdAt: card.createdAt,
+              completedAt: undefined,
+            }
           : card,
       ),
     );
+  };
+
+  const handleCornerOpened = () => {
+    if (isCornerHintDismissed) {
+      return;
+    }
+
+    setIsCornerHintDismissed(true);
+
+    try {
+      window.localStorage.setItem(CORNER_HINT_STORAGE_KEY, '1');
+    } catch {
+      // The hint simply shows again next time when storage is unavailable.
+    }
   };
 
   const handleExportBackup = () => {
@@ -1587,10 +1616,13 @@ const MainApp: React.FC = () => {
                   onRecordSeriesStep={recordSeriesStep}
                   onFinishSeries={finishSeries}
                   onToggleListItem={toggleListItem}
-                  onRename={(title) =>
-                    handleRenameCard(activeCard.id, title)
-                  }
+                  onSave={handleSaveCard}
                   onDelete={() => handleDeleteCard(activeCard.id)}
+                  showCornerHint={
+                    !isCornerHintDismissed &&
+                    activeCard.id === cards[0]?.id
+                  }
+                  onCornerOpened={handleCornerOpened}
                   onOpenList={
                     activeCard.kind === 'list'
                       ? () => setExpandedListCardId(activeCard.id)
@@ -1718,15 +1750,20 @@ const MainApp: React.FC = () => {
                     transition={{ duration: 0.18 }}
                     className="absolute right-[18px] top-[13px] flex select-none items-center gap-2 whitespace-nowrap text-left"
                   >
-                    {/* Light lettering with a dark under-edge: the ghost is a
-                        translucent sheet over the dark table, so dark ink on it
-                        disappears. Sits at the right end of the ghost's top
-                        edge, where the most of it sticks out above the card. */}
+                    {/* Stamped into the ghost sheet: a dark edge up-left and a
+                        light one down-right, as before. The ink itself is light
+                        because the ghost is a translucent sheet over the dark
+                        table, where dark ink on it disappears. Sits at the right
+                        end of the ghost's top edge, where most of it sticks out
+                        above the card. */}
                     <span
                       className="font-serif text-[22px] font-medium leading-none"
                       style={{
-                        color: 'rgba(239,232,216,0.92)',
-                        textShadow: '0 1px 2px rgba(0,0,0,0.8)',
+                        color: 'rgba(214,205,186,0.8)',
+                        textShadow: `
+                          -1px -1px 1px rgba(0,0,0,0.72),
+                          1px 1px 1px rgba(255,255,255,0.42)
+                        `,
                       }}
                     >
                       +
@@ -1735,8 +1772,11 @@ const MainApp: React.FC = () => {
                     <span
                       className="font-mono text-[10px] font-bold uppercase leading-none tracking-[0.16em]"
                       style={{
-                        color: 'rgba(239,232,216,0.9)',
-                        textShadow: '0 1px 2px rgba(0,0,0,0.8)',
+                        color: 'rgba(214,205,186,0.78)',
+                        textShadow: `
+                          -1px -1px 1px rgba(0,0,0,0.72),
+                          1px 1px 1px rgba(255,255,255,0.4)
+                        `,
                       }}
                     >
                       Добавить карту
