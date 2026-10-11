@@ -1,6 +1,8 @@
 import React, { useEffect } from 'react';
 
 import { SETTINGS, useSettings } from '../../app/settings';
+import { MotionSetting } from './MotionSetting';
+import { playSound } from '../../app/sounds';
 
 interface SettingsViewProps {
   isOpen: boolean;
@@ -59,6 +61,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             Настройки
           </h2>
 
+          <MotionSetting style={lit(110)} />
+
           <ul>
             {SETTINGS.map((setting, index) => {
               const isOn = values[setting.id];
@@ -88,7 +92,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     role="switch"
                     aria-checked={isOn}
                     aria-label={setting.label}
-                    onClick={() => set(setting.id, !isOn)}
+                    onClick={() => {
+                      playSound('toggle');
+                      set(setting.id, !isOn);
+                    }}
                     onTouchStart={() => undefined}
                     className="lit-switch shrink-0"
                   >

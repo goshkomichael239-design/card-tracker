@@ -1,5 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 
+import { playSound } from '../../app/sounds';
+
 interface ListCheckboxProps {
   checked: boolean;
   size: number;
@@ -33,6 +35,7 @@ export const ListCheckbox: React.FC<ListCheckboxProps> = ({
     }
 
     // Only the moment of ticking shows the tab leaving, not every redraw.
+    playSound('check');
     const start = window.setTimeout(() => setIsTearing(true), 0);
     const stop = window.setTimeout(() => setIsTearing(false), TEAR_MS);
 

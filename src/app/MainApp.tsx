@@ -75,6 +75,7 @@ import { INITIAL_CARD_SWITCHER_CONFIG } from '../components/card-switcher/cardSw
 import { ARCHIVE_NAVIGATION_HEIGHT } from '../components/archive/ArchiveNavigation';
 import { getCardScale, useViewportSize } from './viewportScale';
 import { haptic } from './haptics';
+import { playSound } from './sounds';
 import { SHOW_DEV_TOOLS } from './devTools';
 import { SettingsGear } from '../components/settings/SettingsGear';
 import { SettingsView } from '../components/settings/SettingsView';
@@ -270,6 +271,23 @@ const MainApp: React.FC = () => {
     ready: boolean;
   } | null>(null);
   const swipeHintRef = useRef<typeof swipeHint>(null);
+
+  // The marble slides when the archive opens or closes; the cloth rustles when
+  // the settings light up. Not on the first render.
+  const hasRenderedRef = useRef(false);
+  useEffect(() => {
+    if (hasRenderedRef.current) {
+      playSound('marble');
+    }
+  }, [isArchiveOpen]);
+  useEffect(() => {
+    if (hasRenderedRef.current) {
+      playSound('rustle');
+    }
+  }, [isSettingsOpen]);
+  useEffect(() => {
+    hasRenderedRef.current = true;
+  }, []);
   const sceneRef = useRef<HTMLDivElement | null>(null);
   const cardLayerRef = useRef<HTMLDivElement | null>(null);
   const lastTurnAtRef = useRef(0);
@@ -530,6 +548,7 @@ const MainApp: React.FC = () => {
 
       playCardEntrance(direction, isQuick);
       haptic(7);
+      playSound('turn', { volume: isQuick ? 0.55 : 1 });
       setActiveCardId(cardId);
     },
     [
@@ -669,6 +688,10 @@ const MainApp: React.FC = () => {
       if (gesture.mode === 'horizontal' && gesture.fromControl) {
         event.currentTarget.setPointerCapture(event.pointerId);
       }
+
+      if (gesture.mode === 'horizontal') {
+        playSound('cloth');
+      }
     }
 
     if (gesture.mode === 'horizontal') {
@@ -682,6 +705,7 @@ const MainApp: React.FC = () => {
 
       if (isReady && !(swipeHintRef.current?.ready)) {
         haptic(6);
+        playSound('tick');
       }
 
       setSwipeHintIfChanged(
@@ -744,6 +768,10 @@ const MainApp: React.FC = () => {
 
     if (!isCommitted || !layer || !activeCard) {
       moveCardLayer(0, true);
+      // The card falls back onto the cloth.
+      if (Math.abs(gesture.dx) > 24) {
+        playSound('place', { volume: 0.7 });
+      }
       return;
     }
 
@@ -936,6 +964,7 @@ const MainApp: React.FC = () => {
     couponFlightInProgressRef.current = true;
     // A short tear: a tick as it is pulled and a longer one as it comes off.
     haptic([10, 28, 22]);
+    playSound('tear');
 
     if (isRepeating) {
       detachedCouponLayerRef.current?.launch({
@@ -1074,6 +1103,7 @@ const MainApp: React.FC = () => {
   // Pins or unpins a card; the data layer keeps pinned cards at the head.
   const handleTogglePin = (cardId: string) => {
     haptic(12);
+    playSound('pin');
     setCards((previous) =>
       previous.map((card) =>
         card.id === cardId && !card.completedAt
@@ -1103,6 +1133,8 @@ const MainApp: React.FC = () => {
     // Not destroyed: crumpled and thrown into the basket, from where it can be
     // put back for a while.
     createTransientOutgoing(cardToDelete, 'trash');
+    // Crumpled as it is thrown; the thud comes when it lands in the basket.
+    playSound('crumple');
     setCards((previous) => previous.filter((card) => card.id !== cardId));
     setActiveCardId(nextCardId);
     setTrash((previous) => [
@@ -1219,6 +1251,7 @@ const MainApp: React.FC = () => {
 
     setUndoEntry(null);
     haptic(14);
+    playSound('undo');
 
     if (entry.action.kind === 'trash') {
       restoreFromTrash(entry.action.cardId);
@@ -1334,6 +1367,7 @@ const MainApp: React.FC = () => {
 
     if (nextActiveId !== cardId) {
       createTransientOutgoing(before, 'postpone');
+      playSound('stamp');
     }
 
     setActiveCardId(nextActiveId);
@@ -1482,6 +1516,7 @@ const MainApp: React.FC = () => {
     if (landed) {
       // The coupon has just been speared: the spike gives a little bump.
       setSpikeBumpKey((previous) => previous + 1);
+      playSound('spike');
     }
   }, []);
 
@@ -1492,6 +1527,7 @@ const MainApp: React.FC = () => {
       if (kind === 'trash') {
         // The crumpled card has just landed: the basket gives a little bump.
         setTrashBumpKey((previous) => previous + 1);
+        playSound('binland');
       }
     },
     [],

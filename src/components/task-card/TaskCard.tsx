@@ -39,6 +39,7 @@ const getCustomPostponeStart = (card: VisualCard): Date => {
 import { CardListFace } from './CardListFace';
 import { PinStar } from './PinStar';
 import { FOLD_CUT_PATH, FOLD_SIZE, FoldedFlap } from './FoldedCorner';
+import { playSound } from '../../app/sounds';
 import { CountdownPanel } from './CountdownPanel';
 import { INITIAL_TASK_CARD_V2_CONFIG } from './taskCardV2Config';
 import { TaskListContent } from './TaskListContent';
@@ -143,6 +144,8 @@ export const TaskCard: React.FC<TaskCardProps> = ({
   }, [card.id, face]);
 
   const handleCornerClick = () => {
+    playSound('flap');
+
     if (face === 'view') {
       goToFace('actions', 1);
       onCornerOpened?.();

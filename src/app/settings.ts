@@ -8,7 +8,6 @@ export type SettingId =
   | 'sounds'
   | 'reminders'
   | 'hints'
-  | 'calmMotion'
   | 'lamp'
   | 'overdueCounter';
 
@@ -33,8 +32,8 @@ export const SETTINGS: SettingDefinition[] = [
     id: 'sounds',
     label: 'Звуки',
     hint: 'Шорох карточек, треск перфорации, штамп',
-    isStub: true,
-    defaultValue: false,
+    isStub: false,
+    defaultValue: true,
   },
   {
     id: 'reminders',
@@ -49,13 +48,6 @@ export const SETTINGS: SettingDefinition[] = [
     hint: 'Стрелка у загнутого уголка и другие подсказки',
     isStub: true,
     defaultValue: true,
-  },
-  {
-    id: 'calmMotion',
-    label: 'Спокойные анимации',
-    hint: 'Меньше движения при листании и переходах',
-    isStub: true,
-    defaultValue: false,
   },
   {
     id: 'lamp',
