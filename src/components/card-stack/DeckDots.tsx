@@ -69,15 +69,17 @@ export const DeckDots: React.FC<DeckDotsProps> = ({
   }
 
   // With few cards the rail stands still, centred, and only the mark moves.
-  const isShort = cards.length <= REACH * 2 - 1;
-  const railOffset = (index: number) =>
-    isShort
-      ? (index - (cards.length - 1) / 2) * SLOT_PX
-      : (index - activeIndex) * SLOT_PX;
-  const visibleFrom = isShort ? 0 : Math.max(0, activeIndex - REACH);
-  const visibleTo = isShort
-    ? cards.length - 1
-    : Math.min(cards.length - 1, activeIndex + REACH);
+  // Otherwise it is a loop: past the last dot come the first ones again.
+  const count = cards.length;
+  const isShort = count < REACH * 2 + 1;
+  const slots = isShort
+    ? cards.map((card, index) => ({ card, index, offset: index - (count - 1) / 2 }))
+    : Array.from({ length: REACH * 2 + 1 }, (_, position) => {
+        const offset = position - REACH;
+        const index = (((activeIndex + offset) % count) + count) % count;
+
+        return { card: cards[index]!, index, offset };
+      });
   const height = (REACH * 2 + 1) * SLOT_PX;
 
   const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
@@ -117,11 +119,12 @@ export const DeckDots: React.FC<DeckDotsProps> = ({
 
     gesture.isDragging = true;
 
-    // Dragging down goes deeper into the deck, like following the dots.
-    const target = Math.min(
-      cards.length - 1,
-      Math.max(0, gesture.startIndex + Math.trunc(dy / DOT_STEP_PX)),
-    );
+    // Dragging down goes deeper into the deck, like following the dots, and
+    // round the loop when it runs out.
+    const target =
+      (((gesture.startIndex + Math.trunc(dy / DOT_STEP_PX)) % cards.length) +
+        cards.length) %
+      cards.length;
 
     if (target !== activeIndex) {
       onSelectIndex(target);
@@ -168,10 +171,9 @@ export const DeckDots: React.FC<DeckDotsProps> = ({
       onPointerUp={finishGesture}
       onPointerCancel={finishGesture}
     >
-      {cards.slice(visibleFrom, visibleTo + 1).map((card, offset) => {
-        const index = visibleFrom + offset;
+      {slots.map(({ card, index, offset }) => {
         const isActive = index === activeIndex;
-        const distance = Math.min(Math.abs(index - activeIndex), 3);
+        const distance = Math.min(Math.abs(offset), 3);
         // Full size at the middle, smaller and fainter toward the ends.
         const scale = isShort ? 1 : SCALE_BY_DISTANCE[distance]!;
         const opacity = isShort ? 1 : OPACITY_BY_DISTANCE[distance]!;
@@ -190,7 +192,7 @@ export const DeckDots: React.FC<DeckDotsProps> = ({
               width: 30,
               height: SLOT_PX,
               marginTop: -SLOT_PX / 2,
-              transform: 'translate3d(0, ' + railOffset(index) + 'px, 0)',
+              transform: 'translate3d(0, ' + offset * SLOT_PX + 'px, 0)',
               opacity,
               transition:
                 'transform 260ms cubic-bezier(0.2, 0.8, 0.2, 1), opacity 200ms ease-out',

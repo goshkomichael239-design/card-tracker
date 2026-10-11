@@ -29,8 +29,8 @@ export const SettingsGear: React.FC<SettingsGearProps> = ({
   >
     <svg
       viewBox="0 0 24 24"
-      width="24"
-      height="24"
+      width="20"
+      height="20"
       aria-hidden="true"
       style={{
         transform: isOpen ? 'rotate(60deg)' : 'rotate(0deg)',

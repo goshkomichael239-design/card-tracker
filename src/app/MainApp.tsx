@@ -585,13 +585,13 @@ const MainApp: React.FC = () => {
       0,
       cards.findIndex((card) => card.id === activeCardId),
     );
-    // Dragging up goes on to the next card, down back to the previous one.
+    // Dragging up goes on to the next card, down back to the previous one;
+    // past the last card comes the first, before the first comes the last.
     const direction: 1 | -1 = dy < 0 ? 1 : -1;
-    const target = cards[currentIndex + direction];
+    const target =
+      cards[(currentIndex + direction + cards.length) % cards.length];
 
     if (!target) {
-      // The end of the deck: the card only gives a little, then resists.
-      moveCardLayer(dy * 0.25, false);
       return;
     }
 

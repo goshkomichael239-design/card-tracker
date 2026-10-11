@@ -63,15 +63,31 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
 
   // The list picks by itself: the row at the top is the chosen card, so
   // scrolling the list chooses cards, and a card chosen any other way is
-  // scrolled up to the top. The last few cards cannot all reach the top (the
-  // list ends); they stay visible and are chosen by a tap.
+  // scrolled up to the top.
+  //
+  // It is also a loop: past the last card come the first ones again. To get
+  // that from an ordinary scrolling box the deck is drawn several times end to
+  // end and the scroll position is kept in the middle copy: when the scrolling
+  // settles, the list is moved back by whole copies, which looks the same.
   const rowStep = metrics.rowHeight + 2;
-  const canScroll = cards.length > metrics.visibleRows;
-  const maxScroll = Math.max(0, (cards.length - metrics.visibleRows) * rowStep);
+  const count = cards.length;
+  const canScroll = count > metrics.visibleRows;
+  const copies = !canScroll ? 1 : count <= 100 ? 7 : 3;
+  const middleOffsetRows = canScroll ? Math.floor(copies / 2) * count : 0;
   const isTouchingRef = useRef(false);
   const lastUserScrollAtRef = useRef(0);
   const ignoreScrollUntilRef = useRef(0);
   const hasAlignedRef = useRef(false);
+  const recentreTimerRef = useRef<number | null>(null);
+
+  useEffect(
+    () => () => {
+      if (recentreTimerRef.current !== null) {
+        window.clearTimeout(recentreTimerRef.current);
+      }
+    },
+    [],
+  );
 
   useEffect(() => {
     const list = listRef.current;
@@ -89,7 +105,23 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
       return;
     }
 
-    const target = canScroll ? Math.min(index * rowStep, maxScroll) : 0;
+    let target = 0;
+
+    if (canScroll) {
+      // The copy of this card that is nearest to where the list is now, so
+      // going from the last card to the first is one step forward.
+      const middle = index + middleOffsetRows;
+      // The first time the list is placed it goes to the middle copy.
+      const copyShift = hasAlignedRef.current
+        ? Math.round((list.scrollTop / rowStep - middle) / count)
+        : 0;
+      const lastTop = (copies * count - metrics.visibleRows) * rowStep;
+
+      target = Math.min(
+        lastTop,
+        Math.max(0, (middle + copyShift * count) * rowStep),
+      );
+    }
 
     if (Math.abs(list.scrollTop - target) < 1) {
       return;
@@ -100,7 +132,40 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
     hasAlignedRef.current = true;
     ignoreScrollUntilRef.current = performance.now() + (isFirst ? 80 : 520);
     list.scrollTo({ top: target, behavior: isFirst ? 'auto' : 'smooth' });
-  }, [activeCardId, cards, canScroll, rowStep, maxScroll]);
+  }, [
+    activeCardId,
+    cards,
+    canScroll,
+    copies,
+    count,
+    middleOffsetRows,
+    metrics.visibleRows,
+    rowStep,
+  ]);
+
+  // When the list has come to rest, put it back in the middle copy.
+  const scheduleRecentre = () => {
+    if (recentreTimerRef.current !== null) {
+      window.clearTimeout(recentreTimerRef.current);
+    }
+
+    recentreTimerRef.current = window.setTimeout(() => {
+      const list = listRef.current;
+
+      if (!list || isTouchingRef.current) {
+        return;
+      }
+
+      const row = Math.round(list.scrollTop / rowStep);
+      const index = ((row % count) + count) % count;
+      const home = (index + middleOffsetRows) * rowStep;
+
+      if (Math.abs(list.scrollTop - home) > 1) {
+        ignoreScrollUntilRef.current = performance.now() + 80;
+        list.scrollTop = home;
+      }
+    }, 220);
+  };
 
   // Scrolled by a finger: the card at the top becomes the active one.
   const handleListScroll = () => {
@@ -115,16 +180,24 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
     }
 
     lastUserScrollAtRef.current = performance.now();
+    scheduleRecentre();
 
-    const index = Math.min(
-      cards.length - 1,
-      Math.max(0, Math.round(list.scrollTop / rowStep)),
-    );
+    const row = Math.round(list.scrollTop / rowStep);
+    const index = ((row % count) + count) % count;
     const card = cards[index];
 
     if (card && card.id !== activeCardId) {
       const from = cards.findIndex((entry) => entry.id === activeCardId);
-      onSelectCard(card.id, index > from ? 1 : -1);
+      let delta = index - from;
+
+      // The short way round the loop.
+      if (delta > count / 2) {
+        delta -= count;
+      } else if (delta < -count / 2) {
+        delta += count;
+      }
+
+      onSelectCard(card.id, delta > 0 ? 1 : -1);
     }
   };
 
@@ -195,14 +268,18 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
                 isTouchingRef.current = false;
               }}
             >
-              {cards.map((card) => {
+              {Array.from({ length: copies }, (_, copy) =>
+                cards.map((card) => ({ card, copy })),
+              )
+                .flat()
+                .map(({ card, copy }) => {
                 const isActive = card.id === activeCardId;
                 const palette = getCardPalette(card);
                 const isOverdue = Boolean(overdueIds?.has(card.id));
 
                 return (
                   <button
-                    key={card.id}
+                    key={copy + ':' + card.id}
                     type="button"
                     data-card-id={card.id}
                     onClick={() => onSelectCard(card.id)}

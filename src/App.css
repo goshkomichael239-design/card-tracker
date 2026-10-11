@@ -721,12 +721,12 @@ main[data-settings-open='true'] > :not([data-settings-keep]) {
    a thin light edge on its lower side. */
 .settings-gear {
   position: absolute;
-  top: 6px;
-  right: 10px;
+  top: 5px;
+  right: 8px;
   z-index: 45;
   display: flex;
-  width: 42px;
-  height: 42px;
+  width: 34px;
+  height: 34px;
   align-items: center;
   justify-content: center;
   border: 0;
@@ -742,27 +742,24 @@ main[data-settings-open='true'] > :not([data-settings-keep]) {
   transition: box-shadow 240ms ease-out, background-color 240ms ease-out;
 }
 
+/* Always white; while the settings are open it also glows. */
 .settings-gear__cut {
-  fill: rgba(0, 12, 6, 0.78);
+  fill: rgba(255, 255, 255, 0.94);
 }
 
 .settings-gear__edge {
-  fill: rgba(255, 255, 255, 0.2);
+  fill: rgba(0, 0, 0, 0.35);
 }
 
 .settings-gear--lit {
-  background: rgba(255, 200, 100, 0.12);
   box-shadow:
     inset 0 2px 5px rgba(0, 0, 0, 0.45),
-    0 0 16px rgba(255, 200, 100, 0.45);
+    0 0 16px rgba(255, 255, 255, 0.5);
 }
 
 .settings-gear--lit .settings-gear__cut {
-  fill: rgba(255, 224, 150, 0.95);
-}
-
-.settings-gear--lit .settings-gear__edge {
-  fill: rgba(255, 190, 80, 0.25);
+  filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.95))
+    drop-shadow(0 0 9px rgba(255, 244, 205, 0.7));
 }
 
 @keyframes lit-ignite {
