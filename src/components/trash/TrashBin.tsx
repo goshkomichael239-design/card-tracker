@@ -3,6 +3,7 @@ import React from 'react';
 import bin0 from '../../assets/bin-new-0.png';
 import bin1 from '../../assets/bin-new-1.png';
 import bin2 from '../../assets/bin-new-2.png';
+import bin3 from '../../assets/bin-new-3.png';
 
 interface TrashBinProps {
   count: number;
@@ -17,9 +18,9 @@ interface TrashBinProps {
 }
 
 // The picture is 257 x 300 units. One picture per number of papers in the
-// basket: empty, one, two; the three- and four-paper pictures are still to
-// come, until then two stands for "two or more".
-const BIN_IMAGES = [bin0, bin1, bin2, bin2, bin2];
+// basket: empty, one, two, three; the four-or-more picture is still to
+// come, until then three stands for "three or more".
+const BIN_IMAGES = [bin0, bin1, bin2, bin3, bin3];
 const PICTURE_W = 257;
 const WIDTH_RATIO = PICTURE_W / 300;
 // How deep the reflection in the marble reaches below the foot, in units.
