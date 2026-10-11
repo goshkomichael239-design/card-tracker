@@ -32,6 +32,7 @@ import {
   startOfLocalDay,
 } from './dateTimeUtils';
 import { getDeckState } from './deckStore';
+import { parseQuickEntry, type QuickEntry } from './parseQuickEntry';
 import { firstOccurrence, isRecurrenceComplete } from './recurrence';
 
 /** The colour scheme of the last card in the deck (the new one sits next to it). */
@@ -99,6 +100,11 @@ export function useCardDraft({
   const [isManualCalendarOpen, setIsManualCalendarOpen] =
     useState(false);
   const [creationCycle, setCreationCycle] = useState(0);
+  // "Нет, выберу сам": the line was understood, the person wants the choices.
+  const [isManualKind, setIsManualKind] = useState(false);
+  // The title was written on the first step (not on a step of its own), so
+  // "back" returns there.
+  const [isTitleFromKindStep, setIsTitleFromKindStep] = useState(false);
 
   const titleInputRef = useRef<HTMLTextAreaElement | null>(null);
   const commitTimerRef = useRef<number | null>(null);
@@ -155,6 +161,14 @@ export function useCardDraft({
     calendarView.getFullYear() > currentDraftDay.getFullYear();
   const canGoToPreviousMonth =
     calendarView.getTime() > currentDraftMonth.getTime();
+  // What the app made of the line typed on the first step.
+  const quickEntry: QuickEntry | null = useMemo(
+    () =>
+      creationState === 'editing' && draftStep === 'kind' && !isManualKind
+        ? parseQuickEntry(draftTitle, new Date(clockMs))
+        : null,
+    [creationState, draftStep, isManualKind, draftTitle, clockMs],
+  );
   const canAdvanceDraft =
     (draftStep === 'title' && Boolean(draftTitle.trim())) ||
     (draftStep === 'series-target' &&
@@ -178,6 +192,8 @@ export function useCardDraft({
     setDraftListInput('');
     setSelectedKind(null);
     setDraftStep('kind');
+    setIsManualKind(false);
+    setIsTitleFromKindStep(false);
     setTimeMode(null);
     setDraftRecurrence(null);
     setDateTimeValue('');
@@ -194,7 +210,10 @@ export function useCardDraft({
 
 
   useEffect(() => {
-    if (creationState !== 'editing' || draftStep !== 'title') {
+    if (
+      creationState !== 'editing' ||
+      (draftStep !== 'title' && draftStep !== 'kind')
+    ) {
       return;
     }
 
@@ -259,6 +278,36 @@ export function useCardDraft({
   };
 
   const handleSelectKind = (kind: CardKind) => {
+    // A line was already written on the first step: it is the title.
+    const typed = draftTitle.trim();
+
+    if (typed && draftStep === 'kind') {
+      setIsTitleFromKindStep(true);
+      setDateTimeValue('');
+
+      if (kind === 'series') {
+        setSelectedKind('series');
+        setTimeMode('none');
+        setDraftStep('series-target');
+        return;
+      }
+
+      if (kind === 'list') {
+        setSelectedKind('list');
+        setTimeMode(null);
+        setDraftListItems((items) =>
+          items.length > 0 ? items : [{ id: createId(), text: typed }],
+        );
+        setDraftStep('list-items');
+        return;
+      }
+
+      setSelectedKind('single');
+      setTimeMode(null);
+      setDraftStep('time');
+      return;
+    }
+
     if (kind === 'series') {
       setSelectedKind('series');
       setTimeMode('none');
@@ -354,6 +403,91 @@ export function useCardDraft({
       setCreationCycle((previous) => previous + 1);
       setCreationState('idle');
     }, 340);
+  };
+
+  // The line was understood and the person said yes: the card is made at once.
+  const handleQuickCreate = () => {
+    const entry = quickEntry;
+
+    if (!entry || creationState !== 'editing') {
+      return;
+    }
+
+    setCreationState('committing');
+
+    commitTimerRef.current = window.setTimeout(() => {
+      const now = new Date().toISOString();
+      const base = {
+        id: createId(),
+        colorId: draftColorId,
+        createdAt: now,
+      };
+      let newCard: VisualCard;
+
+      if (entry.kind === 'series') {
+        newCard = {
+          ...base,
+          title: entry.title,
+          kind: 'series',
+          timeMode: 'none',
+          series: {
+            targetCount: entry.target,
+            entries: [],
+            startedAt: now,
+            timingAnchorAt: now,
+          },
+        };
+      } else if (entry.kind === 'list') {
+        newCard = {
+          ...base,
+          title: entry.title,
+          kind: 'list',
+          timeMode: 'none',
+          list: {
+            items: entry.items.map((text) => ({ id: createId(), text })),
+          },
+        };
+      } else {
+        const due = entry.recurrence
+          ? firstOccurrence(
+              entry.recurrence,
+              entry.at.getHours(),
+              entry.at.getMinutes(),
+            )
+          : entry.at;
+
+        newCard = {
+          ...base,
+          title: entry.title,
+          kind: 'single',
+          timeMode: entry.timeMode,
+          deadlineAt:
+            entry.timeMode === 'deadline' ? due.toISOString() : undefined,
+          reminderAt:
+            entry.timeMode === 'reminder' ? due.toISOString() : undefined,
+          recurrence: entry.recurrence,
+        };
+      }
+
+      onCreate(newCard);
+
+      resetDraft();
+      setCreationCycle((previous) => previous + 1);
+      setCreationState('idle');
+    }, 340);
+  };
+
+  // Enter in the first field: make it as understood; otherwise carry on as a
+  // plain task with the line as its title (the likeliest choice).
+  const handleKindEnter = () => {
+    if (quickEntry) {
+      handleQuickCreate();
+      return;
+    }
+
+    if (draftTitle.trim()) {
+      handleSelectKind('single');
+    }
   };
 
   // "Регулярно": a repeating card is a reminder whose time moves on to the
@@ -603,6 +737,7 @@ export function useCardDraft({
     if (draftStep === 'title') {
       setSelectedKind(null);
       setSeriesTargetInput('');
+      setIsManualKind(true);
       setDraftStep('kind');
       return;
     }
@@ -610,18 +745,38 @@ export function useCardDraft({
     if (draftStep === 'time') {
       setTimeMode(null);
       setDateTimeValue('');
+
+      if (isTitleFromKindStep && selectedKind !== 'list') {
+        setSelectedKind(null);
+        setIsTitleFromKindStep(false);
+        setIsManualKind(true);
+        setDraftStep('kind');
+        return;
+      }
+
       setDraftStep(selectedKind === 'list' ? 'list-items' : 'title');
       return;
     }
 
     if (draftStep === 'series-target') {
       setSeriesTargetInput('');
+
+      if (isTitleFromKindStep) {
+        setSelectedKind(null);
+        setIsTitleFromKindStep(false);
+        setIsManualKind(true);
+        setDraftStep('kind');
+        return;
+      }
+
       setDraftStep('title');
       return;
     }
 
     if (draftStep === 'list-items') {
       setSelectedKind(null);
+      setIsTitleFromKindStep(false);
+      setIsManualKind(true);
       setDraftStep('kind');
       return;
     }
@@ -773,7 +928,14 @@ export function useCardDraft({
     isSelectedDateTimeValid,
     onSubmit: handleCreateCard,
     onCancel: handleCancelCreating,
-    onTitleChange: setDraftTitle,
+    onTitleChange: (value: string) => {
+      setDraftTitle(value);
+      setIsManualKind(false);
+    },
+    quickEntry,
+    onQuickCreate: handleQuickCreate,
+    onChooseManually: () => setIsManualKind(true),
+    onKindEnter: handleKindEnter,
     onSeriesTargetChange: setSeriesTargetInput,
     onListInputChange: setDraftListInput,
     onAddListItem: handleAddDraftListItem,

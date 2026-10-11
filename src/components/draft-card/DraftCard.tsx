@@ -32,6 +32,7 @@ import { DraftTimeModeStep } from './DraftTimeModeStep';
 import { DraftTitleStep } from './DraftTitleStep';
 import { DraftRepeatStep } from './DraftRepeatStep';
 import type { RecurrenceRule } from '../../app/cardTheme';
+import type { QuickEntry } from '../../app/parseQuickEntry';
 
 export interface DraftCardProps {
   creationCycle: number;
@@ -62,6 +63,10 @@ export interface DraftCardProps {
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
   onCancel: () => void;
   onTitleChange: (value: string) => void;
+  quickEntry: QuickEntry | null;
+  onQuickCreate: () => void;
+  onChooseManually: () => void;
+  onKindEnter: () => void;
   onSeriesTargetChange: (value: string) => void;
   onListInputChange: (value: string) => void;
   onAddListItem: () => void;
@@ -187,7 +192,19 @@ export function DraftCard(props: DraftCardProps) {
               <DraftTitleStep titleInputRef={props.titleInputRef} value={props.draftTitle} disabled={disabled} palette={props.palette} onChange={props.onTitleChange} />
             )}
             {props.draftStep === 'kind' && (
-              <DraftKindStep selectedKind={props.selectedKind} palette={props.palette} onSelectKind={props.onSelectKind} />
+              <DraftKindStep
+                selectedKind={props.selectedKind}
+                palette={props.palette}
+                titleInputRef={props.titleInputRef}
+                value={props.draftTitle}
+                disabled={disabled}
+                quickEntry={props.quickEntry}
+                onChange={props.onTitleChange}
+                onSelectKind={props.onSelectKind}
+                onQuickCreate={props.onQuickCreate}
+                onChooseManually={props.onChooseManually}
+                onEnter={props.onKindEnter}
+              />
             )}
             {props.draftStep === 'series-target' && (
               <DraftSeriesTargetStep
