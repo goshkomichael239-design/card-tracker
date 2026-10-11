@@ -22,6 +22,10 @@ interface TrashBinProps {
 // come, until then three stands for "three or more".
 const BIN_IMAGES = [bin0, bin1, bin2, bin3, bin3];
 const PICTURE_W = 257;
+// The base is a flat ring seen at a slant: its bottom edge is an arc, lowest in
+// the middle. The shadow and the reflection belong to the whole ring, so they
+// are centred on the ring (y), not on its lowest point.
+const BASE_CY = 283;
 const WIDTH_RATIO = PICTURE_W / 300;
 // How deep the reflection in the marble reaches below the foot, in units.
 const REFLECTION_DEPTH = 80;
@@ -87,9 +91,9 @@ export const TrashBin: React.FC<TrashBinProps> = ({
             <mask id="bin-reflection-mask">
               <rect
                 x="0"
-                y="300"
+                y={BASE_CY}
                 width="257"
-                height={REFLECTION_DEPTH}
+                height={REFLECTION_DEPTH + 17}
                 fill="url(#bin-fade)"
               />
             </mask>
@@ -97,17 +101,17 @@ export const TrashBin: React.FC<TrashBinProps> = ({
 
           {/* Cast shadow: long, soft, falling to the right. */}
           <ellipse
-            cx="178"
-            cy="296"
-            rx="118"
-            ry="15"
-            fill="rgba(40,30,20,0.3)"
+            cx="188"
+            cy={BASE_CY + 6}
+            rx="122"
+            ry="19"
+            fill="rgba(40,30,20,0.32)"
             filter="url(#bin-soft)"
           />
 
           {/* Reflection in the polished stone, fading within a short way. */}
           <g mask="url(#bin-reflection-mask)" opacity="0.32">
-            <g transform="translate(0 600) scale(1 -1)">
+            <g transform={`translate(0 ${BASE_CY * 2}) scale(1 -1)`}>
               <image
                 href={BIN_IMAGES[shown]}
                 x="0"
@@ -121,10 +125,10 @@ export const TrashBin: React.FC<TrashBinProps> = ({
           {/* Contact shadow: dark and tight where it touches. */}
           <ellipse
             cx="128"
-            cy="297"
-            rx="84"
-            ry="8"
-            fill="rgba(10,6,2,0.62)"
+            cy={BASE_CY + 2}
+            rx="110"
+            ry="21"
+            fill="rgba(10,6,2,0.6)"
             filter="url(#bin-tight)"
           />
 

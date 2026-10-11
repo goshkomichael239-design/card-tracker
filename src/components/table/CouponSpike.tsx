@@ -23,8 +23,10 @@ const FIRST_SLIP_Y = 252;
 const SLIP_STEP = 24;
 const SLIP_WIDTH = 150;
 const SLIP_HEIGHT = 36;
-// The foot of the stand, and how deep its reflection in the stone reaches.
-const FOOT_Y = 454;
+// The middle of the stand's foot (a disc seen at a slant: its lower edge is an
+// arc reaching to the bottom of the picture), and how deep its reflection in
+// the stone reaches. Shadow and reflection belong to the whole disc.
+const FOOT_Y = 436;
 const REFLECTION_DEPTH = 120;
 
 /**
@@ -90,10 +92,10 @@ export const CouponSpike: React.FC<CouponSpikeProps> = ({
 
           {/* Cast shadow: long, soft, falling to the right. */}
           <ellipse
-            cx="150"
-            cy={FOOT_Y}
-            rx="130"
-            ry="17"
+            cx="164"
+            cy={FOOT_Y + 8}
+            rx="134"
+            ry="24"
             fill="rgba(40,30,20,0.3)"
             filter="url(#spike-soft)"
           />
@@ -108,9 +110,9 @@ export const CouponSpike: React.FC<CouponSpikeProps> = ({
           {/* Contact shadow: dark and tight under the wooden foot. */}
           <ellipse
             cx="112"
-            cy={FOOT_Y + 1}
-            rx="92"
-            ry="9"
+            cy={FOOT_Y + 3}
+            rx="124"
+            ry="29"
             fill="rgba(10,6,2,0.62)"
             filter="url(#spike-tight)"
           />
