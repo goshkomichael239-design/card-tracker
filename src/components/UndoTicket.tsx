@@ -37,7 +37,7 @@ export const UndoTicket: React.FC<UndoTicketProps> = ({
         ...style,
       }}
     >
-      <div className="pointer-events-auto relative flex items-center justify-center gap-1">
+      <div className="pointer-events-auto relative flex h-full items-center justify-center gap-2">
         <span className="embossed-line truncate">{message}</span>
 
         <button
@@ -51,9 +51,9 @@ export const UndoTicket: React.FC<UndoTicketProps> = ({
 
         <span
           aria-hidden="true"
-          className="ticket-countdown absolute -bottom-1 left-2 right-2 h-px"
+          className="ticket-countdown absolute bottom-0 left-2 right-2 h-px"
           style={{
-            backgroundColor: 'rgba(255,255,255,0.4)',
+            backgroundColor: 'rgba(255,214,120,0.5)',
             animationDuration: `${durationMs}ms`,
           }}
         />

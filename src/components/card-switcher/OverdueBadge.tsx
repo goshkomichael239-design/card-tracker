@@ -6,30 +6,40 @@ interface OverdueBadgeProps {
   label?: string;
   className?: string;
   style?: React.CSSProperties;
+  /** When given, the dot is a button (for instance: go to the next one). */
+  onPress?: () => void;
 }
 
 /**
  * A red wax dot with a number: how many cards on the table are overdue.
- * It only tells, it does nothing when pressed.
+ * Without `onPress` it only tells; with it, pressing the dot acts.
  */
 export const OverdueBadge: React.FC<OverdueBadgeProps> = ({
   count,
   label,
   className = '',
   style,
+  onPress,
 }) => {
   if (count <= 0) {
     return null;
   }
 
   const description = `Просрочено: ${count}`;
+  const Tag = onPress ? 'button' : 'span';
 
   return (
-    <span
-      role="img"
-      aria-label={description}
+    <Tag
+      {...(onPress
+        ? {
+            type: 'button' as const,
+            onClick: onPress,
+            onTouchStart: () => undefined,
+          }
+        : { role: 'img' })}
+      aria-label={onPress ? `${description}. К следующей просроченной` : description}
       title={description}
-      className={`pointer-events-none flex h-[22px] min-w-[22px] items-center justify-center whitespace-nowrap rounded-full font-mono font-bold leading-none tabular-nums ${label ? 'gap-1 px-2.5 text-[11px] uppercase tracking-[0.08em]' : 'px-1.5 text-[12px]'} ${className}`}
+      className={`${onPress ? 'pointer-events-auto cursor-pointer active:translate-y-px' : 'pointer-events-none'} flex h-[22px] min-w-[22px] items-center justify-center whitespace-nowrap rounded-full font-mono font-bold leading-none tabular-nums ${label ? 'gap-1 px-2.5 text-[11px] uppercase tracking-[0.08em]' : 'px-1.5 text-[12px]'} ${className}`}
       style={{
         color: '#FFF4EC',
         background:
@@ -42,6 +52,6 @@ export const OverdueBadge: React.FC<OverdueBadgeProps> = ({
     >
       {count}
       {label && <span className="font-semibold">{label}</span>}
-    </span>
+    </Tag>
   );
 };

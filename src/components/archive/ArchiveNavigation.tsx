@@ -11,7 +11,7 @@ interface ArchiveNavigationProps {
   glintKey?: number;
 }
 
-export const ARCHIVE_NAVIGATION_HEIGHT = 80;
+export const ARCHIVE_NAVIGATION_HEIGHT = 56;
 
 const GOLD_STYLE: React.CSSProperties = {
   background:

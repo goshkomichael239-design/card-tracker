@@ -9,6 +9,7 @@ import {
   type CardSwitcherConfig,
 } from './cardSwitcherConfig';
 import { useWheelNavigation } from '../../app/useWheelNavigation';
+import { haptic } from '../../app/haptics';
 import { OverdueBadge } from './OverdueBadge';
 
 interface CardSwitcherProps {
@@ -53,6 +54,24 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
 }) => {
   const metrics = getSwitcherMetrics(isPhone);
   const listRef = useRef<HTMLDivElement | null>(null);
+
+  // The red dot jumps to the next overdue card after the current one, round
+  // the deck, with a light tap.
+  const goToNextOverdue = () => {
+    const activeIndex = cards.findIndex((card) => card.id === activeCardId);
+
+    for (let step = 1; step <= cards.length; step += 1) {
+      const candidate = cards[(activeIndex + step) % cards.length];
+
+      if (candidate && overdueIds?.has(candidate.id)) {
+        if (candidate.id !== activeCardId) {
+          haptic(8);
+          onSelectCard(candidate.id, 1);
+        }
+        return;
+      }
+    }
+  };
   const [config, setConfig] = useState<CardSwitcherConfig>(() => ({
     ...INITIAL_CARD_SWITCHER_CONFIG,
   }));
@@ -341,6 +360,7 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
           count={overdueIds?.size ?? 0}
           label="просрочено"
           className="absolute -right-2 -top-2 z-10"
+          onPress={goToNextOverdue}
         />
       </div>
 
