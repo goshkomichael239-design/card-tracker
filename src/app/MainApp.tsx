@@ -72,6 +72,9 @@ import { INITIAL_CARD_SWITCHER_CONFIG } from '../components/card-switcher/cardSw
 import { ARCHIVE_NAVIGATION_HEIGHT } from '../components/archive/ArchiveNavigation';
 import { getCardScale, useViewportSize } from './viewportScale';
 import { haptic } from './haptics';
+import { SHOW_DEV_TOOLS } from './devTools';
+import { SettingsGear } from '../components/settings/SettingsGear';
+import { SettingsView } from '../components/settings/SettingsView';
 import { useWheelNavigation } from './useWheelNavigation';
 import { DeckDots } from '../components/card-stack/DeckDots';
 import { getSwitcherMetrics } from '../components/card-switcher/cardSwitcherConfig';
@@ -199,6 +202,7 @@ const MainApp: React.FC = () => {
   const archivedCards = useDeckStore((state) => state.archivedCards);
   const trash = useDeckStore((state) => state.trash);
   const [isTrashOpen, setIsTrashOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [trashBumpKey, setTrashBumpKey] = useState(0);
   const [spikeBumpKey, setSpikeBumpKey] = useState(0);
   // Coarse clock for the overview: deadlines become overdue as time passes.
@@ -1267,8 +1271,16 @@ const MainApp: React.FC = () => {
   );
 
   return (
-    <main className="relative h-full w-full overflow-hidden">
+    <main
+      className="relative h-full w-full overflow-hidden"
+      data-settings-open={isSettingsOpen ? 'true' : undefined}
+    >
       <StorageNotice />
+
+      {/* The cloth itself stays when the rest of the table fades away. */}
+      <div className="absolute inset-0 z-10" data-settings-keep="">
+        <TableBackground />
+      </div>
 
       <ArchiveView
         isOpen={isArchiveOpen}
@@ -1282,8 +1294,6 @@ const MainApp: React.FC = () => {
       />
 
       <div className="absolute inset-0 z-20 h-full w-full">
-        <TableBackground />
-
         <div className="absolute inset-x-3 top-4 z-30 flex justify-center">
           <CardSwitcher
             cards={cards}
@@ -1409,7 +1419,8 @@ const MainApp: React.FC = () => {
                   onTogglePin={() => handleTogglePin(activeCard.id)}
                   showCornerHint={
                     !isCornerHintDismissed &&
-                    activeCard.id === cards[0]?.id
+                    // The arrow points at the first card that has no pin on it.
+                    activeCard.id === cards.find((card) => !card.pinned)?.id
                   }
                   onCornerOpened={handleCornerOpened}
                   onAddListItem={(text) =>
@@ -1598,14 +1609,6 @@ const MainApp: React.FC = () => {
         style={{ left: 12, bottom: ARCHIVE_NAVIGATION_HEIGHT + 12 }}
       />
 
-      {/* Opposite the basket: today's torn coupons, and a way into the archive. */}
-      <CouponSpike
-        slipPapers={todaySlipPapers}
-        bumpKey={spikeBumpKey}
-        onOpen={() => setIsArchiveOpen(true)}
-        style={{ right: 12, bottom: ARCHIVE_NAVIGATION_HEIGHT + 12 }}
-      />
-
       <DetachedCompletionCoupon
         ref={detachedCouponLayerRef}
         onFlightComplete={handleCouponFlightComplete}
@@ -1629,6 +1632,32 @@ const MainApp: React.FC = () => {
       <ArchiveNavigation
         isArchiveOpen={isArchiveOpen}
         onToggle={() => setIsArchiveOpen((previous) => !previous)}
+        glintKey={spikeBumpKey}
+      />
+
+      {/* The day's torn coupons on their spike, right of the "Архив" label:
+          they land here, and pressing it opens the archive. */}
+      <CouponSpike
+        slipPapers={todaySlipPapers}
+        bumpKey={spikeBumpKey}
+        onOpen={() => setIsArchiveOpen(true)}
+        style={{
+          left: 'calc(50% + 62px)',
+          bottom: 12,
+          zIndex: 35,
+          opacity: isArchiveOpen ? 0 : 1,
+          pointerEvents: isArchiveOpen ? 'none' : 'auto',
+          transition: 'opacity 200ms ease-out',
+        }}
+      />
+
+      <SettingsGear
+        isOpen={isSettingsOpen}
+        onToggle={() => setIsSettingsOpen((previous) => !previous)}
+      />
+      <SettingsView
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
       />
 
       {/* Rides over the bottom edge of the table, never over the card. */}
@@ -1643,7 +1672,7 @@ const MainApp: React.FC = () => {
         />
       )}
 
-      {import.meta.env.DEV && (
+      {import.meta.env.DEV && SHOW_DEV_TOOLS && (
         <DebugCardsPanel
           disabled={isCreating || pendingCompletedCardId !== null}
           onAddCards={handleAddDebugCards}

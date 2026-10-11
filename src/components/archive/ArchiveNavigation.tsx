@@ -7,6 +7,8 @@ import whiteMarbleTexture from '../../assets/white-marble.webp';
 interface ArchiveNavigationProps {
   isArchiveOpen: boolean;
   onToggle: () => void;
+  /** Changes every time a coupon lands in the archive: a quick glint. */
+  glintKey?: number;
 }
 
 export const ARCHIVE_NAVIGATION_HEIGHT = 80;
@@ -30,6 +32,7 @@ const NAV_SURFACE_TRANSITION = {
 export const ArchiveNavigation: React.FC<ArchiveNavigationProps> = ({
   isArchiveOpen,
   onToggle,
+  glintKey = 0,
 }) => {
   return (
     <button
@@ -71,6 +74,25 @@ export const ArchiveNavigation: React.FC<ArchiveNavigationProps> = ({
       >
         <TableSurface isFull={false} />
       </motion.div>
+
+      {/* A brief, quiet glint around the archive when a coupon lands. */}
+      {glintKey > 0 && !isArchiveOpen && (
+        <span key={glintKey} aria-hidden="true">
+          <span className="archive-glint" />
+          <span
+            className="archive-spark"
+            style={{ left: 'calc(50% - 46px)', top: '24%', animationDelay: '0ms' }}
+          />
+          <span
+            className="archive-spark"
+            style={{ left: 'calc(50% + 34px)', top: '58%', animationDelay: '70ms' }}
+          />
+          <span
+            className="archive-spark"
+            style={{ left: 'calc(50% + 74px)', top: '20%', animationDelay: '130ms' }}
+          />
+        </span>
+      )}
 
       <AnimatePresence mode="wait">
         <motion.span

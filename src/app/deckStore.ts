@@ -3,6 +3,10 @@ import { create } from 'zustand';
 import { createAutoBackup } from './storage/autoBackup';
 import type { TimeMode, VisualCard } from './cardTheme';
 import { createId, pinnedFirst } from './cardOps';
+import { createDemoCards } from './demoCards';
+
+/** A first run starts with thirty varied cards (set false for a single one). */
+const SHOW_DEMO_DECK = true;
 import {
   loadActiveCards,
   loadArchivedCards,
@@ -36,8 +40,12 @@ const resolve = <T,>(next: Updater<T>, previous: T): T =>
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-/** What a first run (nothing stored) starts with. */
+/** What a first run (nothing stored) starts with: a full demonstration deck. */
 const createFirstRunCards = (): VisualCard[] => {
+  if (SHOW_DEMO_DECK) {
+    return createDemoCards();
+  }
+
   if (!import.meta.env.DEV) {
     return [
       {

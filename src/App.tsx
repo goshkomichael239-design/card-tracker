@@ -1,6 +1,7 @@
 import React, { lazy, Suspense, useState } from 'react';
 
 import MainApp from './app/MainApp';
+import { SHOW_DEV_TOOLS } from './app/devTools';
 
 type AppMode = 'application' | 'sandboxes';
 
@@ -139,7 +140,7 @@ const App: React.FC = () => {
     <div className="fixed inset-0 overflow-hidden">
       <MainApp />
 
-      {ENABLE_SANDBOXES && (
+      {ENABLE_SANDBOXES && SHOW_DEV_TOOLS && (
         <button
           type="button"
           onClick={() =>
