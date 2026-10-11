@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import './App.css'
 import { initStorage } from './app/storage/kv'
 import { initMotion } from './app/motion'
+import { initSwipeStyle } from './app/swipeStyle'
 
 // Keeps the app in the browser's cache after the first visit, so it opens and
 // works with no network (see the offline-cache plugin in vite.config.ts).
@@ -37,6 +38,7 @@ const boot = async () => {
 
   // The chosen amount of motion is in force before the first frame.
   initMotion()
+  initSwipeStyle()
 
   const { default: App } = await import('./App.tsx')
 

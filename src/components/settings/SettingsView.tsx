@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 
 import { SETTINGS, useSettings } from '../../app/settings';
 import { MotionSetting } from './MotionSetting';
+import { SwipeStyleSetting } from './SwipeStyleSetting';
 import { playSound } from '../../app/sounds';
 
 interface SettingsViewProps {
@@ -62,6 +63,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           </h2>
 
           <MotionSetting style={lit(110)} />
+          <SwipeStyleSetting style={lit(135)} />
 
           <ul>
             {SETTINGS.map((setting, index) => {

@@ -599,10 +599,37 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                 opacity: config.paperTextureOpacity,
               }}
             />
-            <span className="swipe-label swipe-label--complete">
-              ✓ Завершить
-            </span>
-            <span className="swipe-label swipe-label--delete">Удалить</span>
+            {/* Rough edges for the stamp's ink. */}
+            <svg width="0" height="0" className="absolute" aria-hidden="true">
+              <filter id="swipe-ink" x="-10%" y="-10%" width="120%" height="120%">
+                <feTurbulence
+                  type="fractalNoise"
+                  baseFrequency="0.9"
+                  numOctaves="2"
+                  seed="4"
+                  result="grain"
+                />
+                <feDisplacementMap in="SourceGraphic" in2="grain" scale="2.2" />
+              </filter>
+            </svg>
+
+            {/* Style "stamp". */}
+            <div className="swipe-stamp swipe-stamp--complete">
+              <span>Готово</span>
+            </div>
+            <div className="swipe-stamp swipe-stamp--delete">
+              <span>Убрать</span>
+            </div>
+
+            {/* Style "coupon". */}
+            <div className="swipe-coupon swipe-coupon--complete">
+              <i className="swipe-coupon__fill" />
+              <span>✓ Готово</span>
+            </div>
+            <div className="swipe-coupon swipe-coupon--delete">
+              <i className="swipe-coupon__fill" />
+              <span>Убрать</span>
+            </div>
           </div>
         )}
       </article>

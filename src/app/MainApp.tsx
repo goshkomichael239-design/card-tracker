@@ -67,6 +67,8 @@ import { DraftCard } from '../components/draft-card/DraftCard';
 import { ArchiveNavigation } from '../components/archive/ArchiveNavigation';
 import { ArchiveView } from '../components/archive/ArchiveView';
 import { SearchBar } from '../components/search/SearchBar';
+import { useSettings } from './settings';
+import { readValue, writeValue } from './storage/kv';
 import { searchCards } from './searchCards';
 import { filterArchive } from './archiveUtils';
 import { CardStack } from '../components/card-stack/CardStack';
@@ -174,6 +176,9 @@ interface SceneGesture {
 
 // A sideways swipe this far (px) completes (right) or deletes (left).
 const SWIPE_COMMIT_PX = 96;
+// Set once the sideways swipe has been shown (or used): the hint is not
+// repeated.
+const SWIPE_HINT_KEY = 'card-tracker.swipe-hint.v1';
 const COUPON_SELECTOR = '[data-coupon="true"], [data-series-coupon="true"]';
 
 const getLocalDayKey = (date: Date): string =>
@@ -277,6 +282,7 @@ const MainApp: React.FC = () => {
   // re-renders per frame.
   const [isSwipeActive, setIsSwipeActive] = useState(false);
   const isSwipeActiveRef = useRef(false);
+  const [isSwipeHintShown, setIsSwipeHintShown] = useState(false);
   const isSwipeReadyRef = useRef(false);
 
   // The marble slides when the archive opens or closes; the cloth rustles when
@@ -629,7 +635,12 @@ const MainApp: React.FC = () => {
     }
   };
 
-  const moveCardLayer = (offsetY: number, isEased: boolean, offsetX = 0) => {
+  const moveCardLayer = (
+    offsetY: number,
+    isEased: boolean,
+    offsetX = 0,
+    isSpringy = false,
+  ) => {
     const layer = cardLayerRef.current;
 
     if (!layer) {
@@ -637,7 +648,10 @@ const MainApp: React.FC = () => {
     }
 
     layer.style.transition = isEased
-      ? 'transform 240ms cubic-bezier(0.2, 0.8, 0.2, 1)'
+      ? isSpringy
+        ? // A little overshoot, like something let go on a rubber band.
+          'transform 380ms cubic-bezier(0.34, 1.56, 0.64, 1)'
+        : 'transform 240ms cubic-bezier(0.2, 0.8, 0.2, 1)'
       : 'none';
     layer.style.transform =
       offsetY === 0 && offsetX === 0
@@ -724,7 +738,14 @@ const MainApp: React.FC = () => {
 
       gesture.dx = dx;
       gesture.isDragging = true;
-      moveCardLayer(0, false, dx * 0.9);
+
+      // Past the line the card pulls harder against the finger: it is clear
+      // that "this is far enough" without it flying off.
+      const beyond = Math.max(0, Math.abs(dx) - SWIPE_COMMIT_PX);
+      const eased =
+        Math.sign(dx) * (Math.min(Math.abs(dx), SWIPE_COMMIT_PX) + beyond * 0.32);
+
+      moveCardLayer(0, false, eased * 0.9);
 
       const progress = Math.min(1, Math.abs(dx) / SWIPE_COMMIT_PX);
       const isReady = progress >= 1;
@@ -743,6 +764,11 @@ const MainApp: React.FC = () => {
       if (!isSwipeActiveRef.current) {
         isSwipeActiveRef.current = true;
         setIsSwipeActive(true);
+
+        // Whoever swipes has found it: no hint needed.
+        if (readValue(SWIPE_HINT_KEY) !== true) {
+          writeValue(SWIPE_HINT_KEY, true);
+        }
       }
 
       return;
@@ -799,7 +825,7 @@ const MainApp: React.FC = () => {
       event.type !== 'pointercancel' && Math.abs(gesture.dx) >= SWIPE_COMMIT_PX;
 
     if (!isCommitted || !layer || !activeCard) {
-      moveCardLayer(0, true);
+      moveCardLayer(0, true, 0, true);
       // The card falls back onto the cloth.
       if (Math.abs(gesture.dx) > 24) {
         playSound('place', { volume: 0.7 });
@@ -864,6 +890,50 @@ const MainApp: React.FC = () => {
 
     return navCards[(index + 1) % navCards.length];
   })();
+
+  const { values: appSettings } = useSettings();
+  const canShowSwipeHint =
+    isPhone &&
+    appSettings.hints &&
+    !isArchiveOpen &&
+    !isSettingsOpen &&
+    !isOverlayOpen &&
+    !isCreating &&
+    Boolean(activeCard);
+
+  useEffect(() => {
+    if (!canShowSwipeHint || readValue(SWIPE_HINT_KEY) === true) {
+      return;
+    }
+
+    let hideTimer: number | null = null;
+    const showTimer = window.setTimeout(() => {
+      const layer = cardLayerRef.current;
+
+      // The card leans to one side and then the other, once.
+      layer?.animate(
+        [
+          { transform: 'translate3d(0, 0, 0)' },
+          { transform: 'translate3d(26px, 0, 0) rotate(1.6deg)', offset: 0.28 },
+          { transform: 'translate3d(-26px, 0, 0) rotate(-1.6deg)', offset: 0.66 },
+          { transform: 'translate3d(0, 0, 0)' },
+        ],
+        { duration: 1500, easing: 'ease-in-out' },
+      );
+      setIsSwipeHintShown(true);
+      writeValue(SWIPE_HINT_KEY, true);
+      hideTimer = window.setTimeout(() => setIsSwipeHintShown(false), 4200);
+    }, 1800);
+
+    return () => {
+      window.clearTimeout(showTimer);
+
+      if (hideTimer !== null) {
+        window.clearTimeout(hideTimer);
+        setIsSwipeHintShown(false);
+      }
+    };
+  }, [canShowSwipeHint]);
 
   const closeSearch = () => {
     setIsSearchOpen(false);
@@ -1977,6 +2047,20 @@ const MainApp: React.FC = () => {
         }}
         glintKey={spikeBumpKey}
       />
+
+      {/* Shown once, on a phone: which way is "done" and which "away". */}
+      <p
+        aria-hidden="true"
+        className="embossed-line pointer-events-none absolute left-1/2 z-40 -translate-x-1/2 whitespace-nowrap"
+        style={{
+          bottom: ARCHIVE_NAVIGATION_HEIGHT + 10,
+          fontSize: 15,
+          opacity: isSwipeHintShown ? 0.95 : 0,
+          transition: 'opacity 420ms ease-out',
+        }}
+      >
+        ← Убрать · Готово →
+      </p>
 
       {/* The basket stands in the left end of the archive bar. */}
       <TrashBin
