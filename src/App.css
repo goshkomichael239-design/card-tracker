@@ -1277,3 +1277,59 @@ main[data-settings-open='true'] > :not([data-settings-keep]) {
 .search-cross:active {
   background: rgba(255, 255, 255, 0.18);
 }
+
+/* The hand-drawn caret: a thin gold bar with a glow. It glides to where the
+   text goes (transform only, so it runs on the compositor) and breathes
+   instead of blinking. The input's own caret is hidden while it is shown. */
+.search-input--own-caret {
+  caret-color: transparent;
+}
+
+.search-mirror {
+  position: absolute;
+  visibility: hidden;
+  white-space: pre;
+  pointer-events: none;
+  flex: none;
+  min-width: 0;
+  width: auto;
+}
+
+.search-caret {
+  position: absolute;
+  top: 8px;
+  left: 0;
+  width: 2px;
+  height: 18px;
+  border-radius: 1px;
+  background: linear-gradient(180deg, #fff2c2 0%, #ffd070 55%, #e0a63c 100%);
+  box-shadow:
+    0 0 6px rgba(255, 208, 112, 0.9),
+    0 0 14px rgba(255, 190, 90, 0.5);
+  pointer-events: none;
+  will-change: transform, opacity;
+  transition: transform 110ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  animation: search-caret-breathe 1.15s ease-in-out infinite;
+}
+
+.search-caret--steady {
+  animation: none;
+  opacity: 1;
+}
+
+@keyframes search-caret-breathe {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.12;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .search-caret {
+    transition: none;
+    animation: none;
+  }
+}

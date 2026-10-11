@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 interface SearchBarProps {
   isOpen: boolean;
@@ -39,7 +39,71 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   onPrevious,
 }) => {
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const mirrorRef = useRef<HTMLSpanElement | null>(null);
+  const steadyTimerRef = useRef<number | null>(null);
   const hasQuery = query.trim() !== '';
+  // The caret is drawn by hand (gold, gliding, breathing). It is only used
+  // while its place is certain: no selection, text that fits the field.
+  // Otherwise the input's own caret stays.
+  const [caret, setCaret] = useState<{ x: number; visible: boolean }>({
+    x: 0,
+    visible: false,
+  });
+  const [isSteady, setIsSteady] = useState(false);
+
+  const updateCaret = useCallback(() => {
+    const input = inputRef.current;
+    const mirror = mirrorRef.current;
+
+    if (!input || !mirror) {
+      return;
+    }
+
+    const isUsable =
+      document.activeElement === input &&
+      input.selectionStart !== null &&
+      input.selectionStart === input.selectionEnd &&
+      input.scrollWidth <= input.clientWidth + 1;
+
+    if (!isUsable) {
+      setCaret((previous) =>
+        previous.visible ? { ...previous, visible: false } : previous,
+      );
+      return;
+    }
+
+    mirror.textContent = input.value.slice(0, input.selectionStart ?? 0);
+    setCaret({ x: input.offsetLeft + mirror.offsetWidth, visible: true });
+  }, []);
+
+  // It stands still while typing and starts breathing again a moment later.
+  const holdCaretSteady = () => {
+    setIsSteady(true);
+
+    if (steadyTimerRef.current !== null) {
+      window.clearTimeout(steadyTimerRef.current);
+    }
+
+    steadyTimerRef.current = window.setTimeout(() => {
+      steadyTimerRef.current = null;
+      setIsSteady(false);
+    }, 520);
+  };
+
+  useEffect(
+    () => () => {
+      if (steadyTimerRef.current !== null) {
+        window.clearTimeout(steadyTimerRef.current);
+      }
+    },
+    [],
+  );
+
+  useEffect(() => {
+    // Moving the caret with the arrows or a tap changes only the selection.
+    document.addEventListener('selectionchange', updateCaret);
+    return () => document.removeEventListener('selectionchange', updateCaret);
+  }, [updateCaret]);
 
   const handleToggle = () => {
     if (!isOpen) {
@@ -94,12 +158,31 @@ export const SearchBar: React.FC<SearchBarProps> = ({
           spellCheck={false}
           value={query}
           tabIndex={isOpen ? 0 : -1}
-          onChange={(event) => onChange(event.target.value)}
+          onChange={(event) => {
+            onChange(event.target.value);
+            holdCaretSteady();
+            updateCaret();
+          }}
           onKeyDown={handleKeyDown}
+          onKeyUp={updateCaret}
+          onSelect={updateCaret}
+          onFocus={updateCaret}
+          onBlur={updateCaret}
           placeholder="Найти карточку…"
           aria-label="Поиск по карточкам"
-          className="search-input"
+          className={`search-input${caret.visible ? ' search-input--own-caret' : ''}`}
         />
+
+        {/* Measures the text before the caret; never seen. */}
+        <span ref={mirrorRef} aria-hidden="true" className="search-input search-mirror" />
+
+        {caret.visible && (
+          <span
+            aria-hidden="true"
+            className={`search-caret${isSteady ? ' search-caret--steady' : ''}`}
+            style={{ transform: `translate3d(${caret.x}px, 0, 0)` }}
+          />
+        )}
 
         {hasQuery && matchCount > 0 && (
           <span className="search-count" aria-live="polite">
