@@ -1,10 +1,8 @@
 import React from 'react';
 
-import bin0 from '../../assets/bin.png';
-import bin1 from '../../assets/bin-1.png';
-import bin2 from '../../assets/bin-2.png';
-import bin3 from '../../assets/bin-3.png';
-import bin4 from '../../assets/bin-4.png';
+import bin0 from '../../assets/bin-new-0.png';
+import bin1 from '../../assets/bin-new-1.png';
+import bin2 from '../../assets/bin-new-2.png';
 
 interface TrashBinProps {
   count: number;
@@ -18,10 +16,12 @@ interface TrashBinProps {
   style?: React.CSSProperties;
 }
 
-// The picture is 244 x 300 units. One picture per number of papers in the
-// basket: empty, one, two, three, four or more.
-const BIN_IMAGES = [bin0, bin1, bin2, bin3, bin4];
-const WIDTH_RATIO = 244 / 300;
+// The picture is 257 x 300 units. One picture per number of papers in the
+// basket: empty, one, two; the three- and four-paper pictures are still to
+// come, until then two stands for "two or more".
+const BIN_IMAGES = [bin0, bin1, bin2, bin2, bin2];
+const PICTURE_W = 257;
+const WIDTH_RATIO = PICTURE_W / 300;
 // How deep the reflection in the marble reaches below the foot, in units.
 const REFLECTION_DEPTH = 80;
 
@@ -68,7 +68,7 @@ export const TrashBin: React.FC<TrashBinProps> = ({
         }}
       >
         <svg
-          viewBox="0 0 244 300"
+          viewBox="0 0 257 300"
           className="h-full w-full overflow-visible"
           aria-hidden="true"
         >
@@ -87,7 +87,7 @@ export const TrashBin: React.FC<TrashBinProps> = ({
               <rect
                 x="0"
                 y="300"
-                width="244"
+                width="257"
                 height={REFLECTION_DEPTH}
                 fill="url(#bin-fade)"
               />
@@ -96,7 +96,7 @@ export const TrashBin: React.FC<TrashBinProps> = ({
 
           {/* Cast shadow: long, soft, falling to the right. */}
           <ellipse
-            cx="168"
+            cx="178"
             cy="296"
             rx="118"
             ry="15"
@@ -111,7 +111,7 @@ export const TrashBin: React.FC<TrashBinProps> = ({
                 href={BIN_IMAGES[shown]}
                 x="0"
                 y="0"
-                width="244"
+                width="257"
                 height="300"
               />
             </g>
@@ -119,7 +119,7 @@ export const TrashBin: React.FC<TrashBinProps> = ({
 
           {/* Contact shadow: dark and tight where it touches. */}
           <ellipse
-            cx="122"
+            cx="128"
             cy="297"
             rx="84"
             ry="8"
@@ -134,7 +134,7 @@ export const TrashBin: React.FC<TrashBinProps> = ({
               href={image}
               x="0"
               y="0"
-              width="244"
+              width="257"
               height="300"
               opacity={index === shown ? 1 : 0}
             />
@@ -142,9 +142,9 @@ export const TrashBin: React.FC<TrashBinProps> = ({
 
           {count > 0 && (
             <g>
-              <circle cx="206" cy="244" r="46" fill="#F7F2E8" stroke="rgba(60,45,30,0.45)" strokeWidth="3" />
+              <circle cx="216" cy="244" r="46" fill="#F7F2E8" stroke="rgba(60,45,30,0.45)" strokeWidth="3" />
               <text
-                x="206"
+                x="216"
                 y="260"
                 textAnchor="middle"
                 fontSize="52"
