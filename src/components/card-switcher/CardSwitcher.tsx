@@ -61,14 +61,13 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
   const visibleRows = Math.min(metrics.visibleRows, Math.max(1, cards.length));
   const listHeight = visibleRows * metrics.rowHeight + (visibleRows - 1) * 2;
 
-  // The list works like a picker: the row standing in the selection slot is
-  // the chosen card, so scrolling the list chooses cards by itself, and a
-  // card chosen any other way is scrolled into that slot.
+  // The list picks by itself: the row at the top is the chosen card, so
+  // scrolling the list chooses cards, and a card chosen any other way is
+  // scrolled up to the top. The last few cards cannot all reach the top (the
+  // list ends); they stay visible and are chosen by a tap.
   const rowStep = metrics.rowHeight + 2;
   const canScroll = cards.length > metrics.visibleRows;
-  const slot = Math.floor((metrics.visibleRows - 1) / 2);
-  const padTop = canScroll ? slot * rowStep : 0;
-  const padBottom = canScroll ? (metrics.visibleRows - 1 - slot) * rowStep : 0;
+  const maxScroll = Math.max(0, (cards.length - metrics.visibleRows) * rowStep);
   const isTouchingRef = useRef(false);
   const lastUserScrollAtRef = useRef(0);
   const ignoreScrollUntilRef = useRef(0);
@@ -90,7 +89,7 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
       return;
     }
 
-    const target = canScroll ? index * rowStep : 0;
+    const target = canScroll ? Math.min(index * rowStep, maxScroll) : 0;
 
     if (Math.abs(list.scrollTop - target) < 1) {
       return;
@@ -101,9 +100,9 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
     hasAlignedRef.current = true;
     ignoreScrollUntilRef.current = performance.now() + (isFirst ? 80 : 520);
     list.scrollTo({ top: target, behavior: isFirst ? 'auto' : 'smooth' });
-  }, [activeCardId, cards, canScroll, rowStep]);
+  }, [activeCardId, cards, canScroll, rowStep, maxScroll]);
 
-  // Scrolled by a finger: the card in the slot becomes the active one.
+  // Scrolled by a finger: the card at the top becomes the active one.
   const handleListScroll = () => {
     const list = listRef.current;
 
@@ -180,12 +179,9 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
               className="no-scrollbar relative flex flex-col gap-0.5 overflow-y-auto"
               style={{
                 height: listHeight,
-                paddingTop: padTop,
-                paddingBottom: padBottom,
                 overscrollBehavior: 'contain',
                 touchAction: 'pan-y',
                 scrollSnapType: canScroll ? 'y mandatory' : undefined,
-                scrollPaddingTop: padTop,
               }}
               onScroll={handleListScroll}
               onTouchStart={() => {
