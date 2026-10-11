@@ -21,5 +21,5 @@ numbers at random and never repeats the last one.
 | pin-1..4 | clip fixed | Kenney "RPG Audio" metalClick, metalLatch + "Impact Sounds" impactMetal_light_004, impactTin_medium_001, CC0 |
 | toggle-1..4 | switch in settings | Kenney "Interface Sounds" toggle_001..004, CC0 |
 | tick-1..3 | swipe reached its threshold | Kenney "Interface Sounds" tick_001/002/004, CC0 |
-| tear-1..4 | coupon torn along the perforation | made here: a noise-click train + Luckius "Paper Ripped 1" at four speeds |
+| tear-1..4 | coupon torn off (real paper) | Luckius "Paper Ripped 1" (original and one pitched lower) + Kenney "Casino Audio" cards-pack-open-1 and -2 (a pack torn open), CC0 |
 | marble-1..4 | archive (marble) slides | made here: filtered brown noise, a trace of grit and a low thud |
