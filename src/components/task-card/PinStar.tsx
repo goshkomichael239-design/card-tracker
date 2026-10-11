@@ -163,7 +163,15 @@ export const PinStar: React.FC<PinStarProps> = ({
 }) => (
   <div
     className="pointer-events-none absolute z-30"
-    style={{ top: -16, right: 60, width: 40, height: 90 }}
+    style={{
+      top: -8,
+      right: 60,
+      width: 40,
+      height: 90,
+      // 3% larger, growing from the star itself so it stays where it is.
+      transform: 'scale(1.03)',
+      transformOrigin: `${STAR_X}px ${STAR_Y}px`,
+    }}
   >
     <AnimatePresence initial={false} mode="popLayout">
       {pinned ? (

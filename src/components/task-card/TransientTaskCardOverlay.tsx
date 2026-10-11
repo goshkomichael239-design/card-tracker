@@ -22,11 +22,6 @@ const BALL_PATH =
 interface TransientTaskCardOverlayProps {
   card: VisualCard;
   kind: TransientCardKind;
-  /**
-   * A card thrown off by a finger: where it was let go (scene units) and the
-   * way it goes (-1 left, 1 right).
-   */
-  swipe?: { x: number; direction: 1 | -1 };
   onFinish: (kind: TransientCardKind) => void;
 }
 
@@ -39,7 +34,7 @@ const TEAR_BOTTOM_PATH =
 
 export const TransientTaskCardOverlay: React.FC<
   TransientTaskCardOverlayProps
-> = ({ card, kind, swipe, onFinish }) => {
+> = ({ card, kind, onFinish }) => {
   const overlayRef = useRef<HTMLDivElement | null>(null);
   const topHalfRef = useRef<HTMLDivElement | null>(null);
   const bottomHalfRef = useRef<HTMLDivElement | null>(null);
@@ -157,29 +152,6 @@ export const TransientTaskCardOverlay: React.FC<
         return;
       }
 
-      if (kind === 'switch' && swipe) {
-        const width = overlay.offsetWidth || 396;
-        const swipeAnimation = overlay.animate(
-          [
-            {
-              transform: `translate3d(${swipe.x}px, 0, 0) rotate(${(swipe.x / width) * 6}deg)`,
-              opacity: 1,
-            },
-            {
-              transform: `translate3d(${swipe.direction * width * 1.1}px, 24px, 0) rotate(${swipe.direction * 10}deg)`,
-              opacity: 0,
-            },
-          ],
-          { duration: 280, easing: 'cubic-bezier(0.3, 0.6, 0.4, 1)', fill: 'forwards' },
-        );
-
-        animations.push(swipeAnimation);
-        swipeAnimation.finished
-          .then(() => onFinish(kind))
-          .catch(() => undefined);
-        return;
-      }
-
       const exitDuration =
         kind === 'completion' ? 320 : kind === 'postpone' ? 420 : 200;
       const archiveDirectionY = Math.max(
@@ -234,7 +206,7 @@ export const TransientTaskCardOverlay: React.FC<
       window.cancelAnimationFrame(frameId);
       animations.forEach((animation) => animation.cancel());
     };
-  }, [kind, onFinish, swipe]);
+  }, [kind, onFinish]);
 
   if (kind === 'discard') {
     return (

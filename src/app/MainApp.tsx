@@ -72,6 +72,8 @@ import { INITIAL_CARD_SWITCHER_CONFIG } from '../components/card-switcher/cardSw
 import { ARCHIVE_NAVIGATION_HEIGHT } from '../components/archive/ArchiveNavigation';
 import { getCardScale, useViewportSize } from './viewportScale';
 import { haptic } from './haptics';
+import { useWheelNavigation } from './useWheelNavigation';
+import { DeckDots } from '../components/card-stack/DeckDots';
 import { getSwitcherMetrics } from '../components/card-switcher/cardSwitcherConfig';
 import {
   DetachedCompletionCoupon,
@@ -124,25 +126,23 @@ interface TransientOutgoingCard {
   key: number;
   card: VisualCard;
   kind: TransientOutgoingKind;
-  /** Set when the card was thrown off by a swipe. */
-  swipe?: { x: number; direction: 1 | -1 };
 }
 
-/** A card is swiped away past this distance (px), or faster than the speed. */
-const SWIPE_DISTANCE_PX = 72;
-const SWIPE_FAST_DISTANCE_PX = 28;
-const SWIPE_SPEED_PX_PER_MS = 0.55;
 /** Below this width the scene is a phone's: cards a little smaller. */
 const PHONE_WIDTH_PX = 640;
 const PHONE_SCENE_FACTOR = 0.9;
+/** The stack stands this share of the screen's width left of the middle. */
+const STACK_SHIFT_RATIO = 0.03;
+/**
+ * Finger travel (px) over the card for one card turned: slower than over the
+ * dots, so the card can be scrubbed through with some care.
+ */
+const CARD_SCRUB_STEP_PX = 70;
 
 interface SceneGesture {
   id: number;
-  x: number;
   y: number;
-  time: number;
-  axis: 'x' | 'y' | null;
-  dx: number;
+  startIndex: number;
 }
 
 const getLocalDayKey = (date: Date): string =>
@@ -229,7 +229,7 @@ const MainApp: React.FC = () => {
   const pendingCompletedRemovalArmedRef = useRef(false);
   const transientSequenceRef = useRef(0);
   const scenePointerRef = useRef<SceneGesture | null>(null);
-  const swipeLayerRef = useRef<HTMLDivElement | null>(null);
+  const sceneRef = useRef<HTMLDivElement | null>(null);
 
   const isCreating = draft.isCreating;
   const activeCard = cards.find((card) => card.id === activeCardId);
@@ -286,17 +286,12 @@ const MainApp: React.FC = () => {
       INITIAL_TASK_CARD_V2_CONFIG.height,
     ) * (isPhone ? PHONE_SCENE_FACTOR : 1);
   const createTransientOutgoing = useCallback(
-    (
-      card: VisualCard,
-      kind: TransientOutgoingKind,
-      swipe?: TransientOutgoingCard['swipe'],
-    ) => {
+    (card: VisualCard, kind: TransientOutgoingKind) => {
       transientSequenceRef.current += 1;
       setTransientOutgoing({
         key: transientSequenceRef.current,
         card,
         kind,
-        swipe,
       });
     },
     [],
@@ -419,7 +414,7 @@ const MainApp: React.FC = () => {
   ]);
 
   const handleSelectCard = useCallback(
-    (cardId: string, swipe?: TransientOutgoingCard['swipe']) => {
+    (cardId: string) => {
       if (cardId === activeCard?.id) {
         return;
       }
@@ -430,7 +425,7 @@ const MainApp: React.FC = () => {
       }
 
       if (activeCard) {
-        createTransientOutgoing(activeCard, 'switch', swipe);
+        createTransientOutgoing(activeCard, 'switch');
       }
 
       haptic(7);
@@ -470,6 +465,7 @@ const MainApp: React.FC = () => {
       isArchiveOpen ||
       isOverlayOpen ||
       isCreating ||
+      cards.length < 2 ||
       (event.pointerType === 'mouse' && event.button !== 0) ||
       !isSceneGestureTarget(event.target)
     ) {
@@ -478,33 +474,17 @@ const MainApp: React.FC = () => {
 
     scenePointerRef.current = {
       id: event.pointerId,
-      x: event.clientX,
       y: event.clientY,
-      time: performance.now(),
-      axis: null,
-      dx: 0,
+      startIndex: Math.max(
+        0,
+        cards.findIndex((card) => card.id === activeCardId),
+      ),
     };
     event.currentTarget.setPointerCapture(event.pointerId);
   };
 
-  // The card follows a sideways finger; the layer is moved directly (no React
-  // render per frame), and eased back or thrown off when the finger lifts.
-  const moveSwipeLayer = (dx: number, withTransition: boolean) => {
-    const layer = swipeLayerRef.current;
-
-    if (!layer) {
-      return;
-    }
-
-    layer.style.transition = withTransition
-      ? 'transform 240ms cubic-bezier(0.2, 0.8, 0.2, 1)'
-      : 'none';
-    layer.style.transform =
-      dx === 0
-        ? ''
-        : `translate3d(${dx}px, 0, 0) rotate(${(dx / 396) * 5}deg)`;
-  };
-
+  // Dragging up leafs forward through the deck, down leafs back, one card for
+  // every CARD_SCRUB_STEP_PX, and the list follows card by card.
   const handleScenePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
     const gesture = scenePointerRef.current;
 
@@ -512,83 +492,40 @@ const MainApp: React.FC = () => {
       return;
     }
 
-    const dx = event.clientX - gesture.x;
-    const dy = event.clientY - gesture.y;
+    const steps = Math.trunc(
+      (gesture.y - event.clientY) / CARD_SCRUB_STEP_PX,
+    );
+    const target = cards[
+      Math.min(cards.length - 1, Math.max(0, gesture.startIndex + steps))
+    ];
 
-    if (gesture.axis === null && Math.max(Math.abs(dx), Math.abs(dy)) > 8) {
-      gesture.axis = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y';
+    if (target && target.id !== activeCardId) {
+      handleSelectCard(target.id);
     }
-
-    if (gesture.axis !== 'x') {
-      return;
-    }
-
-    // With nothing to swipe to the card only gives a little, then resists.
-    const follow = cards.length > 1 ? 1 : 0.22;
-
-    gesture.dx = dx;
-    moveSwipeLayer(dx * follow, false);
   };
 
   const handleScenePointerEnd = (event: React.PointerEvent<HTMLDivElement>) => {
-    const gesture = scenePointerRef.current;
-
-    if (!gesture || gesture.id !== event.pointerId) {
-      return;
-    }
-
-    scenePointerRef.current = null;
-
-    if (gesture.axis === 'x') {
-      const elapsed = Math.max(1, performance.now() - gesture.time);
-      const speed = Math.abs(gesture.dx) / elapsed;
-      const isThrown =
-        cards.length > 1 &&
-        (Math.abs(gesture.dx) > SWIPE_DISTANCE_PX ||
-          (speed > SWIPE_SPEED_PX_PER_MS &&
-            Math.abs(gesture.dx) > SWIPE_FAST_DISTANCE_PX));
-
-      if (!isThrown) {
-        moveSwipeLayer(0, true);
-        return;
-      }
-
-      // To the left is the next card, to the right the one before.
-      const direction: 1 | -1 = gesture.dx < 0 ? -1 : 1;
-      const currentIndex = cards.findIndex((card) => card.id === activeCardId);
-      const nextIndex =
-        (Math.max(0, currentIndex) - direction + cards.length) % cards.length;
-      const target = cards[nextIndex];
-
-      moveSwipeLayer(0, false);
-
-      if (target) {
-        handleSelectCard(target.id, {
-          x: gesture.dx / sceneScale,
-          direction,
-        });
-      }
-
-      return;
-    }
-
-    const deltaY = event.clientY - gesture.y;
-
-    if (Math.abs(deltaY) < 48) {
-      return;
-    }
-
-    if (deltaY < 0) {
-      handleNextCard();
-    } else {
-      handlePreviousCard();
+    if (scenePointerRef.current?.id === event.pointerId) {
+      scenePointerRef.current = null;
     }
   };
 
-  const handleScenePointerCancel = () => {
-    scenePointerRef.current = null;
-    moveSwipeLayer(0, true);
+  const handleSelectCardIndex = (index: number) => {
+    const target = cards[index];
+
+    if (target) {
+      handleSelectCard(target.id);
+    }
   };
+
+  // The wheel over the stack turns the cards, as it does over the list and
+  // the dots (a long list on the card keeps the wheel for its own scrolling).
+  useWheelNavigation(sceneRef, {
+    onNext: handleNextCard,
+    onPrevious: handlePreviousCard,
+    isEnabled: cards.length > 1 && !isArchiveOpen && !isOverlayOpen && !isCreating,
+    ignoreWithin: '.overflow-y-auto, input, textarea',
+  });
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -1256,6 +1193,7 @@ const MainApp: React.FC = () => {
         </div>
 
       <div
+        ref={sceneRef}
         className="relative z-10 flex h-full w-full items-center justify-center px-4"
         style={{
           touchAction: 'none',
@@ -1265,15 +1203,26 @@ const MainApp: React.FC = () => {
         onPointerDown={handleScenePointerDown}
         onPointerMove={handleScenePointerMove}
         onPointerUp={handleScenePointerEnd}
-        onPointerCancel={handleScenePointerCancel}
+        onPointerCancel={handleScenePointerEnd}
       >
         <div
           className="relative shrink-0"
           style={{
             width: INITIAL_TASK_CARD_V2_CONFIG.width * sceneScale,
             height: INITIAL_TASK_CARD_V2_CONFIG.height * sceneScale,
+            // The stack stands a little left of the middle, leaving room for
+            // the dots on its right.
+            transform: `translateX(${-viewportWidth * STACK_SHIFT_RATIO}px)`,
           }}
         >
+          <DeckDots
+            cards={cards}
+            activeCardId={activeCardId}
+            overdueIds={overdueIds}
+            onSelectIndex={handleSelectCardIndex}
+            onNext={handleNextCard}
+            onPrevious={handlePreviousCard}
+          />
 <div
           className="absolute left-0 top-0"
           style={{
@@ -1335,12 +1284,7 @@ const MainApp: React.FC = () => {
                   pointerEvents: isCreating ? 'none' : 'auto',
                 }}
               >
-                <div
-                ref={swipeLayerRef}
-                className="absolute inset-0"
-                style={{ willChange: 'transform' }}
-              >
-              <TaskCard
+                <TaskCard
                   card={activeCard}
                   onComplete={handleCompleteCard}
                   onRecordSeriesStep={recordSeriesStep}
@@ -1362,7 +1306,6 @@ const MainApp: React.FC = () => {
                   }
                   isOverdue={overdueIds.has(activeCard.id)}
                 />
-              </div>
               </motion.div>
             )}
           </AnimatePresence>
@@ -1372,7 +1315,6 @@ const MainApp: React.FC = () => {
               key={transientOutgoing.key}
               card={transientOutgoing.card}
               kind={transientOutgoing.kind}
-              swipe={transientOutgoing.swipe}
               onFinish={handleTransientOutgoingFinish}
             />
           )}

@@ -8,6 +8,7 @@ import {
   INITIAL_CARD_SWITCHER_CONFIG,
   type CardSwitcherConfig,
 } from './cardSwitcherConfig';
+import { useWheelNavigation } from '../../app/useWheelNavigation';
 import { OverdueBadge } from './OverdueBadge';
 
 interface CardSwitcherProps {
@@ -24,8 +25,6 @@ interface CardSwitcherProps {
 }
 
 
-const WHEEL_INTENT_THRESHOLD = 6;
-const WHEEL_GESTURE_END_MS = 90;
 const SHOW_CARD_SWITCHER_DEBUG = false;
 
 const getCardDisplayLabel = (card: VisualCard) => {
@@ -56,19 +55,7 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
   const [config, setConfig] = useState<CardSwitcherConfig>(() => ({
     ...INITIAL_CARD_SWITCHER_CONFIG,
   }));
-  const wheelAccumulatorRef = useRef(0);
-  const wheelGestureActiveRef = useRef(false);
-  const wheelLastEventAtRef = useRef(0);
   const switcherRef = useRef<HTMLDivElement | null>(null);
-  const cardsRef = useRef(cards);
-  const onNextCardRef = useRef(onNextCard);
-  const onPreviousCardRef = useRef(onPreviousCard);
-
-  useEffect(() => {
-    cardsRef.current = cards;
-    onNextCardRef.current = onNextCard;
-    onPreviousCardRef.current = onPreviousCard;
-  }, [cards, onNextCard, onPreviousCard]);
 
   const visibleRows = Math.min(metrics.visibleRows, Math.max(1, cards.length));
   const listHeight = visibleRows * metrics.rowHeight + (visibleRows - 1) * 2;
@@ -94,80 +81,11 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
       list.scrollTo({ top: bottom - list.clientHeight, behavior: 'smooth' });
     }
   }, [activeCardId, cards.length, metrics.rowHeight]);
-  useEffect(() => {
-    const switcher = switcherRef.current;
-
-    if (!switcher) {
-      return;
-    }
-
-    const handleWheel = (event: WheelEvent) => {
-      event.preventDefault();
-
-      const currentCards = cardsRef.current;
-      if (currentCards.length <= 1) {
-        return;
-      }
-
-      const normalizedDelta =
-        event.deltaMode === 1
-          ? event.deltaY * 16
-          : event.deltaMode === 2
-            ? event.deltaY * window.innerHeight
-            : event.deltaY;
-
-      if (normalizedDelta === 0) {
-        return;
-      }
-
-      const now = performance.now();
-      const isNewGesture =
-        now - wheelLastEventAtRef.current > WHEEL_GESTURE_END_MS;
-
-      wheelLastEventAtRef.current = now;
-
-      if (isNewGesture) {
-        wheelGestureActiveRef.current = false;
-        wheelAccumulatorRef.current = 0;
-      }
-
-      if (wheelGestureActiveRef.current) {
-        return;
-      }
-
-      if (
-        wheelAccumulatorRef.current !== 0 &&
-        Math.sign(wheelAccumulatorRef.current) !== Math.sign(normalizedDelta)
-      ) {
-        wheelAccumulatorRef.current = 0;
-      }
-
-      wheelAccumulatorRef.current += normalizedDelta;
-
-      if (
-        Math.abs(wheelAccumulatorRef.current) < WHEEL_INTENT_THRESHOLD
-      ) {
-        return;
-      }
-
-      const direction = wheelAccumulatorRef.current > 0 ? 1 : -1;
-
-      wheelAccumulatorRef.current = 0;
-      wheelGestureActiveRef.current = true;
-
-      if (direction > 0) {
-        onNextCardRef.current();
-      } else {
-        onPreviousCardRef.current();
-      }
-    };
-
-    switcher.addEventListener('wheel', handleWheel, { passive: false });
-
-    return () => {
-      switcher.removeEventListener('wheel', handleWheel);
-    };
-  }, []);
+  useWheelNavigation(switcherRef, {
+    onNext: onNextCard,
+    onPrevious: onPreviousCard,
+    isEnabled: cards.length > 1,
+  });
 
   return (
     <>
