@@ -1191,3 +1191,89 @@ main[data-settings-open='true'] > :not([data-settings-keep]) {
     0 -1px 0 rgba(0, 0, 0, 0.6),
     0 1px 0 rgba(255, 255, 255, 0.12);
 }
+/* Search: the glass sits beside the gear (same recess, same glow), and the
+   field grows out of it to the left. */
+.search-lupa {
+  right: 50px;
+}
+
+.search-field {
+  position: absolute;
+  top: 5px;
+  right: 92px;
+  left: 12px;
+  z-index: 45;
+  display: flex;
+  height: 34px;
+  align-items: center;
+  gap: 8px;
+  padding: 0 6px 0 16px;
+  border-radius: 17px;
+  background: rgba(0, 20, 10, 0.32);
+  box-shadow:
+    inset 0 2px 5px rgba(0, 0, 0, 0.55),
+    inset 0 -1px 1px rgba(255, 255, 255, 0.08),
+    0 1px 0 rgba(255, 255, 255, 0.1);
+  /* Closed: folded into the glass on the right. */
+  clip-path: inset(0 0 0 100% round 17px);
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    clip-path 320ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    opacity 200ms ease-out;
+}
+
+.search-field--open {
+  clip-path: inset(0 0 0 0 round 17px);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.search-input {
+  min-width: 0;
+  flex: 1;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: #fff0c4;
+  /* 16px keeps phones from zooming the page on focus. */
+  font-family: 'Lora', Georgia, serif;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  caret-color: #ffd98a;
+  text-shadow: 0 0 6px rgba(255, 214, 120, 0.55);
+}
+
+.search-input::placeholder {
+  color: rgba(255, 236, 190, 0.45);
+  text-shadow: none;
+}
+
+.search-count {
+  flex-shrink: 0;
+  font-family: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: rgba(255, 236, 190, 0.7);
+}
+
+.search-cross {
+  display: flex;
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 244, 205, 0.9);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.search-cross:active {
+  background: rgba(255, 255, 255, 0.18);
+}

@@ -15,6 +15,8 @@ import { getListCompletedCount, getListProgress } from '../../app/listUtils';
 import { getSeriesProgress } from '../../app/seriesUtils';
 
 interface ArchiveCatalogProps {
+  /** The search box starts with this text. */
+  initialQuery?: string;
   cards: VisualCard[];
   onOpenCard: (cardId: string) => void;
 }
@@ -134,9 +136,10 @@ const CardEdge: React.FC<{ card: VisualCard; onOpen: () => void }> = ({
  */
 export const ArchiveCatalog: React.FC<ArchiveCatalogProps> = ({
   cards,
+  initialQuery = '',
   onOpenCard,
 }) => {
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState(initialQuery);
   const [kind, setKind] = useState<ArchiveKindFilter>('all');
   const [page, setPage] = useState(0);
   const [budget, setBudget] = useState(FALLBACK_BUDGET);

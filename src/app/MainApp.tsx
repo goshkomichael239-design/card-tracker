@@ -66,6 +66,9 @@ import { UndoTicket } from '../components/UndoTicket';
 import { DraftCard } from '../components/draft-card/DraftCard';
 import { ArchiveNavigation } from '../components/archive/ArchiveNavigation';
 import { ArchiveView } from '../components/archive/ArchiveView';
+import { SearchBar } from '../components/search/SearchBar';
+import { searchCards } from './searchCards';
+import { filterArchive } from './archiveUtils';
 import { CardStack } from '../components/card-stack/CardStack';
 import { CardSwitcher } from '../components/card-switcher/CardSwitcher';
 import { INITIAL_CARD_SWITCHER_CONFIG } from '../components/card-switcher/cardSwitcherConfig';
@@ -273,6 +276,17 @@ const MainApp: React.FC = () => {
 
   const isCreating = draft.isCreating;
   const activeCard = cards.find((card) => card.id === activeCardId);
+
+  // Search: with something typed, the list, the dots and every way of turning
+  // the cards go through the cards it found, and only those.
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [archiveInitialQuery, setArchiveInitialQuery] = useState('');
+  const isSearching = isSearchOpen && searchQuery.trim() !== '';
+  const navCards = useMemo(
+    () => (isSearching ? searchCards(cards, searchQuery) : cards),
+    [cards, isSearching, searchQuery],
+  );
   // Any sheet lying over the table blocks the table's own gestures and keys.
   const isOverlayOpen = isTrashOpen;
   // Coupons torn off today, as paper colours for the slips on the spike.
@@ -529,18 +543,20 @@ const MainApp: React.FC = () => {
 
   const moveActiveCard = useCallback(
     (direction: -1 | 1) => {
-      if (cards.length <= 1) {
+      if (navCards.length <= 1) {
         return;
       }
 
-      const currentIndex = cards.findIndex((card) => card.id === activeCardId);
+      const currentIndex = navCards.findIndex(
+        (card) => card.id === activeCardId,
+      );
       const activeIndex = currentIndex >= 0 ? currentIndex : 0;
       const nextIndex =
-        (activeIndex + direction + cards.length) % cards.length;
+        (activeIndex + direction + navCards.length) % navCards.length;
 
-      handleSelectCard(cards[nextIndex]!.id, { direction });
+      handleSelectCard(navCards[nextIndex]!.id, { direction });
     },
-    [activeCardId, cards, handleSelectCard],
+    [activeCardId, navCards, handleSelectCard],
   );
 
   const handleNextCard = useCallback(
@@ -644,7 +660,7 @@ const MainApp: React.FC = () => {
           ? 'horizontal'
           : 'vertical';
 
-      if (gesture.mode === 'vertical' && (gesture.fromControl || cards.length < 2)) {
+      if (gesture.mode === 'vertical' && (gesture.fromControl || navCards.length < 2)) {
         // Not ours: leave it to the button (or there is nothing to turn to).
         scenePointerRef.current = null;
         return;
@@ -682,13 +698,13 @@ const MainApp: React.FC = () => {
 
     const currentIndex = Math.max(
       0,
-      cards.findIndex((card) => card.id === activeCardId),
+      navCards.findIndex((card) => card.id === activeCardId),
     );
     // Dragging up goes on to the next card, down back to the previous one;
     // past the last card comes the first, before the first comes the last.
     const direction: 1 | -1 = dy < 0 ? 1 : -1;
     const target =
-      cards[(currentIndex + direction + cards.length) % cards.length];
+      navCards[(currentIndex + direction + navCards.length) % navCards.length];
 
     if (!target) {
       return;
@@ -765,11 +781,42 @@ const MainApp: React.FC = () => {
   };
 
   const handleSelectCardIndex = (index: number) => {
-    const target = cards[index];
+    const target = navCards[index];
 
     if (target) {
       handleSelectCard(target.id);
     }
+  };
+
+  const archiveMatchCount = isSearching
+    ? filterArchive(archivedCards, searchQuery, 'all').length
+    : 0;
+
+  const closeSearch = () => {
+    setIsSearchOpen(false);
+    setSearchQuery('');
+  };
+
+  // Typing: the first card it finds comes forward unless the one on the table
+  // is among them already.
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+
+    const found = searchCards(cards, value);
+
+    if (
+      value.trim() !== '' &&
+      found.length > 0 &&
+      !found.some((card) => card.id === activeCardId)
+    ) {
+      handleSelectCard(found[0].id, { direction: 1 });
+    }
+  };
+
+  const handleSearchInArchive = () => {
+    setArchiveInitialQuery(searchQuery);
+    closeSearch();
+    setIsArchiveOpen(true);
   };
 
   // The wheel over the stack turns the cards, as it does over the list and
@@ -777,9 +824,41 @@ const MainApp: React.FC = () => {
   useWheelNavigation(sceneRef, {
     onNext: handleNextCard,
     onPrevious: handlePreviousCard,
-    isEnabled: cards.length > 1 && !isArchiveOpen && !isOverlayOpen && !isCreating,
+    isEnabled: navCards.length > 1 && !isArchiveOpen && !isOverlayOpen && !isCreating,
     ignoreWithin: '.overflow-y-auto, input, textarea',
   });
+
+  // "/" or Ctrl+K opens the search from the keyboard.
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const isShortcut =
+        (event.key === '/' && !event.ctrlKey && !event.metaKey) ||
+        ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k');
+
+      if (
+        !isShortcut ||
+        isSearchOpen ||
+        isOverlayOpen ||
+        isArchiveOpen ||
+        isSettingsOpen ||
+        isCreating ||
+        isEditableTarget(event.target)
+      ) {
+        return;
+      }
+
+      event.preventDefault();
+      setIsSearchOpen(true);
+      window.requestAnimationFrame(() =>
+        document
+          .querySelector<HTMLInputElement>('.search-input')
+          ?.focus({ preventScroll: true }),
+      );
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isSearchOpen, isOverlayOpen, isArchiveOpen, isSettingsOpen, isCreating]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -1434,6 +1513,7 @@ const MainApp: React.FC = () => {
         isOpen={isArchiveOpen}
         archivedCards={archivedCards}
         liveCards={cards}
+        initialQuery={archiveInitialQuery}
         settlingCardId={pendingCompletedCardId}
         onReturnCard={handleReturnFromArchive}
         onTrashCard={handleTrashFromArchive}
@@ -1444,7 +1524,7 @@ const MainApp: React.FC = () => {
       <div className="absolute inset-0 z-20 h-full w-full">
         <div className="absolute inset-x-3 top-4 z-30 flex justify-center">
           <CardSwitcher
-            cards={cards}
+            cards={navCards}
             activeCardId={activeCardId}
             onSelectCard={(cardId, direction) =>
               handleSelectCard(cardId, direction ? { direction } : undefined)
@@ -1452,8 +1532,30 @@ const MainApp: React.FC = () => {
             onNextCard={handleNextCard}
             onPreviousCard={handlePreviousCard}
             isPhone={isPhone}
-            overdueIds={overdueIds}
+            overdueIds={isSearching ? undefined : overdueIds}
           />
+
+          {/* Nothing found: say so, and offer the archive if it has it. */}
+          {isSearching && navCards.length === 0 && (
+            <div
+              className="lit-in flex flex-col items-center gap-2 pt-4 text-center"
+              style={{ pointerEvents: 'auto' }}
+            >
+              <p className="lit-text text-[18px] font-semibold">
+                Ничего не найдено
+              </p>
+              {archiveMatchCount > 0 && (
+                <button
+                  type="button"
+                  onClick={handleSearchInArchive}
+                  onTouchStart={() => undefined}
+                  className="embossed-line embossed-action"
+                >
+                  Искать в архиве · {archiveMatchCount}
+                </button>
+              )}
+            </div>
+          )}
         </div>
 
       <div
@@ -1480,7 +1582,7 @@ const MainApp: React.FC = () => {
           }}
         >
           <DeckDots
-            cards={cards}
+            cards={navCards}
             activeCardId={activeCardId}
             overdueIds={overdueIds}
             onSelectIndex={handleSelectCardIndex}
@@ -1790,7 +1892,10 @@ const MainApp: React.FC = () => {
 
       <ArchiveNavigation
         isArchiveOpen={isArchiveOpen}
-        onToggle={() => setIsArchiveOpen((previous) => !previous)}
+        onToggle={() => {
+          closeSearch();
+          setIsArchiveOpen((previous) => !previous);
+        }}
         glintKey={spikeBumpKey}
       />
 
@@ -1826,7 +1931,33 @@ const MainApp: React.FC = () => {
 
       <SettingsGear
         isOpen={isSettingsOpen}
-        onToggle={() => setIsSettingsOpen((previous) => !previous)}
+        onToggle={() => {
+          closeSearch();
+          setIsSettingsOpen((previous) => !previous);
+        }}
+      />
+      <SearchBar
+        isOpen={isSearchOpen}
+        isHidden={isArchiveOpen}
+        query={searchQuery}
+        matchCount={navCards.length}
+        matchPosition={
+          Math.max(
+            0,
+            navCards.findIndex((card) => card.id === activeCardId),
+          ) + 1
+        }
+        onToggle={() => {
+          if (isSearchOpen) {
+            closeSearch();
+          } else {
+            setIsSearchOpen(true);
+          }
+        }}
+        onChange={handleSearchChange}
+        onClose={closeSearch}
+        onNext={handleNextCard}
+        onPrevious={handlePreviousCard}
       />
       <SettingsView
         isOpen={isSettingsOpen}

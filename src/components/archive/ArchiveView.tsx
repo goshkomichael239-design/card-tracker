@@ -14,6 +14,8 @@ interface ArchiveViewProps {
   archivedCards: VisualCard[];
   /** Cards still on the table: their series steps and checked items count as activity. */
   liveCards: VisualCard[];
+  /** What the archive search starts with (carried over from the table). */
+  initialQuery?: string;
   /** Ids that cannot be returned yet (their completion is still settling). */
   settlingCardId: string | null;
   onReturnCard: (cardId: string) => void;
@@ -37,6 +39,7 @@ const TITLE_STYLE: React.CSSProperties = {
 const ArchiveContents: React.FC<Omit<ArchiveViewProps, 'isOpen'>> = ({
   archivedCards,
   liveCards,
+  initialQuery,
   settlingCardId,
   onReturnCard,
   onTrashCard,
@@ -80,7 +83,11 @@ const ArchiveContents: React.FC<Omit<ArchiveViewProps, 'isOpen'>> = ({
         </p>
       )}
 
-      <ArchiveCatalog cards={archivedCards} onOpenCard={setOpenCardId} />
+      <ArchiveCatalog
+        cards={archivedCards}
+        initialQuery={initialQuery}
+        onOpenCard={setOpenCardId}
+      />
 
       <BackupControls onExport={onExportBackup} onImport={onImportBackup} />
 
