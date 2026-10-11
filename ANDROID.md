@@ -6,7 +6,7 @@
 
 ## Что уже есть
 
-- **Манифест** `public/manifest.webmanifest`: имя «Карточки», иконки 192 / 512 и
+- **Манифест** `public/manifest.webmanifest`: имя «Card Tracker», иконки 192 / 512 и
   «маскируемая» иконка для Android, режим `standalone`, зелёная тема.
 - **Иконки** `public/icons/` (исходник рисуется скриптом, при смене дизайна
   перегенерируются).
@@ -41,7 +41,7 @@ npm run preview -- --host 127.0.0.1 --port 4174
 
 ```
 npm i @capacitor/core @capacitor/cli @capacitor/android
-npx cap init Карточки ru.example.cards --web-dir=dist
+npx cap init "Card Tracker" ru.example.cardtracker --web-dir=dist
 npm run build
 npx cap add android
 npx cap sync
