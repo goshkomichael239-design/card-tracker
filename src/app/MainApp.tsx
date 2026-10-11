@@ -1660,7 +1660,7 @@ const MainApp: React.FC = () => {
         onClose={() => setIsSettingsOpen(false)}
       />
 
-      {/* Rides over the bottom edge of the table, never over the card. */}
+      {/* Lettering on the cloth just above the archive bar, never over the card. */}
       {undoEntry && (
         <UndoTicket
           key={undoEntry.key}
@@ -1668,7 +1668,8 @@ const MainApp: React.FC = () => {
           onUndo={handleUndo}
           onExpire={handleUndoExpire}
           durationMs={UNDO_DURATION_MS}
-          style={{ bottom: 14 }}
+          // In the gap between the cards and the archive bar.
+          style={{ bottom: ARCHIVE_NAVIGATION_HEIGHT - 2 }}
         />
       )}
 

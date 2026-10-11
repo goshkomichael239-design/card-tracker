@@ -947,3 +947,41 @@ main[data-settings-open='true'] > :not([data-settings-keep]) {
     animation: none;
   }
 }
+
+/* White lettering pressed into the cloth: a thin dark edge above, a faint
+   light edge below, like type stamped into felt. */
+.embossed-line {
+  font-family: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.94);
+  text-shadow:
+    0 -1px 0 rgba(0, 20, 10, 0.55),
+    0 1px 0 rgba(255, 255, 255, 0.14),
+    0 0 1px rgba(0, 0, 0, 0.3);
+}
+
+.embossed-action {
+  padding: 10px 10px;
+  border: 0;
+  border-bottom: 1px dotted rgba(255, 255, 255, 0.55);
+  background: transparent;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  transition: color 160ms ease-out, text-shadow 160ms ease-out;
+}
+
+.embossed-action:hover,
+.embossed-action:focus-visible {
+  outline: none;
+  text-shadow:
+    0 0 6px rgba(255, 255, 255, 0.7),
+    0 -1px 0 rgba(0, 20, 10, 0.55);
+}
+
+.embossed-action:active {
+  transform: translateY(1px);
+}

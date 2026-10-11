@@ -68,7 +68,7 @@
   .progress__main { font-size: 22px; font-weight: 600; }
   .progress__side { font-family: var(--font-mono); font-size: 12.5px; color: var(--ink-soft); letter-spacing: 0.04em; }
   .bar { height: 12px; border-radius: 7px; background: var(--paper-edge); box-shadow: inset 0 1px 3px rgba(0,0,0,0.25); overflow: hidden; }
-  .bar > i { display: block; height: 100%; width: 62%; background: var(--cloth); border-radius: 7px; }
+  .bar > i { display: block; height: 100%; width: 61%; background: var(--cloth); border-radius: 7px; }
 
   .filters { display: flex; flex-wrap: wrap; gap: 8px; }
   .chip {
@@ -132,10 +132,10 @@
 
   <div class="progress">
     <div class="progress__nums">
-      <span class="progress__main">Сделано 43 из 69</span>
-      <span class="progress__side">62% · впереди 26 · отменено 2</span>
+      <span class="progress__main">Сделано 43 из 70</span>
+      <span class="progress__side">61% · впереди 27 · отменено 2</span>
     </div>
-    <div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="69" aria-valuenow="43"><i></i></div>
+    <div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="70" aria-valuenow="43"><i></i></div>
   </div>
 
   <div class="filters" role="group" aria-label="Что показывать">
@@ -524,7 +524,7 @@
       <section class="block" data-block>
         <header class="block__head">
           <h2>Новый архив</h2>
-          <span class="block__count">9 из 10</span>
+          <span class="block__count">9 из 11</span>
         </header>
         <ul class="list">
         <li class="item item--done" data-status="done">
@@ -603,6 +603,14 @@
           <span class="mark" aria-hidden="true"></span>
           <div class="body">
             <p class="text">Напоминание владельца: обсудить, как архив выглядит сейчас, и подредактировать его</p>
+            
+          </div>
+          <span class="state">впереди</span>
+        </li>
+        <li class="item item--todo" data-status="todo">
+          <span class="mark" aria-hidden="true"></span>
+          <div class="body">
+            <p class="text">Напоминание владельца: привести все стрелки «назад / вперёд» к одному скевоморфному виду и стилю (создание карточек, листание в архиве, список на карточке и везде, где они есть) — пока не делать</p>
             
           </div>
           <span class="state">впереди</span>
