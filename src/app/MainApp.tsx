@@ -157,8 +157,20 @@ interface SceneGesture {
   id: number;
   /** Where the finger is measured from; moves on after every turn. */
   y: number;
+  /** Where the finger first came down (sideways swipes measure from it). */
+  startX: number;
+  /** Not known until the finger has gone a few pixels: up/down turns the
+   *  cards, sideways tears the card off or throws it away. */
+  mode: 'vertical' | 'horizontal' | null;
+  /** The finger came down on a button: only a sideways swipe takes over. */
+  fromControl: boolean;
+  dx: number;
   isDragging: boolean;
 }
+
+// A sideways swipe this far (px) completes (right) or deletes (left).
+const SWIPE_COMMIT_PX = 96;
+const COUPON_SELECTOR = '[data-coupon="true"], [data-series-coupon="true"]';
 
 const getLocalDayKey = (date: Date): string =>
   `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
@@ -249,6 +261,12 @@ const MainApp: React.FC = () => {
   const pendingCompletedRemovalArmedRef = useRef(false);
   const transientSequenceRef = useRef(0);
   const scenePointerRef = useRef<SceneGesture | null>(null);
+  // While a card is swiped sideways: which way, and whether it is far enough.
+  const [swipeHint, setSwipeHint] = useState<{
+    side: 'left' | 'right';
+    ready: boolean;
+  } | null>(null);
+  const swipeHintRef = useRef<typeof swipeHint>(null);
   const sceneRef = useRef<HTMLDivElement | null>(null);
   const cardLayerRef = useRef<HTMLDivElement | null>(null);
   const lastTurnAtRef = useRef(0);
@@ -536,26 +554,40 @@ const MainApp: React.FC = () => {
   );
 
   const handleScenePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+    const target = event.target;
+
     if (
       isArchiveOpen ||
       isOverlayOpen ||
       isCreating ||
-      cards.length < 2 ||
+      !activeCard ||
       (event.pointerType === 'mouse' && event.button !== 0) ||
-      !isSceneGestureTarget(event.target)
+      !(target instanceof Element) ||
+      target.closest('input, textarea, select, [contenteditable="true"]')
     ) {
       return;
     }
 
+    const fromControl = !isSceneGestureTarget(target);
+
     scenePointerRef.current = {
       id: event.pointerId,
       y: event.clientY,
+      startX: event.clientX,
+      mode: null,
+      fromControl,
+      dx: 0,
       isDragging: false,
     };
-    event.currentTarget.setPointerCapture(event.pointerId);
+
+    // A finger that starts on a button keeps the button's own press unless it
+    // turns out to be a sideways swipe: capture only then.
+    if (!fromControl) {
+      event.currentTarget.setPointerCapture(event.pointerId);
+    }
   };
 
-  const moveCardLayer = (offsetY: number, isEased: boolean) => {
+  const moveCardLayer = (offsetY: number, isEased: boolean, offsetX = 0) => {
     const layer = cardLayerRef.current;
 
     if (!layer) {
@@ -566,13 +598,28 @@ const MainApp: React.FC = () => {
       ? 'transform 240ms cubic-bezier(0.2, 0.8, 0.2, 1)'
       : 'none';
     layer.style.transform =
-      offsetY === 0
+      offsetY === 0 && offsetX === 0
         ? ''
-        : `translate3d(0, ${offsetY}px, 0) rotate(${(offsetY / CARD_TURN_DISTANCE_PX) * 1.4}deg)`;
+        : offsetX !== 0
+          ? `translate3d(${offsetX}px, 0, 0) rotate(${(offsetX / SWIPE_COMMIT_PX) * 4}deg)`
+          : `translate3d(0, ${offsetY}px, 0) rotate(${(offsetY / CARD_TURN_DISTANCE_PX) * 1.4}deg)`;
+  };
+
+  const setSwipeHintIfChanged = (next: typeof swipeHint) => {
+    const previous = swipeHintRef.current;
+
+    if (previous?.side === next?.side && previous?.ready === next?.ready) {
+      return;
+    }
+
+    swipeHintRef.current = next;
+    setSwipeHint(next);
   };
 
   // The card follows the finger up or down; far enough, it is turned and the
-  // next one takes its place, and the drag goes on from there.
+  // next one takes its place, and the drag goes on from there. Sideways, it
+  // follows the finger and, let go far enough, is completed (right) or thrown
+  // away (left).
   const handleScenePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
     const gesture = scenePointerRef.current;
 
@@ -580,11 +627,56 @@ const MainApp: React.FC = () => {
       return;
     }
 
-    const dy = event.clientY - gesture.y;
+    if (gesture.mode === null) {
+      const adx = Math.abs(event.clientX - gesture.startX);
+      const ady = Math.abs(event.clientY - gesture.y);
 
-    if (!gesture.isDragging && Math.abs(dy) < 6) {
+      if (Math.max(adx, ady) < 8) {
+        return;
+      }
+
+      const hasCoupon = Boolean(
+        cardLayerRef.current?.querySelector(COUPON_SELECTOR),
+      );
+
+      gesture.mode =
+        event.pointerType !== 'mouse' && adx > ady * 1.3 && hasCoupon
+          ? 'horizontal'
+          : 'vertical';
+
+      if (gesture.mode === 'vertical' && (gesture.fromControl || cards.length < 2)) {
+        // Not ours: leave it to the button (or there is nothing to turn to).
+        scenePointerRef.current = null;
+        return;
+      }
+
+      if (gesture.mode === 'horizontal' && gesture.fromControl) {
+        event.currentTarget.setPointerCapture(event.pointerId);
+      }
+    }
+
+    if (gesture.mode === 'horizontal') {
+      const dx = event.clientX - gesture.startX;
+
+      gesture.dx = dx;
+      gesture.isDragging = true;
+      moveCardLayer(0, false, dx * 0.9);
+
+      const isReady = Math.abs(dx) >= SWIPE_COMMIT_PX;
+
+      if (isReady && !(swipeHintRef.current?.ready)) {
+        haptic(6);
+      }
+
+      setSwipeHintIfChanged(
+        Math.abs(dx) < 6
+          ? null
+          : { side: dx > 0 ? 'right' : 'left', ready: isReady },
+      );
       return;
     }
+
+    const dy = event.clientY - gesture.y;
 
     gesture.isDragging = true;
 
@@ -616,12 +708,60 @@ const MainApp: React.FC = () => {
   };
 
   const handleScenePointerEnd = (event: React.PointerEvent<HTMLDivElement>) => {
-    if (scenePointerRef.current?.id !== event.pointerId) {
+    const gesture = scenePointerRef.current;
+
+    if (gesture?.id !== event.pointerId) {
       return;
     }
 
     scenePointerRef.current = null;
-    moveCardLayer(0, true);
+    setSwipeHintIfChanged(null);
+
+    if (gesture.mode !== 'horizontal') {
+      moveCardLayer(0, true);
+      return;
+    }
+
+    const layer = cardLayerRef.current;
+    const isCommitted =
+      event.type !== 'pointercancel' && Math.abs(gesture.dx) >= SWIPE_COMMIT_PX;
+
+    if (!isCommitted || !layer || !activeCard) {
+      moveCardLayer(0, true);
+      return;
+    }
+
+    // Put the card back at once and read the coupon where it really stands.
+    moveCardLayer(0, false);
+
+    if (gesture.dx > 0) {
+      const coupon = layer.querySelector<HTMLElement>('[data-coupon="true"]');
+      const seriesCoupon = layer.querySelector<HTMLElement>(
+        '[data-series-coupon="true"]',
+      );
+      const anchor = activeCard.kind === 'series' ? (seriesCoupon ?? coupon) : coupon;
+
+      // A list's coupon waits for every item to be checked; the swipe is the
+      // deliberate way to close it early. A sheet that is not due stays shut.
+      const isShut =
+        anchor instanceof HTMLButtonElement &&
+        anchor.disabled &&
+        activeCard.kind !== 'list';
+
+      if (!anchor || isShut) {
+        return;
+      }
+
+      const bounds = anchor.getBoundingClientRect();
+
+      if (activeCard.kind === 'series') {
+        finishSeries(bounds);
+      } else {
+        handleCompleteCard(bounds);
+      }
+    } else {
+      handleDeleteCard(activeCard.id);
+    }
   };
 
   const handleSelectCardIndex = (index: number) => {
@@ -1347,6 +1487,24 @@ const MainApp: React.FC = () => {
             onNext={handleNextCard}
             onPrevious={handlePreviousCard}
           />
+
+          {/* Uncovered by a card swiped sideways: what letting go will do. */}
+          {swipeHint && (
+            <span
+              aria-hidden="true"
+              className="embossed-line pointer-events-none absolute top-1/2 -translate-y-1/2 text-center"
+              style={{
+                [swipeHint.side === 'right' ? 'left' : 'right']: 4,
+                width: 96 * sceneScale + 24,
+                fontSize: 15,
+                opacity: swipeHint.ready ? 1 : 0.5,
+                transform: `translateY(-50%) scale(${swipeHint.ready ? 1.08 : 0.96})`,
+                transition: 'opacity 120ms ease-out, transform 120ms ease-out',
+              }}
+            >
+              {swipeHint.side === 'right' ? '✓ Выполнено' : 'В корзину'}
+            </span>
+          )}
 <div
           className="absolute left-0 top-0"
           style={{

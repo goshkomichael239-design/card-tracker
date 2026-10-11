@@ -11,10 +11,16 @@ export const FOLD_CUT_PATH = `polygon(0 0, calc(100% - ${FOLD_SIZE}px) 0, 100% $
  * mirrored across the crease. Shared by the cards and the new-card form, so
  * all of them have the same corner.
  */
-export const FoldedFlap: React.FC<{ lifted: boolean; paperTint: string }> = ({
-  lifted,
-  paperTint,
-}) => (
+// The "edit" pencil glyph (Material, 24 x 24), tip at the lower left.
+const PENCIL_PATH =
+  'M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a.996.996 0 000-1.41l-2.34-2.34a.996.996 0 00-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z';
+
+export const FoldedFlap: React.FC<{
+  lifted: boolean;
+  paperTint: string;
+  /** A pencil pressed into the flap: this corner is the way to edit. */
+  showPencil?: boolean;
+}> = ({ lifted, paperTint, showPencil = false }) => (
   <span
     className="absolute right-0 top-0 block"
     style={{
@@ -36,5 +42,20 @@ export const FoldedFlap: React.FC<{ lifted: boolean; paperTint: string }> = ({
         backgroundBlendMode: 'normal, multiply',
       }}
     />
+    {showPencil && (
+      <svg
+        viewBox="0 0 24 24"
+        width="17"
+        height="17"
+        aria-hidden="true"
+        className="absolute"
+        style={{ left: 6, top: 22, overflow: 'visible' }}
+      >
+        {/* Blind embossing: a lit edge below, a shaded edge above. */}
+        <path d={PENCIL_PATH} fill="rgba(255,255,255,0.95)" transform="translate(0.9 0.9)" />
+        <path d={PENCIL_PATH} fill="rgba(70,52,34,0.55)" transform="translate(-0.6 -0.6)" />
+        <path d={PENCIL_PATH} fill="rgba(176,156,126,0.55)" />
+      </svg>
+    )}
   </span>
 );

@@ -627,6 +627,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
             <FoldedFlap
               lifted={face !== 'view' || isCornerKeyboardFocused}
               paperTint={palette.paper}
+              showPencil
             />
           </button>
         ) : (
