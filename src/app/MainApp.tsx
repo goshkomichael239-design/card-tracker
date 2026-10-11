@@ -1769,7 +1769,11 @@ const MainApp: React.FC = () => {
 
       {/* The basket stands on the table, in the corner just above the edge. */}
       <TrashBin
-        count={trash.length}
+        // The paper that is still in the air is not in the basket yet.
+        count={Math.max(
+          0,
+          trash.length - (transientOutgoing?.kind === 'trash' ? 1 : 0),
+        )}
         bumpKey={trashBumpKey}
         onOpen={() => setIsTrashOpen(true)}
         style={{ left: 12, bottom: ARCHIVE_NAVIGATION_HEIGHT + 12 }}
