@@ -202,6 +202,12 @@ const isSceneGestureTarget = (target: EventTarget | null): boolean => {
 // Free space the scene must keep around the card at scale 1: the ghost card sits
 // up and to the left of it, the neighbouring stack down and to the right.
 const SCENE_TOP_OVERHANG = 66;
+// The basket and the spike stand on the archive bar's marble: their feet this
+// far above its bottom edge (the stone below them holds the reflection), and
+// their upper parts rise over the bar's top edge onto the cloth.
+const BAR_FLOOR = 20;
+const BAR_OBJECT_HEIGHT = { bin: 80, spike: 90 };
+const BAR_OBJECT_OVERHANG = 34;
 // The stack peeks this far below the front card (the next card, the layers).
 const STACK_PEEK_BELOW = 12;
 // Clear cloth between the lowest edge of the stack and the archive bar: the
@@ -1981,9 +1987,16 @@ const MainApp: React.FC = () => {
         )}
         bumpKey={trashBumpKey}
         onOpen={() => setIsTrashOpen(true)}
-        // In the bar's left end; the touch box is wider than the picture.
-        pictureHeight={ARCHIVE_NAVIGATION_HEIGHT - 20}
-        style={{ left: 0, bottom: 0, width: 84, height: ARCHIVE_NAVIGATION_HEIGHT }}
+        // Standing on the bar's marble at its left end, its upper part rising
+        // over the bar's edge; the touch box covers all of it and more.
+        pictureHeight={BAR_OBJECT_HEIGHT.bin}
+        floor={BAR_FLOOR}
+        style={{
+          left: 0,
+          bottom: 0,
+          width: 92,
+          height: ARCHIVE_NAVIGATION_HEIGHT + BAR_OBJECT_OVERHANG,
+        }}
       />
 
       {/* The day's torn coupons on their brass spike in the corner opposite the
@@ -1991,12 +2004,12 @@ const MainApp: React.FC = () => {
       <CouponSpike
         slipPapers={todaySlipPapers}
         bumpKey={spikeBumpKey}
-        pictureHeight={ARCHIVE_NAVIGATION_HEIGHT - 16}
+        pictureHeight={BAR_OBJECT_HEIGHT.spike}
         style={{
           // Opposite the basket: in the bar's right end. It is only looked at;
           // the bar under it takes the press.
-          right: 20,
-          bottom: 4,
+          right: 16,
+          bottom: BAR_FLOOR,
           opacity: isArchiveOpen ? 0 : 1,
           transition: 'opacity 200ms ease-out',
         }}

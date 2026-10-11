@@ -20,9 +20,12 @@ const SLIP_TILTS = [-9, 7, -4, 10, -7, 5];
 // (the brass foot) tops out near y = 268.
 const NEEDLE_X = 112;
 const FIRST_SLIP_Y = 252;
-const SLIP_STEP = 21;
-const SLIP_WIDTH = 112;
-const SLIP_HEIGHT = 30;
+const SLIP_STEP = 24;
+const SLIP_WIDTH = 150;
+const SLIP_HEIGHT = 36;
+// The foot of the stand, and how deep its reflection in the stone reaches.
+const FOOT_Y = 454;
+const REFLECTION_DEPTH = 120;
 
 /**
  * A brass receipt spike standing on the table, opposite the waste basket.
@@ -63,8 +66,54 @@ export const CouponSpike: React.FC<CouponSpikeProps> = ({
           className="h-full w-full overflow-visible"
           aria-hidden="true"
         >
-          {/* Contact shadow on the table. */}
-          <ellipse cx="112" cy="448" rx="100" ry="14" fill="rgba(0,0,0,0.42)" />
+          <defs>
+            <filter id="spike-soft" x="-30%" y="-200%" width="160%" height="500%">
+              <feGaussianBlur stdDeviation="9" />
+            </filter>
+            <filter id="spike-tight" x="-30%" y="-300%" width="160%" height="700%">
+              <feGaussianBlur stdDeviation="4" />
+            </filter>
+            <linearGradient id="spike-fade" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stopColor="#fff" stopOpacity="0.9" />
+              <stop offset="1" stopColor="#fff" stopOpacity="0" />
+            </linearGradient>
+            <mask id="spike-reflection-mask">
+              <rect
+                x="-20"
+                y={FOOT_Y}
+                width="264"
+                height={REFLECTION_DEPTH}
+                fill="url(#spike-fade)"
+              />
+            </mask>
+          </defs>
+
+          {/* Cast shadow: long, soft, falling to the right. */}
+          <ellipse
+            cx="150"
+            cy={FOOT_Y}
+            rx="130"
+            ry="17"
+            fill="rgba(40,30,20,0.3)"
+            filter="url(#spike-soft)"
+          />
+
+          {/* Reflection in the polished stone. */}
+          <g mask="url(#spike-reflection-mask)" opacity="0.3">
+            <g transform={`translate(0 ${FOOT_Y * 2}) scale(1 -1)`}>
+              <image href={spikeImage} x="0" y="0" width="224" height="460" />
+            </g>
+          </g>
+
+          {/* Contact shadow: dark and tight under the wooden foot. */}
+          <ellipse
+            cx="112"
+            cy={FOOT_Y + 1}
+            rx="92"
+            ry="9"
+            fill="rgba(10,6,2,0.62)"
+            filter="url(#spike-tight)"
+          />
 
           <image href={spikeImage} x="0" y="0" width="224" height="460" />
 

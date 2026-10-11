@@ -11,20 +11,27 @@ interface TrashBinProps {
   /** Changes every time a card lands in the bin; replays the little bump. */
   bumpKey: number;
   onOpen: () => void;
-  /** Height of the picture in px; the touch box is wider and as tall as the bar. */
+  /** Height of the picture in px. */
   pictureHeight: number;
+  /** How far above the bottom of the touch box the basket's foot stands. */
+  floor: number;
   style?: React.CSSProperties;
 }
 
 // The picture is 244 x 300 units. One picture per number of papers in the
 // basket: empty, one, two, three, four or more.
 const BIN_IMAGES = [bin0, bin1, bin2, bin3, bin4];
+const WIDTH_RATIO = 244 / 300;
+// How deep the reflection in the marble reaches below the foot, in units.
+const REFLECTION_DEPTH = 80;
 
 /**
- * The waste-paper basket standing in the archive bar's left end. Thrown-away
- * cards fly into it and it fills with crumpled paper; pressing it opens what
- * is inside. The touch box is wider than the picture and sits above the bar,
- * so a press near the basket does not open the archive by mistake.
+ * The waste-paper basket standing on the archive bar's marble, at its left
+ * end. Thrown-away cards fly into it and it fills with crumpled paper;
+ * pressing it opens what is inside. It stands on a contact shadow, throws a
+ * long soft one to the right (the light is at the top left) and is mirrored
+ * faintly in the polished stone. The touch box is wider than the picture and
+ * taller than the bar, so a press near the basket never opens the archive.
  * `data-trash-bin` lets the throw animation aim at the picture.
  */
 export const TrashBin: React.FC<TrashBinProps> = ({
@@ -32,61 +39,125 @@ export const TrashBin: React.FC<TrashBinProps> = ({
   bumpKey,
   onOpen,
   pictureHeight,
+  floor,
   style,
-}) => (
-  <button
-    type="button"
-    onClick={onOpen}
-    onTouchStart={() => undefined}
-    aria-label={count > 0 ? `Корзина: ${count}` : 'Корзина пуста'}
-    title="Корзина"
-    className="absolute z-[35] flex cursor-pointer items-center justify-center border-0 bg-transparent p-0"
-    style={style}
-  >
-    <span
-      key={bumpKey}
-      data-trash-bin=""
-      className={`trash-bin block${bumpKey > 0 ? ' trash-bump' : ''}`}
-      style={{ height: pictureHeight, width: (pictureHeight * 244) / 300 }}
+}) => {
+  const pictureWidth = pictureHeight * WIDTH_RATIO;
+  const shown = Math.min(count, BIN_IMAGES.length - 1);
+
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      onTouchStart={() => undefined}
+      aria-label={count > 0 ? `Корзина: ${count}` : 'Корзина пуста'}
+      title="Корзина"
+      className="absolute z-[35] cursor-pointer border-0 bg-transparent p-0"
+      style={style}
     >
-      <svg
-        viewBox="0 0 244 300"
-        className="h-full w-full overflow-visible"
-        aria-hidden="true"
+      <span
+        key={bumpKey}
+        data-trash-bin=""
+        className={`trash-bin absolute block${bumpKey > 0 ? ' trash-bump' : ''}`}
+        style={{
+          height: pictureHeight,
+          width: pictureWidth,
+          left: '50%',
+          marginLeft: -pictureWidth / 2,
+          bottom: floor,
+        }}
       >
-        {/* Contact shadow on the table. */}
-        <ellipse cx="122" cy="292" rx="88" ry="12" fill="rgba(0,0,0,0.4)" />
+        <svg
+          viewBox="0 0 244 300"
+          className="h-full w-full overflow-visible"
+          aria-hidden="true"
+        >
+          <defs>
+            <filter id="bin-soft" x="-30%" y="-200%" width="160%" height="500%">
+              <feGaussianBlur stdDeviation="7" />
+            </filter>
+            <filter id="bin-tight" x="-30%" y="-300%" width="160%" height="700%">
+              <feGaussianBlur stdDeviation="3" />
+            </filter>
+            <linearGradient id="bin-fade" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stopColor="#fff" stopOpacity="0.9" />
+              <stop offset="1" stopColor="#fff" stopOpacity="0" />
+            </linearGradient>
+            <mask id="bin-reflection-mask">
+              <rect
+                x="0"
+                y="300"
+                width="244"
+                height={REFLECTION_DEPTH}
+                fill="url(#bin-fade)"
+              />
+            </mask>
+          </defs>
 
-        {/* All the pictures stay loaded; the one for the count shows. */}
-        {BIN_IMAGES.map((image, index) => (
-          <image
-            key={index}
-            href={image}
-            x="0"
-            y="0"
-            width="244"
-            height="300"
-            opacity={index === Math.min(count, BIN_IMAGES.length - 1) ? 1 : 0}
+          {/* Cast shadow: long, soft, falling to the right. */}
+          <ellipse
+            cx="168"
+            cy="296"
+            rx="118"
+            ry="15"
+            fill="rgba(40,30,20,0.3)"
+            filter="url(#bin-soft)"
           />
-        ))}
 
-        {count > 0 && (
-          <g>
-            <circle cx="206" cy="244" r="46" fill="#F7F2E8" stroke="rgba(60,45,30,0.45)" strokeWidth="3" />
-            <text
-              x="206"
-              y="260"
-              textAnchor="middle"
-              fontSize="52"
-              fontWeight="700"
-              fill="#3F3932"
-              fontFamily="Lora, Georgia, serif"
-            >
-              {count > 99 ? '99' : count}
-            </text>
+          {/* Reflection in the polished stone, fading within a short way. */}
+          <g mask="url(#bin-reflection-mask)" opacity="0.32">
+            <g transform="translate(0 600) scale(1 -1)">
+              <image
+                href={BIN_IMAGES[shown]}
+                x="0"
+                y="0"
+                width="244"
+                height="300"
+              />
+            </g>
           </g>
-        )}
-      </svg>
-    </span>
-  </button>
-);
+
+          {/* Contact shadow: dark and tight where it touches. */}
+          <ellipse
+            cx="122"
+            cy="297"
+            rx="84"
+            ry="8"
+            fill="rgba(10,6,2,0.62)"
+            filter="url(#bin-tight)"
+          />
+
+          {/* All the pictures stay loaded; the one for the count shows. */}
+          {BIN_IMAGES.map((image, index) => (
+            <image
+              key={index}
+              href={image}
+              x="0"
+              y="0"
+              width="244"
+              height="300"
+              opacity={index === shown ? 1 : 0}
+            />
+          ))}
+
+          {count > 0 && (
+            <g>
+              <circle cx="206" cy="244" r="46" fill="#F7F2E8" stroke="rgba(60,45,30,0.45)" strokeWidth="3" />
+              <text
+                x="206"
+                y="260"
+                textAnchor="middle"
+                fontSize="52"
+                fontWeight="700"
+                fill="#3F3932"
+                fontFamily="Lora, Georgia, serif"
+              >
+                {count > 99 ? '99' : count}
+              </text>
+            </g>
+          )}
+        </svg>
+      </span>
+    </button>
+  );
+};
