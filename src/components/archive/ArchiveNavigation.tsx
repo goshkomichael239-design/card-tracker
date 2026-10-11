@@ -91,7 +91,7 @@ export const ArchiveNavigation: React.FC<ArchiveNavigationProps> = ({
           exit={{ opacity: 0, y: -8 }}
           transition={{ duration: 0.3 }}
           data-text={isArchiveOpen ? 'Главный экран' : 'Архив'}
-          className={`foil-text foil-text--sweep${isArchiveOpen ? ' foil-text--on-dark' : ''} relative z-10 text-[21px] leading-none`}
+          className={`foil-text foil-text--sweep${isArchiveOpen ? ' foil-text--on-dark' : ''} relative z-10 text-[27px] leading-none`}
         >
           {isArchiveOpen ? 'Главный экран' : 'Архив'}
         </motion.span>

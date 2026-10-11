@@ -1650,7 +1650,7 @@ const MainApp: React.FC = () => {
         bumpKey={spikeBumpKey}
         onOpen={() => setIsArchiveOpen(true)}
         style={{
-          left: 'calc(50% + 62px)',
+          left: 'calc(50% + 84px)',
           bottom: 12,
           zIndex: 35,
           opacity: isArchiveOpen ? 0 : 1,
