@@ -1,4 +1,5 @@
 import type { CardPalette, TaskListData } from '../../app/cardTheme';
+import { ListCheckbox } from './ListCheckbox';
 interface TaskListContentProps {
   list: TaskListData;
   palette: CardPalette;
@@ -52,22 +53,13 @@ export function TaskListContent({
                   color: completed ? 'rgba(40,35,29,0.56)' : '#28231D',
                 }}
               >
-                <span
-                  className="mt-[1px] flex shrink-0 items-center justify-center rounded-full border font-mono font-bold"
-                  style={{
-                    width: isSheet ? 28 : 26,
-                    height: isSheet ? 28 : 26,
-                    fontSize: isSheet ? 15 : 14,
-                    borderColor: completed
-                      ? palette.accent
-                      : 'rgba(69,57,44,0.32)',
-                    backgroundColor: completed
-                      ? palette.accent
-                      : 'transparent',
-                    color: 'white',
-                  }}
-                >
-                  {completed ? '✓' : ''}
+                <span className="mt-[1px] flex shrink-0">
+                  <ListCheckbox
+                    checked={completed}
+                    size={isSheet ? 28 : 26}
+                    accent={palette.accent}
+                    accentDark={palette.accentDark}
+                  />
                 </span>
                 <span
                   className="min-w-0 flex-1 break-words leading-[1.38]"

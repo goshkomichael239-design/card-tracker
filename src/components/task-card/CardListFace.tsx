@@ -163,8 +163,8 @@ export const CardListFace: React.FC<CardListFaceProps> = ({
       >
         <span
           aria-hidden="true"
-          className="h-[22px] w-[22px] shrink-0 rounded-full border"
-          style={{ borderColor: `${palette.accent}7a` }}
+          className="h-[22px] w-[22px] shrink-0 rounded-[6px]"
+          style={{ border: `1.5px dashed ${palette.accent}7a` }}
         />
         <input
           value={input}
