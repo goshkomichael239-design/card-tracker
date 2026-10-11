@@ -7,7 +7,8 @@ interface CouponSpikeProps {
   slipPapers: string[];
   /** Changes every time a coupon lands on the spike; replays the bump. */
   bumpKey: number;
-  onOpen: () => void;
+  /** Height of the picture in px. */
+  pictureHeight: number;
   style?: React.CSSProperties;
 }
 
@@ -26,32 +27,32 @@ const SLIP_HEIGHT = 30;
 /**
  * A brass receipt spike standing on the table, opposite the waste basket.
  * Every coupon torn off today is speared on it in its card's colour, so the
- * day's work piles up visibly; pressing it opens the archive.
+ * day's work piles up visibly. It stands in the archive bar's right end and
+ * takes no presses itself: the bar under it opens the archive.
  * `data-coupon-spike` lets the flying coupon aim at it.
  */
 export const CouponSpike: React.FC<CouponSpikeProps> = ({
   slipPapers,
   bumpKey,
-  onOpen,
+  pictureHeight,
   style,
 }) => {
   const count = slipPapers.length;
   const slips = slipPapers.slice(0, MAX_SLIPS).reverse();
 
   return (
-    <button
-      type="button"
+    <div
       data-coupon-spike=""
-      onClick={onOpen}
-      onTouchStart={() => undefined}
+      role="img"
       aria-label={
-        count > 0
-          ? `Сегодня выполнено: ${count}. Открыть архив`
-          : 'Сегодня ещё ничего. Открыть архив'
+        count > 0 ? `Сегодня выполнено: ${count}` : 'Сегодня ещё ничего'
       }
-      title="Сделано сегодня"
-      className="trash-bin absolute z-30 h-[92px] w-[45px] cursor-pointer border-0 bg-transparent p-0 sm:h-[104px] sm:w-[51px]"
-      style={style}
+      className="trash-bin pointer-events-none absolute z-[35]"
+      style={{
+        height: pictureHeight,
+        width: (pictureHeight * 224) / 460,
+        ...style,
+      }}
     >
       <span
         key={bumpKey}
@@ -103,12 +104,12 @@ export const CouponSpike: React.FC<CouponSpikeProps> = ({
 
           {count > 0 && (
             <g>
-              <circle cx="186" cy="396" r="36" fill="#F7F2E8" stroke="rgba(60,45,30,0.4)" strokeWidth="2.5" />
+              <circle cx="176" cy="392" r="58" fill="#F7F2E8" stroke="rgba(60,45,30,0.4)" strokeWidth="2.5" />
               <text
-                x="186"
-                y="409"
+                x="176"
+                y="414"
                 textAnchor="middle"
-                fontSize="40"
+                fontSize="72"
                 fontWeight="700"
                 fill="#3F3932"
                 fontFamily="Lora, Georgia, serif"
@@ -119,6 +120,6 @@ export const CouponSpike: React.FC<CouponSpikeProps> = ({
           )}
         </svg>
       </span>
-    </button>
+    </div>
   );
 };

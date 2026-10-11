@@ -11,7 +11,7 @@ interface ArchiveNavigationProps {
   glintKey?: number;
 }
 
-export const ARCHIVE_NAVIGATION_HEIGHT = 56;
+export const ARCHIVE_NAVIGATION_HEIGHT = 72;
 
 const NAV_SURFACE_TRANSITION = {
   duration: 0.22,
@@ -91,7 +91,7 @@ export const ArchiveNavigation: React.FC<ArchiveNavigationProps> = ({
           exit={{ opacity: 0, y: -8 }}
           transition={{ duration: 0.3 }}
           data-text={isArchiveOpen ? 'Главный экран' : 'Архив'}
-          className={`foil-text foil-text--sweep${isArchiveOpen ? ' foil-text--on-dark' : ''} relative z-10 text-[27px] leading-none`}
+          className={`foil-text foil-text--sweep${isArchiveOpen ? ' foil-text--on-dark' : ''} relative z-10 leading-none ${isArchiveOpen ? 'text-[20px]' : 'text-[27px]'}`}
         >
           {isArchiveOpen ? 'Главный экран' : 'Архив'}
         </motion.span>

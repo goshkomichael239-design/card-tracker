@@ -1767,17 +1767,6 @@ const MainApp: React.FC = () => {
         </div>
       </div>
 
-      {/* The basket stands on the table, in the corner just above the edge. */}
-      <TrashBin
-        // The paper that is still in the air is not in the basket yet.
-        count={Math.max(
-          0,
-          trash.length - (transientOutgoing?.kind === 'trash' ? 1 : 0),
-        )}
-        bumpKey={trashBumpKey}
-        onOpen={() => setIsTrashOpen(true)}
-        style={{ left: 12, bottom: ARCHIVE_NAVIGATION_HEIGHT + 12 }}
-      />
 
       <DetachedCompletionCoupon
         ref={detachedCouponLayerRef}
@@ -1805,19 +1794,32 @@ const MainApp: React.FC = () => {
         glintKey={spikeBumpKey}
       />
 
+      {/* The basket stands in the left end of the archive bar. */}
+      <TrashBin
+        // The paper that is still in the air is not in the basket yet.
+        count={Math.max(
+          0,
+          trash.length - (transientOutgoing?.kind === 'trash' ? 1 : 0),
+        )}
+        bumpKey={trashBumpKey}
+        onOpen={() => setIsTrashOpen(true)}
+        // In the bar's left end; the touch box is wider than the picture.
+        pictureHeight={ARCHIVE_NAVIGATION_HEIGHT - 20}
+        style={{ left: 0, bottom: 0, width: 84, height: ARCHIVE_NAVIGATION_HEIGHT }}
+      />
+
       {/* The day's torn coupons on their brass spike in the corner opposite the
           basket: they land here, and pressing it opens the archive. */}
       <CouponSpike
         slipPapers={todaySlipPapers}
         bumpKey={spikeBumpKey}
-        onOpen={() => setIsArchiveOpen(true)}
+        pictureHeight={ARCHIVE_NAVIGATION_HEIGHT - 16}
         style={{
-          // Opposite the basket: in the right corner, just above the bar.
-          right: 14,
-          bottom: ARCHIVE_NAVIGATION_HEIGHT + 12,
-          zIndex: 35,
+          // Opposite the basket: in the bar's right end. It is only looked at;
+          // the bar under it takes the press.
+          right: 20,
+          bottom: 4,
           opacity: isArchiveOpen ? 0 : 1,
-          pointerEvents: isArchiveOpen ? 'none' : 'auto',
           transition: 'opacity 200ms ease-out',
         }}
       />
