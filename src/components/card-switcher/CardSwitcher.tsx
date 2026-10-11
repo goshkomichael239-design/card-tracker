@@ -14,7 +14,8 @@ import { OverdueBadge } from './OverdueBadge';
 interface CardSwitcherProps {
   cards: VisualCard[];
   activeCardId: string;
-  onSelectCard: (cardId: string) => void;
+  /** `direction` is given when the list itself was scrolled to the card. */
+  onSelectCard: (cardId: string, direction?: 1 | -1) => void;
   onNextCard: () => void;
   onPreviousCard: () => void;
   mode?: 'main' | 'archive';
@@ -60,27 +61,74 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
   const visibleRows = Math.min(metrics.visibleRows, Math.max(1, cards.length));
   const listHeight = visibleRows * metrics.rowHeight + (visibleRows - 1) * 2;
 
-  // The active card is always brought into view, whichever way it was chosen
-  // (a tap, the wheel, a swipe on the card).
+  // The list works like a picker: the row standing in the selection slot is
+  // the chosen card, so scrolling the list chooses cards by itself, and a
+  // card chosen any other way is scrolled into that slot.
+  const rowStep = metrics.rowHeight + 2;
+  const canScroll = cards.length > metrics.visibleRows;
+  const slot = Math.floor((metrics.visibleRows - 1) / 2);
+  const padTop = canScroll ? slot * rowStep : 0;
+  const padBottom = canScroll ? (metrics.visibleRows - 1 - slot) * rowStep : 0;
+  const isTouchingRef = useRef(false);
+  const lastUserScrollAtRef = useRef(0);
+  const ignoreScrollUntilRef = useRef(0);
+  const hasAlignedRef = useRef(false);
+
   useEffect(() => {
     const list = listRef.current;
-    const row = list?.querySelector<HTMLElement>(
-      `[data-card-id="${CSS.escape(activeCardId)}"]`,
-    );
+    const index = cards.findIndex((card) => card.id === activeCardId);
 
-    if (!list || !row) {
+    if (!list || index < 0) {
       return;
     }
 
-    const top = row.offsetTop;
-    const bottom = top + row.offsetHeight;
-
-    if (top < list.scrollTop) {
-      list.scrollTo({ top, behavior: 'smooth' });
-    } else if (bottom > list.scrollTop + list.clientHeight) {
-      list.scrollTo({ top: bottom - list.clientHeight, behavior: 'smooth' });
+    // While a finger (or its momentum) is moving the list, the list leads.
+    if (
+      isTouchingRef.current ||
+      performance.now() - lastUserScrollAtRef.current < 220
+    ) {
+      return;
     }
-  }, [activeCardId, cards.length, metrics.rowHeight]);
+
+    const target = canScroll ? index * rowStep : 0;
+
+    if (Math.abs(list.scrollTop - target) < 1) {
+      return;
+    }
+
+    const isFirst = !hasAlignedRef.current;
+
+    hasAlignedRef.current = true;
+    ignoreScrollUntilRef.current = performance.now() + (isFirst ? 80 : 520);
+    list.scrollTo({ top: target, behavior: isFirst ? 'auto' : 'smooth' });
+  }, [activeCardId, cards, canScroll, rowStep]);
+
+  // Scrolled by a finger: the card in the slot becomes the active one.
+  const handleListScroll = () => {
+    const list = listRef.current;
+
+    if (
+      !list ||
+      !canScroll ||
+      performance.now() < ignoreScrollUntilRef.current
+    ) {
+      return;
+    }
+
+    lastUserScrollAtRef.current = performance.now();
+
+    const index = Math.min(
+      cards.length - 1,
+      Math.max(0, Math.round(list.scrollTop / rowStep)),
+    );
+    const card = cards[index];
+
+    if (card && card.id !== activeCardId) {
+      const from = cards.findIndex((entry) => entry.id === activeCardId);
+      onSelectCard(card.id, index > from ? 1 : -1);
+    }
+  };
+
   useWheelNavigation(switcherRef, {
     onNext: onNextCard,
     onPrevious: onPreviousCard,
@@ -132,8 +180,23 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
               className="no-scrollbar relative flex flex-col gap-0.5 overflow-y-auto"
               style={{
                 height: listHeight,
+                paddingTop: padTop,
+                paddingBottom: padBottom,
                 overscrollBehavior: 'contain',
                 touchAction: 'pan-y',
+                scrollSnapType: canScroll ? 'y mandatory' : undefined,
+                scrollPaddingTop: padTop,
+              }}
+              onScroll={handleListScroll}
+              onTouchStart={() => {
+                isTouchingRef.current = true;
+                ignoreScrollUntilRef.current = 0;
+              }}
+              onTouchEnd={() => {
+                isTouchingRef.current = false;
+              }}
+              onTouchCancel={() => {
+                isTouchingRef.current = false;
               }}
             >
               {cards.map((card) => {
@@ -150,6 +213,7 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
                     className="relative flex w-full shrink-0 items-center overflow-hidden border-0 px-2.5 text-left"
                     style={{
                       height: metrics.rowHeight,
+                      scrollSnapAlign: 'start',
                       borderRadius: 8,
                       backgroundColor: isActive
                         ? `${palette.accent}1f`

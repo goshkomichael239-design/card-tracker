@@ -1288,7 +1288,9 @@ const MainApp: React.FC = () => {
           <CardSwitcher
             cards={cards}
             activeCardId={activeCardId}
-            onSelectCard={handleSelectCard}
+            onSelectCard={(cardId, direction) =>
+              handleSelectCard(cardId, direction ? { direction } : undefined)
+            }
             onNextCard={handleNextCard}
             onPreviousCard={handlePreviousCard}
             isPhone={isPhone}
