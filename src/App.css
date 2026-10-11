@@ -1,4 +1,4 @@
-﻿@import "tailwindcss";
+@import "tailwindcss";
 
 /* Lora is bundled with the app (variable weight 400-700), so text renders the
    same offline. The unicode-range split lets the browser fetch only the
@@ -1087,10 +1087,11 @@ main[data-settings-open='true'] > :not([data-settings-keep]) {
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122;
 }
 
-/* Hot-stamped gold foil: bands of bronze, gold and a pale highlight across the
-   letters, pressed a little into the paper (dark edge above, light below).
-   The text itself only takes room; two copies are painted over it: the
-   pressed edge below, the foil above. */
+/* Hot-stamped gold foil lettering: a photo of gold foil inside the letters,
+   shaded for depth, pressed a little into the paper (dark edge above, light
+   below) and crossed once by a band of light. The text itself only takes
+   room; two copies are painted over it: the pressed edge below, the foil
+   above. */
 .foil-text {
   position: relative;
   display: inline-block;
@@ -1124,22 +1125,23 @@ main[data-settings-open='true'] > :not([data-settings-keep]) {
 }
 
 .foil-text::after {
+  /* Light band (moved by the sweep), depth shading, then the foil photo. */
   background-image:
     linear-gradient(
       100deg,
-      #6b470c 0%,
-      #b88a2a 14%,
-      #f4de94 27%,
-      #c79a36 38%,
-      #7c5512 52%,
-      #d9b04e 66%,
-      #fbeeb4 78%,
-      #a67a22 90%,
-      #6b470c 100%
+      transparent 38%,
+      rgba(255, 255, 255, 0.85) 50%,
+      transparent 62%
     ),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(0, 0, 0, 0.16));
-  background-size: 220% 100%, 100% 100%;
-  background-position: 0% 0, 0 0;
+    linear-gradient(
+      180deg,
+      rgba(60, 32, 0, 0.62) 0%,
+      rgba(100, 60, 0, 0.3) 45%,
+      rgba(40, 20, 0, 0.7) 100%
+    ),
+    url('./assets/foil.jpg');
+  background-size: 260% 100%, 100% 100%, 300px 300px;
+  background-position: 0% 0, 0 0, 40% 30%;
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -1153,34 +1155,35 @@ main[data-settings-open='true'] > :not([data-settings-keep]) {
 
 @keyframes foil-sweep {
   from {
-    background-position: 100% 0, 0 0;
+    background-position: 0% 0, 0 0, 40% 30%;
   }
   to {
-    background-position: 0% 0, 0 0;
+    background-position: 100% 0, 0 0, 40% 30%;
   }
 }
+
 @media (prefers-reduced-motion: reduce) {
   .foil-text--sweep::after {
     animation: none;
   }
 }
 
-/* On the dark green bar the foil needs brighter bands to read. */
+/* On the dark green bar the foil needs less shading to read. */
 .foil-text--on-dark::after {
   background-image:
     linear-gradient(
       100deg,
-      #a67a22 0%,
-      #e0bc5a 14%,
-      #fff3c4 27%,
-      #e8c866 38%,
-      #b08430 52%,
-      #f0d474 66%,
-      #fffbe0 78%,
-      #d2a844 90%,
-      #a67a22 100%
+      transparent 38%,
+      rgba(255, 255, 255, 0.9) 50%,
+      transparent 62%
     ),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.15), rgba(0, 0, 0, 0.1));
+    linear-gradient(
+      180deg,
+      rgba(70, 38, 0, 0.12) 0%,
+      rgba(70, 38, 0, 0) 50%,
+      rgba(50, 26, 0, 0.22) 100%
+    ),
+    url('./assets/foil.jpg');
 }
 
 .foil-text--on-dark::before {

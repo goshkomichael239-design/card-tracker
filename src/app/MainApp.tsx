@@ -1643,15 +1643,16 @@ const MainApp: React.FC = () => {
         glintKey={spikeBumpKey}
       />
 
-      {/* The day's torn coupons on their spike, right of the "Архив" label:
-          they land here, and pressing it opens the archive. */}
+      {/* The day's torn coupons on their brass spike in the corner opposite the
+          basket: they land here, and pressing it opens the archive. */}
       <CouponSpike
         slipPapers={todaySlipPapers}
         bumpKey={spikeBumpKey}
         onOpen={() => setIsArchiveOpen(true)}
         style={{
-          left: 'calc(50% + 84px)',
-          bottom: 12,
+          // Opposite the basket: in the right corner, just above the bar.
+          right: 14,
+          bottom: ARCHIVE_NAVIGATION_HEIGHT + 12,
           zIndex: 35,
           opacity: isArchiveOpen ? 0 : 1,
           pointerEvents: isArchiveOpen ? 'none' : 'auto',
