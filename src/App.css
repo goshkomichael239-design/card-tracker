@@ -1403,3 +1403,74 @@ main[data-settings-open='true'] > :not([data-settings-keep]) {
 :root[data-motion='calm'] .list-check__tab--flying {
   animation: none;
 }
+
+/* Card pulled sideways: the paper stays, its contents give way, and the word
+   for the action lights up on the side the card came from. Everything is
+   driven by --swipe (0..1) and data-swipe-* on the card layer. */
+.swipe-cover {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+  opacity: clamp(0, calc(var(--swipe, 0) * 2.6), 1);
+}
+
+.swipe-label {
+  position: absolute;
+  top: 50%;
+  font-family: 'Playfair Display', 'Lora', Georgia, serif;
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translateY(-50%) scale(0.94);
+  transition:
+    opacity 120ms ease-out,
+    transform 140ms ease-out,
+    text-shadow 140ms ease-out;
+}
+
+.swipe-label--complete {
+  left: 28px;
+  color: #2f7a3e;
+  transform-origin: 0 50%;
+}
+
+.swipe-label--delete {
+  right: 28px;
+  color: #a8372b;
+  transform-origin: 100% 50%;
+}
+
+[data-swipe-side='right'] .swipe-label--complete,
+[data-swipe-side='left'] .swipe-label--delete {
+  opacity: 0.42;
+}
+
+[data-swipe-side='right'][data-swipe-ready='true'] .swipe-label--complete {
+  opacity: 1;
+  transform: translateY(-50%) scale(1.06);
+  text-shadow:
+    0 0 10px rgba(70, 190, 100, 0.75),
+    0 0 26px rgba(70, 190, 100, 0.4);
+}
+
+[data-swipe-side='left'][data-swipe-ready='true'] .swipe-label--delete {
+  opacity: 1;
+  transform: translateY(-50%) scale(1.06);
+  text-shadow:
+    0 0 10px rgba(235, 90, 70, 0.75),
+    0 0 26px rgba(235, 90, 70, 0.4);
+}
+
+/* Out of the way while a card is pulled sideways: the loose star and the
+   corner hint (the clip, being an object on the card, stays). */
+[data-swipe-side='left'] .pin-star-mark,
+[data-swipe-side='right'] .pin-star-mark,
+[data-swipe-side='left'] [role='note'],
+[data-swipe-side='right'] [role='note'] {
+  opacity: 0;
+  transition: opacity 90ms linear;
+}

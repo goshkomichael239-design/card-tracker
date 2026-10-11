@@ -580,6 +580,31 @@ export const TaskCard: React.FC<TaskCardProps> = ({
             />
           )}
         </CardFaceStage>
+
+        {/* Pulled sideways (see MainApp): the card's contents go, and the word
+            for what letting go will do lights up on that side. */}
+        {canOpenMenu && (
+          <div className="swipe-cover" aria-hidden="true">
+            <div
+              className="absolute inset-0"
+              style={{ backgroundColor: palette.paper }}
+            />
+            <div
+              className="absolute inset-0"
+              style={{
+                backgroundImage: `url(${cardboardTexture})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                mixBlendMode: 'multiply',
+                opacity: config.paperTextureOpacity,
+              }}
+            />
+            <span className="swipe-label swipe-label--complete">
+              ✓ Завершить
+            </span>
+            <span className="swipe-label swipe-label--delete">Удалить</span>
+          </div>
+        )}
       </article>
 
       {/* The favourite star, left of the folded corner; pressed it becomes a

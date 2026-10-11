@@ -37,7 +37,7 @@ const StarMark: React.FC = () => (
     height="90"
     viewBox="0 0 40 90"
     aria-hidden="true"
-    className="absolute left-0 top-0"
+    className="pin-star-mark absolute left-0 top-0"
   >
     <polygon
       points={STAR_POINTS}

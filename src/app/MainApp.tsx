@@ -265,12 +265,13 @@ const MainApp: React.FC = () => {
   const pendingCompletedRemovalArmedRef = useRef(false);
   const transientSequenceRef = useRef(0);
   const scenePointerRef = useRef<SceneGesture | null>(null);
-  // While a card is swiped sideways: which way, and whether it is far enough.
-  const [swipeHint, setSwipeHint] = useState<{
-    side: 'left' | 'right';
-    ready: boolean;
-  } | null>(null);
-  const swipeHintRef = useRef<typeof swipeHint>(null);
+  // While a card is swiped sideways the next one is laid bare under it. The
+  // pull itself (how far, which way, whether it is far enough) is written
+  // straight onto the card layer as --swipe and data-swipe-*, so nothing
+  // re-renders per frame.
+  const [isSwipeActive, setIsSwipeActive] = useState(false);
+  const isSwipeActiveRef = useRef(false);
+  const isSwipeReadyRef = useRef(false);
 
   // The marble slides when the archive opens or closes; the cloth rustles when
   // the settings light up. Not on the first render.
@@ -640,15 +641,33 @@ const MainApp: React.FC = () => {
           : `translate3d(0, ${offsetY}px, 0) rotate(${(offsetY / CARD_TURN_DISTANCE_PX) * 1.4}deg)`;
   };
 
-  const setSwipeHintIfChanged = (next: typeof swipeHint) => {
-    const previous = swipeHintRef.current;
+  const writeSwipeVisuals = (progress: number, side: 'left' | 'right' | '') => {
+    const layer = cardLayerRef.current;
 
-    if (previous?.side === next?.side && previous?.ready === next?.ready) {
+    if (!layer) {
       return;
     }
 
-    swipeHintRef.current = next;
-    setSwipeHint(next);
+    layer.style.setProperty('--swipe', progress.toFixed(3));
+    layer.dataset.swipeSide = side;
+    layer.dataset.swipeReady = progress >= 1 ? 'true' : 'false';
+  };
+
+  const clearSwipeVisuals = () => {
+    const layer = cardLayerRef.current;
+
+    if (layer) {
+      layer.style.removeProperty('--swipe');
+      delete layer.dataset.swipeSide;
+      delete layer.dataset.swipeReady;
+    }
+
+    isSwipeReadyRef.current = false;
+
+    if (isSwipeActiveRef.current) {
+      isSwipeActiveRef.current = false;
+      setIsSwipeActive(false);
+    }
   };
 
   // The card follows the finger up or down; far enough, it is turned and the
@@ -701,18 +720,25 @@ const MainApp: React.FC = () => {
       gesture.isDragging = true;
       moveCardLayer(0, false, dx * 0.9);
 
-      const isReady = Math.abs(dx) >= SWIPE_COMMIT_PX;
+      const progress = Math.min(1, Math.abs(dx) / SWIPE_COMMIT_PX);
+      const isReady = progress >= 1;
 
-      if (isReady && !(swipeHintRef.current?.ready)) {
+      if (isReady && !isSwipeReadyRef.current) {
         haptic(6);
         playSound('tick');
       }
 
-      setSwipeHintIfChanged(
-        Math.abs(dx) < 6
-          ? null
-          : { side: dx > 0 ? 'right' : 'left', ready: isReady },
+      isSwipeReadyRef.current = isReady;
+      writeSwipeVisuals(
+        progress,
+        Math.abs(dx) < 6 ? '' : dx > 0 ? 'right' : 'left',
       );
+
+      if (!isSwipeActiveRef.current) {
+        isSwipeActiveRef.current = true;
+        setIsSwipeActive(true);
+      }
+
       return;
     }
 
@@ -755,7 +781,7 @@ const MainApp: React.FC = () => {
     }
 
     scenePointerRef.current = null;
-    setSwipeHintIfChanged(null);
+    clearSwipeVisuals();
 
     if (gesture.mode !== 'horizontal') {
       moveCardLayer(0, true);
@@ -819,6 +845,19 @@ const MainApp: React.FC = () => {
   const archiveMatchCount = isSearching
     ? filterArchive(archivedCards, searchQuery, 'all').length
     : 0;
+
+  const swipeNextCard = (() => {
+    if (navCards.length < 2) {
+      return undefined;
+    }
+
+    const index = Math.max(
+      0,
+      navCards.findIndex((card) => card.id === activeCardId),
+    );
+
+    return navCards[(index + 1) % navCards.length];
+  })();
 
   const closeSearch = () => {
     setIsSearchOpen(false);
@@ -1626,23 +1665,6 @@ const MainApp: React.FC = () => {
             onPrevious={handlePreviousCard}
           />
 
-          {/* Uncovered by a card swiped sideways: what letting go will do. */}
-          {swipeHint && (
-            <span
-              aria-hidden="true"
-              className="embossed-line pointer-events-none absolute top-1/2 -translate-y-1/2 text-center"
-              style={{
-                [swipeHint.side === 'right' ? 'left' : 'right']: 4,
-                width: 96 * sceneScale + 24,
-                fontSize: 15,
-                opacity: swipeHint.ready ? 1 : 0.5,
-                transform: `translateY(-50%) scale(${swipeHint.ready ? 1.08 : 0.96})`,
-                transition: 'opacity 120ms ease-out, transform 120ms ease-out',
-              }}
-            >
-              {swipeHint.side === 'right' ? '✓ Выполнено' : 'В корзину'}
-            </span>
-          )}
 <div
           className="absolute left-0 top-0"
           style={{
@@ -1654,6 +1676,21 @@ const MainApp: React.FC = () => {
         >
           {activeCard && (
             <CardStack cards={cards} activeCardId={activeCardId} />
+          )}
+
+          {/* A card pulled sideways uncovers the next one, whole. */}
+          {isSwipeActive && swipeNextCard && (
+            <div
+              className="pointer-events-none absolute inset-0"
+              style={{ zIndex: 18 }}
+              aria-hidden="true"
+            >
+              <TaskCard
+                card={swipeNextCard}
+                onComplete={() => undefined}
+                isStatic
+              />
+            </div>
           )}
 
           <AnimatePresence initial={false} mode="popLayout">
