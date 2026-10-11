@@ -190,7 +190,7 @@ const SCENE_TOP_OVERHANG = 66;
 const STACK_PEEK_BELOW = 12;
 // Clear cloth between the lowest edge of the stack and the archive bar: the
 // same on every screen. The "done / take back" line stands in it.
-const CARD_BOTTOM_GAP = 24;
+const CARD_BOTTOM_GAP = 48;
 const SCENE_SIDE_OVERHANG = 44;
 const NARROW_SCENE_SIDE_OVERHANG = 64;
 // The overview tabs hanging under the card list.
@@ -299,8 +299,8 @@ const MainApp: React.FC = () => {
     switcherRows * switcherMetrics.rowHeight +
     (switcherRows - 1) * SWITCHER_ROW_GAP;
   const sceneTopReserve = switcherBottom + SCENE_TOP_OVERHANG;
-  // The cards are anchored to the bottom: whatever height is left over goes
-  // above them, so the gap to the archive bar never changes.
+  // The stack stands as high as it can, under the list; the cloth left under
+  // it (never less than the gap) holds the "take back" line.
   const sceneBottomReserve =
     ARCHIVE_NAVIGATION_HEIGHT + CARD_BOTTOM_GAP + STACK_PEEK_BELOW;
   const sceneScale =
@@ -1318,7 +1318,7 @@ const MainApp: React.FC = () => {
 
       <div
         ref={sceneRef}
-        className="relative z-10 flex h-full w-full items-end justify-center px-4"
+        className="relative z-10 flex h-full w-full items-start justify-center px-4"
         style={{
           touchAction: 'none',
           paddingTop: sceneTopReserve,
@@ -1676,8 +1676,14 @@ const MainApp: React.FC = () => {
           onUndo={handleUndo}
           onExpire={handleUndoExpire}
           durationMs={UNDO_DURATION_MS}
-          // In the gap between the cards and the archive bar.
-          style={{ bottom: ARCHIVE_NAVIGATION_HEIGHT, height: CARD_BOTTOM_GAP }}
+          // Centred in the cloth left between the stack and the archive bar.
+          style={{
+            top:
+              sceneTopReserve +
+              (INITIAL_TASK_CARD_V2_CONFIG.height + STACK_PEEK_BELOW) *
+                sceneScale,
+            bottom: ARCHIVE_NAVIGATION_HEIGHT,
+          }}
         />
       )}
 

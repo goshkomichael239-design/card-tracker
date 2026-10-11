@@ -951,23 +951,25 @@ main[data-settings-open='true'] > :not([data-settings-keep]) {
 /* Lettering on the cloth in the settings' warm gold: the message is quiet,
    the "take back" button is lit like a switch that is on. */
 .embossed-line {
-  font-family: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
-  font-size: 12px;
-  font-weight: 700;
-  line-height: 1;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: rgba(255, 236, 190, 0.62);
+  /* The same lettering as the names in the settings (.lit-text). */
+  font-family: inherit;
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: 0.04em;
+  color: #fff0c4;
   text-shadow:
-    0 -1px 0 rgba(0, 20, 10, 0.5),
-    0 0 8px rgba(255, 214, 120, 0.14);
+    0 0 5px rgba(255, 214, 120, 0.8),
+    0 0 16px rgba(255, 190, 90, 0.4);
 }
 
 .embossed-action {
-  height: 20px;
-  padding: 0 10px;
-  border: 1px solid rgba(255, 214, 120, 0.5);
-  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  height: 32px;
+  padding: 0 16px;
+  border: 1px solid rgba(255, 214, 120, 0.55);
+  border-radius: 16px;
   background: rgba(255, 214, 120, 0.08);
   color: #fff0c4;
   text-shadow:
