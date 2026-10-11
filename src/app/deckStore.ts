@@ -14,6 +14,7 @@ import {
   saveArchivedCards,
 } from './persistence';
 import { loadTrash, saveTrash, type TrashedCard } from './trash';
+import { loadDecksState, saveDecksState, type Deck } from './decks';
 
 /**
  * The data layer: the cards on the table, the archive and the bin.
@@ -30,6 +31,11 @@ export interface DeckState {
   cards: VisualCard[];
   archivedCards: VisualCard[];
   trash: TrashedCard[];
+  /** The decks (the base one first) and which of them lies on the table. */
+  decks: Deck[];
+  activeDeckId: string;
+  setDecks: (next: Updater<Deck[]>) => void;
+  setActiveDeckId: (id: string) => void;
   setCards: (next: Updater<VisualCard[]>) => void;
   setArchivedCards: (next: Updater<VisualCard[]>) => void;
   setTrash: (next: Updater<TrashedCard[]>) => void;
@@ -88,7 +94,20 @@ const createFirstRunCards = (): VisualCard[] => {
   });
 };
 
+const initialDecks = loadDecksState();
+
 export const useDeckStore = create<DeckState>((set) => ({
+  decks: initialDecks.decks,
+  activeDeckId: initialDecks.activeDeckId,
+  setDecks: (next) =>
+    set((state) => {
+      const decks = resolve(next, state.decks);
+      return decks === state.decks ? state : { decks };
+    }),
+  setActiveDeckId: (activeDeckId) =>
+    set((state) =>
+      activeDeckId === state.activeDeckId ? state : { activeDeckId },
+    ),
   cards: loadActiveCards() ?? createFirstRunCards(),
   archivedCards: loadArchivedCards(),
   trash: loadTrash(),
@@ -113,12 +132,18 @@ export const useDeckStore = create<DeckState>((set) => ({
 export const getDeckState = (): DeckState => useDeckStore.getState();
 
 /** Stable setters (they never change), usable straight from any code. */
-export const { setCards, setArchivedCards, setTrash } = useDeckStore.getState();
+export const {
+  setCards,
+  setArchivedCards,
+  setTrash,
+  setDecks,
+  setActiveDeckId,
+} = useDeckStore.getState();
 
 // Saving and safety copies follow the data, wherever it is changed from.
 const autoBackup = createAutoBackup(() => {
-  const { cards, archivedCards, trash } = getDeckState();
-  return { cards, archive: archivedCards, trash };
+  const { cards, archivedCards, trash, decks } = getDeckState();
+  return { cards, archive: archivedCards, trash, decks };
 });
 
 export const snapshotBeforeImport = (): void =>
@@ -140,6 +165,14 @@ useDeckStore.subscribe((state, previous) => {
   if (state.trash !== previous.trash) {
     saveTrash(state.trash);
     changed = true;
+  }
+
+  if (
+    state.decks !== previous.decks ||
+    state.activeDeckId !== previous.activeDeckId
+  ) {
+    saveDecksState({ decks: state.decks, activeDeckId: state.activeDeckId });
+    changed = state.decks !== previous.decks || changed;
   }
 
   if (changed) {

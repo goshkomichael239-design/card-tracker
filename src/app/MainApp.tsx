@@ -43,12 +43,21 @@ import {
 } from './cardOps';
 import {
   getDeckState,
+  setActiveDeckId,
   setArchivedCards,
   setCards,
+  setDecks,
   setTrash,
   snapshotBeforeImport,
   useDeckStore,
 } from './deckStore';
+import { getDeckBack } from './deckBacks';
+import {
+  createDeck,
+  DEFAULT_DECK_ID,
+  getCardDeckId,
+  MAX_DECKS,
+} from './decks';
 import { DEBUG_CARD_ID_PREFIX } from './debugCards';
 import { getListProgress } from './listUtils';
 import { reviveCard } from './archiveUtils';
@@ -57,6 +66,8 @@ import { advanceRecurringCard } from './recurrence';
 import { useCardDraft } from './useCardDraft';
 import { purgeExpiredTrash } from './trash';
 import { DebugCardsPanel } from '../components/DebugCardsPanel';
+import { DeckSheet } from '../components/decks/DeckSheet';
+import { DeckTabs } from '../components/decks/DeckTabs';
 import { TrashBin } from '../components/trash/TrashBin';
 import { CouponSpike } from '../components/table/CouponSpike';
 import { TableSurface } from '../components/table/TableSurface';
@@ -229,7 +240,16 @@ const MainApp: React.FC = () => {
   const { width: viewportWidth, height: viewportHeight } = useViewportSize();
   const [isArchiveOpen, setIsArchiveOpen] = useState(false);
   // The data layer (deckStore.ts) owns the cards, the archive and the bin.
-  const cards = useDeckStore((state) => state.cards);
+  const allCards = useDeckStore((state) => state.cards);
+  const decks = useDeckStore((state) => state.decks);
+  const activeDeckId = useDeckStore((state) => state.activeDeckId);
+  // The cards of the deck that lies on the table: everything on the table (the
+  // list, the dots, the stack, turning, search) works with these.
+  const cards = useMemo(
+    () =>
+      allCards.filter((card) => getCardDeckId(card, decks) === activeDeckId),
+    [allCards, decks, activeDeckId],
+  );
   const archivedCards = useDeckStore((state) => state.archivedCards);
   const trash = useDeckStore((state) => state.trash);
   const [isTrashOpen, setIsTrashOpen] = useState(false);
@@ -263,7 +283,10 @@ const MainApp: React.FC = () => {
   const draft = useCardDraft({
     pendingCompletedCardId,
     onCreate: (card) => {
-      setCards((previous) => [...previous, card]);
+      setCards((previous) => [
+        ...previous,
+        { ...card, deckId: getDeckState().activeDeckId },
+      ]);
       setActiveCardId(card.id);
     },
   });
@@ -348,6 +371,19 @@ const MainApp: React.FC = () => {
       ),
     [cards, clockNow],
   );
+
+  // Decks that have something overdue (shown as a dot on their tabs).
+  const overdueDeckIds = useMemo(() => {
+    const ids = new Set<string>();
+
+    for (const card of allCards) {
+      if (getDueBucket(card, clockNow) === 'overdue') {
+        ids.add(getCardDeckId(card, decks));
+      }
+    }
+
+    return ids;
+  }, [allCards, decks, clockNow]);
 
   const isPhone = viewportWidth < PHONE_WIDTH_PX;
   const switcherMetrics = getSwitcherMetrics(isPhone);
@@ -935,6 +971,122 @@ const MainApp: React.FC = () => {
     };
   }, [canShowSwipeHint]);
 
+  // What the query finds in the decks that are not on the table.
+  const otherDeckHits = useMemo(() => {
+    if (!isSearching) {
+      return [];
+    }
+
+    return decks
+      .filter((deck) => deck.id !== activeDeckId)
+      .map((deck) => ({
+        deck,
+        matches: searchCards(
+          allCards.filter((card) => getCardDeckId(card, decks) === deck.id),
+          searchQuery,
+        ),
+      }))
+      .filter((hit) => hit.matches.length > 0);
+  }, [isSearching, decks, activeDeckId, allCards, searchQuery]);
+
+  // ---- decks: switching and the settings sheet ---------------------------
+  const [deckSheet, setDeckSheet] = useState<{ deckId: string | null } | null>(
+    null,
+  );
+  const lastCardByDeckRef = useRef<Record<string, string>>({});
+
+  const switchDeck = (deckId: string, preferCardId?: string) => {
+    if (
+      (deckId === activeDeckId && !preferCardId) ||
+      isCreating ||
+      pendingCompletedCardIdRef.current !== null
+    ) {
+      return;
+    }
+
+    const state = getDeckState();
+    const target = state.cards.filter(
+      (card) => getCardDeckId(card, state.decks) === deckId,
+    );
+    const remembered = lastCardByDeckRef.current[deckId];
+
+    lastCardByDeckRef.current[activeDeckId] = activeCardId;
+
+    const nextId =
+      preferCardId ??
+      (target.some((card) => card.id === remembered)
+        ? remembered
+        : target[0]?.id) ??
+      '';
+
+    haptic(8);
+    playSound('turn');
+    setActiveDeckId(deckId);
+    setActiveCardId(nextId);
+    playCardEntrance(1, false);
+  };
+
+  const handleSaveDeck = (name: string, backId: string) => {
+    const editingId = deckSheet?.deckId ?? null;
+
+    if (editingId === null) {
+      if (getDeckState().decks.length >= MAX_DECKS) {
+        setDeckSheet(null);
+        return;
+      }
+
+      const created = createDeck(name, backId);
+
+      setDecks((previous) => [...previous, created]);
+      setDeckSheet(null);
+      switchDeck(created.id);
+      return;
+    }
+
+    setDecks((previous) =>
+      previous.map((deck) =>
+        deck.id === editingId
+          ? {
+              ...deck,
+              name: editingId === DEFAULT_DECK_ID ? deck.name : name.trim() || deck.name,
+              backId,
+            }
+          : deck,
+      ),
+    );
+    setDeckSheet(null);
+  };
+
+  // The cards of a removed deck are not lost: they go to the base deck.
+  const handleDeleteDeck = () => {
+    const removedId = deckSheet?.deckId ?? null;
+
+    if (removedId === null || removedId === DEFAULT_DECK_ID) {
+      return;
+    }
+
+    setDeckSheet(null);
+    setCards((previous) =>
+      previous.map((card) =>
+        getCardDeckId(card, getDeckState().decks) === removedId
+          ? { ...card, deckId: DEFAULT_DECK_ID }
+          : card,
+      ),
+    );
+
+    if (activeDeckId === removedId) {
+      const state = getDeckState();
+      const base = state.cards.find(
+        (card) => getCardDeckId(card, state.decks) === DEFAULT_DECK_ID,
+      );
+
+      setActiveDeckId(DEFAULT_DECK_ID);
+      setActiveCardId(base?.id ?? '');
+    }
+
+    setDecks((previous) => previous.filter((deck) => deck.id !== removedId));
+  };
+
   const closeSearch = () => {
     setIsSearchOpen(false);
     setSearchQuery('');
@@ -1243,7 +1395,16 @@ const MainApp: React.FC = () => {
       return;
     }
 
-    const nextCardId = pickNeighbourId(currentCards, index, cardId);
+    const deckList = getDeckState().cards.filter(
+      (card) =>
+        getCardDeckId(card, getDeckState().decks) ===
+        getCardDeckId(cardToDelete, getDeckState().decks),
+    );
+    const nextCardId = pickNeighbourId(
+      deckList,
+      deckList.findIndex((card) => card.id === cardId),
+      cardId,
+    );
 
     // Not destroyed: crumpled and thrown into the basket, from where it can be
     // put back for a while.
@@ -1292,10 +1453,13 @@ const MainApp: React.FC = () => {
         : insertAt(previous, item.card, item.index),
     );
 
-    if (!isSettling && activeCard && activeCard.id !== cardId) {
+    const restoredDeckId = getCardDeckId(item.card, getDeckState().decks);
+
+    if (!isSettling && activeCard && activeCard.id !== cardId && restoredDeckId === activeDeckId) {
       createTransientOutgoing(activeCard, 'switch');
     }
 
+    setActiveDeckId(restoredDeckId);
     setActiveCardId(cardId);
     setUndoEntry((current) =>
       undoIsAboutTrashedCard(current?.action, cardId)
@@ -1430,6 +1594,7 @@ const MainApp: React.FC = () => {
         ? previous
         : [...previous, revived],
     );
+    setActiveDeckId(getCardDeckId(revived, getDeckState().decks));
     setActiveCardId(cardId);
     setIsArchiveOpen(false);
   };
@@ -1476,7 +1641,17 @@ const MainApp: React.FC = () => {
 
     const postponed = postponeCard(before, until);
     const next = [...current.filter((card) => card.id !== cardId), postponed];
-    const nextActiveId = pickNeighbourId(current, index, cardId) || cardId;
+    const deckList = current.filter(
+      (card) =>
+        getCardDeckId(card, getDeckState().decks) ===
+        getCardDeckId(before, getDeckState().decks),
+    );
+    const nextActiveId =
+      pickNeighbourId(
+        deckList,
+        deckList.findIndex((card) => card.id === cardId),
+        cardId,
+      ) || cardId;
 
     setCards(next);
 
@@ -1515,7 +1690,13 @@ const MainApp: React.FC = () => {
   const handleExportBackup = () => {
     downloadTextFile(
       getBackupFilename(),
-      serializeBackup(getDeckState().cards, archivedCards, trash),
+      serializeBackup(
+        getDeckState().cards,
+        archivedCards,
+        trash,
+        true,
+        getDeckState().decks,
+      ),
     );
   };
 
@@ -1530,6 +1711,14 @@ const MainApp: React.FC = () => {
 
     // Whatever the import does, the state just before it is kept.
     snapshotBeforeImport();
+
+    // Decks the file knew and this device does not.
+    const knownDeckIds = new Set(getDeckState().decks.map((deck) => deck.id));
+    const newDecks = backup.decks.filter((deck) => !knownDeckIds.has(deck.id));
+
+    if (newDecks.length > 0) {
+      setDecks((previous) => [...previous, ...newDecks].slice(0, MAX_DECKS));
+    }
 
     const knownIds = new Set(
       [
@@ -1686,27 +1875,47 @@ const MainApp: React.FC = () => {
             overdueIds={isSearching ? undefined : overdueIds}
           />
 
-          {/* Nothing found: say so, and offer the archive if it has it. */}
-          {isSearching && navCards.length === 0 && (
-            <div
-              className="lit-in flex flex-col items-center gap-2 pt-4 text-center"
-              style={{ pointerEvents: 'auto' }}
-            >
-              <p className="lit-text text-[18px] font-semibold">
-                Ничего не найдено
-              </p>
-              {archiveMatchCount > 0 && (
-                <button
-                  type="button"
-                  onClick={handleSearchInArchive}
-                  onTouchStart={() => undefined}
-                  className="embossed-line embossed-action"
-                >
-                  Искать в архиве · {archiveMatchCount}
-                </button>
-              )}
-            </div>
-          )}
+          {/* Nothing here: say so, and offer the other decks and the archive. */}
+          {isSearching &&
+            (navCards.length === 0 || otherDeckHits.length > 0) && (
+              <div
+                className="lit-in flex flex-col items-center gap-2 pt-4 text-center"
+                style={{ pointerEvents: 'auto' }}
+              >
+                {navCards.length === 0 && (
+                  <p className="lit-text text-[18px] font-semibold">
+                    {otherDeckHits.length > 0
+                      ? 'В этой колоде не найдено'
+                      : 'Ничего не найдено'}
+                  </p>
+                )}
+                {otherDeckHits.map((hit) => (
+                  <button
+                    key={hit.deck.id}
+                    type="button"
+                    onClick={() =>
+                      switchDeck(hit.deck.id, hit.matches[0]!.id)
+                    }
+                    onTouchStart={() => undefined}
+                    className="embossed-line embossed-action"
+                  >
+                    Найдено в «{hit.deck.name}» · {hit.matches.length}
+                  </button>
+                ))}
+                {navCards.length === 0 &&
+                  otherDeckHits.length === 0 &&
+                  archiveMatchCount > 0 && (
+                    <button
+                      type="button"
+                      onClick={handleSearchInArchive}
+                      onTouchStart={() => undefined}
+                      className="embossed-line embossed-action"
+                    >
+                      Искать в архиве · {archiveMatchCount}
+                    </button>
+                  )}
+              </div>
+            )}
         </div>
 
       <div
@@ -1751,8 +1960,25 @@ const MainApp: React.FC = () => {
           }}
         >
           {activeCard && (
-            <CardStack cards={cards} activeCardId={activeCardId} />
+            <CardStack
+              cards={cards}
+              activeCardId={activeCardId}
+              back={getDeckBack(
+                decks.find((deck) => deck.id === activeDeckId)?.backId,
+              )}
+            />
           )}
+
+          {/* The decks' tabs stand out of the stack's top edge. */}
+          <DeckTabs
+            decks={decks}
+            activeDeckId={activeDeckId}
+            overdueDeckIds={overdueDeckIds}
+            canCreate={decks.length < MAX_DECKS && !isCreating}
+            onSelect={(deckId) => switchDeck(deckId)}
+            onEdit={(deckId) => setDeckSheet({ deckId })}
+            onCreate={() => setDeckSheet({ deckId: null })}
+          />
 
           {/* A card pulled sideways uncovers the next one, whole. */}
           {isSwipeActive && swipeNextCard && (
@@ -2023,6 +2249,23 @@ const MainApp: React.FC = () => {
         ref={detachedCouponLayerRef}
         onFlightComplete={handleCouponFlightComplete}
       />
+
+      {deckSheet && (
+        <DeckSheet
+          key={deckSheet.deckId ?? 'new'}
+          deck={
+            decks.find((deck) => deck.id === deckSheet.deckId) ?? null
+          }
+          cardCount={
+            allCards.filter(
+              (card) => getCardDeckId(card, decks) === deckSheet.deckId,
+            ).length
+          }
+          onSave={handleSaveDeck}
+          onDelete={handleDeleteDeck}
+          onClose={() => setDeckSheet(null)}
+        />
+      )}
 
       {isTrashOpen && (
         <TrashSheet

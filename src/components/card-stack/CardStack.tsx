@@ -1,11 +1,14 @@
 import React, { useMemo } from 'react';
 
 import type { VisualCard } from '../../app/cardTheme';
+import type { DeckBack } from '../../app/deckBacks';
 import { CardStackLayer } from './CardStackLayer';
 
 interface CardStackProps {
   cards: VisualCard[];
   activeCardId: string;
+  /** The deck's back: the lower layers show it (none: the card papers). */
+  back?: DeckBack;
 }
 
 const MAX_LOWER_LAYERS = 4;
@@ -13,6 +16,7 @@ const MAX_LOWER_LAYERS = 4;
 export const CardStack: React.FC<CardStackProps> = ({
   cards,
   activeCardId,
+  back,
 }) => {
   const activeIndex = Math.max(
     0,
@@ -42,6 +46,7 @@ export const CardStack: React.FC<CardStackProps> = ({
             key={card.id}
             card={card}
             sequenceIndex={sequenceIndex}
+            back={back}
           />
         ))}
       </div>

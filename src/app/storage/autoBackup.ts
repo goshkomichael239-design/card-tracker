@@ -1,4 +1,5 @@
 import type { VisualCard } from '../cardTheme';
+import type { Deck } from '../decks';
 import { serializeBackup } from '../backupUtils';
 import type { TrashedCard } from '../trash';
 import {
@@ -30,6 +31,7 @@ export interface SnapshotData {
   cards: VisualCard[];
   archive: VisualCard[];
   trash: TrashedCard[];
+  decks?: Deck[];
 }
 
 /** FNV-1a: a small, fast fingerprint; it only has to tell "changed or not". */
@@ -146,7 +148,7 @@ export const takeSnapshot = async (
 
   try {
     const hash = fingerprint(
-      JSON.stringify([active, data.archive, data.trash]),
+      JSON.stringify([active, data.archive, data.trash, data.decks]),
     );
     const existing = (await readSnapshots(db)).map(toMeta);
     const latest = existing.sort((left, right) =>
@@ -172,7 +174,7 @@ export const takeSnapshot = async (
       archived: data.archive.length,
       trash: data.trash.length,
       hash,
-      payload: serializeBackup(data.cards, data.archive, data.trash, false),
+      payload: serializeBackup(data.cards, data.archive, data.trash, false, data.decks),
     });
 
     await deleteSnapshots(

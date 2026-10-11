@@ -1,15 +1,19 @@
 import type { VisualCard } from './cardTheme';
 import { isStoredVisualCard, sanitizeStoredCard } from './cardValidation';
+import { normalizeDecks, type Deck } from './decks';
 import { isTrashedCard, purgeExpiredTrash, type TrashedCard } from './trash';
 
 const BACKUP_APP_ID = 'card-tracker';
-// v2 adds the bin, v3 postponements and repeat rules; older files still import.
-const BACKUP_VERSION = 3;
+// v2 adds the bin, v3 postponements and repeat rules, v4 decks; older files
+// still import.
+const BACKUP_VERSION = 4;
 
 export interface BackupPayload {
   cards: VisualCard[];
   archive: VisualCard[];
   trash: TrashedCard[];
+  /** The decks the file knew (the base one is always there). */
+  decks: Deck[];
 }
 
 export type BackupImportResult =
@@ -27,6 +31,7 @@ export const serializeBackup = (
   trash: TrashedCard[],
   /** A file for a person is indented; automatic snapshots are compact. */
   pretty = true,
+  decks: Deck[] = [],
 ): string =>
   JSON.stringify(
     {
@@ -36,6 +41,7 @@ export const serializeBackup = (
       cards: cards.filter((card) => !card.completedAt),
       archive,
       trash,
+      decks,
     },
     null,
     pretty ? 2 : undefined,
@@ -68,6 +74,7 @@ export const parseBackup = (text: string): BackupPayload | null => {
         .filter(isStoredVisualCard)
         .filter((card) => Boolean(card.completedAt))
         .map(sanitizeStoredCard),
+      decks: normalizeDecks(backup.decks),
       trash: Array.isArray(backup.trash)
         ? purgeExpiredTrash(backup.trash.filter(isTrashedCard)).map(
             (item) => ({ ...item, card: sanitizeStoredCard(item.card) }),

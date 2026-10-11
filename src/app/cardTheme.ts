@@ -51,6 +51,8 @@ export interface VisualCard {
   recurrence?: RecurrenceRule;
   /** Pinned cards always lead the deck. */
   pinned?: boolean;
+  /** The deck it lies in; none (or a deck that is gone): the base one. */
+  deckId?: string;
 }
 
 export interface Postponement {

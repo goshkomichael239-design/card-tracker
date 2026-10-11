@@ -2,16 +2,19 @@ import React from 'react';
 
 import cardboardTexture from '../../assets/cardboard.avif';
 import { getCardPalette, type VisualCard } from '../../app/cardTheme';
+import type { DeckBack } from '../../app/deckBacks';
 import { INITIAL_TASK_CARD_V2_CONFIG } from '../task-card/taskCardV2Config';
 
 interface CardStackLayerProps {
   card: VisualCard;
   sequenceIndex: number;
+  back?: DeckBack;
 }
 
 export const CardStackLayer: React.FC<CardStackLayerProps> = ({
   card,
   sequenceIndex,
+  back,
 }) => {
   const config = INITIAL_TASK_CARD_V2_CONFIG;
   const depth = sequenceIndex + 1;
@@ -20,6 +23,8 @@ export const CardStackLayer: React.FC<CardStackLayerProps> = ({
   const rotation =
     depth * config.stackRotation * (sequenceIndex % 2 === 0 ? 1 : -0.65);
   const scale = 1 - depth * 0.012;
+  const hasBack = Boolean(back?.paper);
+  const cast = `${config.shadowX * 0.55}px ${config.shadowY * 0.6}px ${config.shadowBlur * 0.6}px rgba(20,17,14,${config.shadowOpacity * 0.58})`;
 
   return (
     <div
@@ -35,23 +40,36 @@ export const CardStackLayer: React.FC<CardStackLayerProps> = ({
         backgroundSize: 'cover',
         backgroundBlendMode: 'multiply',
         border: '1px solid rgba(91,76,59,0.16)',
-        boxShadow: `${config.shadowX * 0.55}px ${config.shadowY * 0.6}px ${config.shadowBlur * 0.6}px rgba(20,17,14,${config.shadowOpacity * 0.58})`,
+        boxShadow: cast,
+        // A deck with a back shows it on every lower layer.
+        ...(hasBack
+          ? {
+              ...back!.paper,
+              backgroundSize: 'auto',
+              backgroundBlendMode: 'normal',
+              boxShadow: `${back!.paper!.boxShadow}, ${cast}`,
+            }
+          : {}),
       }}
       aria-hidden="true"
     >
-      <div
-        className="absolute inset-0"
-        style={{
-          backgroundImage: `url(${cardboardTexture})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          mixBlendMode: 'multiply',
-          opacity: config.paperTextureOpacity,
-        }}
-      />
-      <span className="engraved absolute left-5 top-6 truncate font-mono text-[10.5px] uppercase tracking-[0.12em] text-black/20">
-        {card.title}
-      </span>
+      {!hasBack && (
+        <>
+          <div
+            className="absolute inset-0"
+            style={{
+              backgroundImage: `url(${cardboardTexture})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              mixBlendMode: 'multiply',
+              opacity: config.paperTextureOpacity,
+            }}
+          />
+          <span className="engraved absolute left-5 top-6 truncate font-mono text-[10.5px] uppercase tracking-[0.12em] text-black/20">
+            {card.title}
+          </span>
+        </>
+      )}
     </div>
   );
 };
