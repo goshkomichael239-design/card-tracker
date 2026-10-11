@@ -22,6 +22,8 @@ const BALL_PATH =
 interface TransientTaskCardOverlayProps {
   card: VisualCard;
   kind: TransientCardKind;
+  /** For a "switch": which way the deck turned, and where a finger left the card. */
+  turn?: { direction: 1 | -1; fromY?: number };
   onFinish: (kind: TransientCardKind) => void;
 }
 
@@ -34,7 +36,7 @@ const TEAR_BOTTOM_PATH =
 
 export const TransientTaskCardOverlay: React.FC<
   TransientTaskCardOverlayProps
-> = ({ card, kind, onFinish }) => {
+> = ({ card, kind, turn, onFinish }) => {
   const overlayRef = useRef<HTMLDivElement | null>(null);
   const topHalfRef = useRef<HTMLDivElement | null>(null);
   const bottomHalfRef = useRef<HTMLDivElement | null>(null);
@@ -152,6 +154,38 @@ export const TransientTaskCardOverlay: React.FC<
         return;
       }
 
+      if (kind === 'switch' && turn) {
+        const startY = turn.fromY ?? 0;
+        // Carried by a finger the card goes on in the finger's direction;
+        // otherwise forward tucks it back under the stack, back sinks it.
+        const end =
+          turn.fromY !== undefined
+            ? `translate3d(0, ${startY - turn.direction * 70}px, 0) rotate(${-turn.direction * 2}deg) scale(0.97)`
+            : turn.direction === 1
+              ? 'translate3d(26px, 30px, 0) rotate(2.4deg) scale(0.95)'
+              : 'translate3d(0, 10px, 0) scale(0.965)';
+        const turnAnimation = overlay.animate(
+          [
+            {
+              transform: `translate3d(0, ${startY}px, 0) rotate(${(startY / 84) * 1.4}deg)`,
+              opacity: 1,
+            },
+            { transform: end, opacity: 0 },
+          ],
+          {
+            duration: turn.fromY !== undefined ? 220 : 280,
+            easing: 'cubic-bezier(0.3, 0.6, 0.4, 1)',
+            fill: 'forwards',
+          },
+        );
+
+        animations.push(turnAnimation);
+        turnAnimation.finished
+          .then(() => onFinish(kind))
+          .catch(() => undefined);
+        return;
+      }
+
       const exitDuration =
         kind === 'completion' ? 320 : kind === 'postpone' ? 420 : 200;
       const archiveDirectionY = Math.max(
@@ -206,7 +240,7 @@ export const TransientTaskCardOverlay: React.FC<
       window.cancelAnimationFrame(frameId);
       animations.forEach((animation) => animation.cancel());
     };
-  }, [kind, onFinish]);
+  }, [kind, onFinish, turn]);
 
   if (kind === 'discard') {
     return (
@@ -241,7 +275,14 @@ export const TransientTaskCardOverlay: React.FC<
       ref={overlayRef}
       className="pointer-events-none absolute inset-0"
       style={{
-        zIndex: 20,
+        // Tucked back it goes under the stack's lower cards; otherwise it
+        // stays just below the card that took its place.
+        zIndex:
+          kind === 'switch' && turn
+            ? turn.direction === 1 && turn.fromY === undefined
+              ? 13
+              : 19
+            : 20,
         willChange: 'transform, opacity',
         backfaceVisibility: 'hidden',
       }}

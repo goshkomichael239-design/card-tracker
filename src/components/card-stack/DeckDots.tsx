@@ -12,20 +12,18 @@ interface DeckDotsProps {
   onPrevious: () => void;
 }
 
-const DOT_COUNT = 5;
+/** Height of one dot's slot on the rail. */
+const SLOT_PX = 22;
 /** Pixels of finger or mouse travel along the dots for one card: quick. */
 const DOT_STEP_PX = 22;
+/** Dots further from the active one than this are not drawn. */
+const REACH = 3;
 
-/** Which cards the dots stand for: a window of five that follows the active one. */
-const getDotWindow = (cardCount: number, activeIndex: number) => {
-  const size = Math.min(DOT_COUNT, cardCount);
-  const start = Math.min(
-    Math.max(0, activeIndex - Math.floor(size / 2)),
-    Math.max(0, cardCount - size),
-  );
+const SCALE_BY_DISTANCE = [1.18, 1, 0.78, 0.5];
+const OPACITY_BY_DISTANCE = [1, 1, 0.75, 0.35];
 
-  return { start, size };
-};
+const RAIL_MASK =
+  'linear-gradient(180deg, transparent 0, #000 22%, #000 78%, transparent 100%)';
 
 interface DotsGesture {
   id: number;
@@ -37,9 +35,13 @@ interface DotsGesture {
 }
 
 /**
- * Page dots in a column beside the stack: where you are in the deck. Press a
- * dot to go to its card; hold and drag along the dots (mouse or finger) to
- * run through the deck, quickly; the wheel over them turns the cards too.
+ * Page dots in a column beside the stack: where you are in the deck.
+ *
+ * The dots sit on a rail that glides under a fixed centre as the active card
+ * changes: those near the middle are full size, those toward the ends shrink
+ * and fade, so nothing jumps. Press a dot to go to its card; hold and drag
+ * along the dots (mouse or finger) to run through the deck, quickly; the wheel
+ * over them turns the cards too.
  */
 export const DeckDots: React.FC<DeckDotsProps> = ({
   cards,
@@ -66,7 +68,17 @@ export const DeckDots: React.FC<DeckDotsProps> = ({
     return null;
   }
 
-  const { start, size } = getDotWindow(cards.length, activeIndex);
+  // With few cards the rail stands still, centred, and only the mark moves.
+  const isShort = cards.length <= REACH * 2 - 1;
+  const railOffset = (index: number) =>
+    isShort
+      ? (index - (cards.length - 1) / 2) * SLOT_PX
+      : (index - activeIndex) * SLOT_PX;
+  const visibleFrom = isShort ? 0 : Math.max(0, activeIndex - REACH);
+  const visibleTo = isShort
+    ? cards.length - 1
+    : Math.min(cards.length - 1, activeIndex + REACH);
+  const height = (REACH * 2 + 1) * SLOT_PX;
 
   const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
     if (event.pointerType === 'mouse' && event.button !== 0) {
@@ -135,55 +147,67 @@ export const DeckDots: React.FC<DeckDotsProps> = ({
       ref={containerRef}
       role="group"
       aria-label="Карточки в стопке"
-      className="absolute flex flex-col items-center"
+      className="absolute"
       style={{
         left: 'calc(100% + 58px)',
         top: '50%',
-        transform: 'translateY(-50%)',
         width: 30,
-        padding: '10px 0',
-        gap: 4,
+        height,
+        transform: 'translateY(-50%)',
         touchAction: 'none',
         cursor: 'grab',
         userSelect: 'none',
         WebkitUserSelect: 'none',
         zIndex: 25,
+        // The ends of the rail fade out instead of being cut.
+        WebkitMaskImage: RAIL_MASK,
+        maskImage: RAIL_MASK,
       }}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={finishGesture}
       onPointerCancel={finishGesture}
     >
-      {Array.from({ length: size }, (_, offset) => {
-        const index = start + offset;
-        const card = cards[index]!;
+      {cards.slice(visibleFrom, visibleTo + 1).map((card, offset) => {
+        const index = visibleFrom + offset;
         const isActive = index === activeIndex;
-        // The ends of a window that has more deck beyond it are drawn smaller.
-        const isEdgeSmall =
-          (offset === 0 && start > 0) ||
-          (offset === size - 1 && start + size < cards.length);
-        const diameter = isEdgeSmall ? 6 : 10;
+        const distance = Math.min(Math.abs(index - activeIndex), 3);
+        // Full size at the middle, smaller and fainter toward the ends.
+        const scale = isShort ? 1 : SCALE_BY_DISTANCE[distance]!;
+        const opacity = isShort ? 1 : OPACITY_BY_DISTANCE[distance]!;
         const isOverdue = Boolean(overdueIds?.has(card.id));
-        const ring = isOverdue ? '#F0907F' : 'rgba(250,244,226,0.85)';
+        const ring = isOverdue ? '#F0907F' : 'rgba(250,244,226,0.9)';
 
         return (
           <span
             key={card.id}
             data-dot-index={index}
-            className="flex h-[22px] w-[30px] shrink-0 items-center justify-center"
-            aria-label={`Карточка ${index + 1} из ${cards.length}`}
+            aria-label={'Карточка ' + (index + 1) + ' из ' + cards.length}
             aria-current={isActive ? 'true' : undefined}
+            className="absolute left-0 flex items-center justify-center"
+            style={{
+              top: '50%',
+              width: 30,
+              height: SLOT_PX,
+              marginTop: -SLOT_PX / 2,
+              transform: 'translate3d(0, ' + railOffset(index) + 'px, 0)',
+              opacity,
+              transition:
+                'transform 260ms cubic-bezier(0.2, 0.8, 0.2, 1), opacity 200ms ease-out',
+            }}
           >
             <span
-              className="block rounded-full transition-all duration-150"
+              className="block rounded-full"
               style={{
-                width: diameter,
-                height: diameter,
+                width: 10,
+                height: 10,
                 boxSizing: 'border-box',
-                border: `2px solid ${ring}`,
+                border: '2px solid ' + ring,
                 backgroundColor: isActive ? ring : 'transparent',
                 boxShadow: '0 1px 2px rgba(0,0,0,0.45)',
-                transform: isActive ? 'scale(1.15)' : 'scale(1)',
+                transform: 'scale(' + scale + ')',
+                transition:
+                  'transform 260ms cubic-bezier(0.2, 0.8, 0.2, 1), background-color 160ms ease-out',
               }}
             />
           </span>

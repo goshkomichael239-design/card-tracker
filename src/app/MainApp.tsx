@@ -122,10 +122,19 @@ const undoIsAboutTrashedCard = (
   (action?.kind === 'trash-archived' &&
     (cardId === undefined || action.card.id === cardId));
 
+/** How a card leaves when the deck is turned (see the overlay). */
+interface DeckTurn {
+  /** 1: on to the next card, -1: back to the one before. */
+  direction: 1 | -1;
+  /** Set when a finger carried the card: where it was, in scene px. */
+  fromY?: number;
+}
+
 interface TransientOutgoingCard {
   key: number;
   card: VisualCard;
   kind: TransientOutgoingKind;
+  turn?: DeckTurn;
 }
 
 /** Below this width the scene is a phone's: cards a little smaller. */
@@ -134,15 +143,18 @@ const PHONE_SCENE_FACTOR = 0.9;
 /** The stack stands this share of the screen's width left of the middle. */
 const STACK_SHIFT_RATIO = 0.03;
 /**
- * Finger travel (px) over the card for one card turned: slower than over the
- * dots, so the card can be scrubbed through with some care.
+ * A finger dragging the card turns it once it has gone this far (px): slower
+ * than over the dots, so the card can be turned through with some care.
  */
-const CARD_SCRUB_STEP_PX = 70;
+const CARD_TURN_DISTANCE_PX = 84;
+/** Turns closer together than this are "quick": a lighter animation. */
+const QUICK_TURN_MS = 150;
 
 interface SceneGesture {
   id: number;
+  /** Where the finger is measured from; moves on after every turn. */
   y: number;
-  startIndex: number;
+  isDragging: boolean;
 }
 
 const getLocalDayKey = (date: Date): string =>
@@ -230,6 +242,8 @@ const MainApp: React.FC = () => {
   const transientSequenceRef = useRef(0);
   const scenePointerRef = useRef<SceneGesture | null>(null);
   const sceneRef = useRef<HTMLDivElement | null>(null);
+  const cardLayerRef = useRef<HTMLDivElement | null>(null);
+  const lastTurnAtRef = useRef(0);
 
   const isCreating = draft.isCreating;
   const activeCard = cards.find((card) => card.id === activeCardId);
@@ -286,12 +300,13 @@ const MainApp: React.FC = () => {
       INITIAL_TASK_CARD_V2_CONFIG.height,
     ) * (isPhone ? PHONE_SCENE_FACTOR : 1);
   const createTransientOutgoing = useCallback(
-    (card: VisualCard, kind: TransientOutgoingKind) => {
+    (card: VisualCard, kind: TransientOutgoingKind, turn?: DeckTurn) => {
       transientSequenceRef.current += 1;
       setTransientOutgoing({
         key: transientSequenceRef.current,
         card,
         kind,
+        turn,
       });
     },
     [],
@@ -413,8 +428,35 @@ const MainApp: React.FC = () => {
     removePendingCompletedCard,
   ]);
 
+  // The new card rises from the stack (forward) or is drawn out from under it
+  // (back), on the layer that also follows a finger.
+  const playCardEntrance = useCallback(
+    (direction: 1 | -1, isQuick: boolean) => {
+      const layer = cardLayerRef.current;
+
+      if (!layer || typeof layer.animate !== 'function') {
+        return;
+      }
+
+      const from = isQuick
+        ? 'translate3d(0, 6px, 0) scale(0.988)'
+        : direction === 1
+          ? 'translate3d(0, 18px, 0) scale(0.962)'
+          : 'translate3d(30px, 26px, 0) rotate(2.2deg) scale(0.95)';
+
+      layer.animate(
+        [{ transform: from }, { transform: 'translate3d(0, 0, 0)' }],
+        {
+          duration: isQuick ? 130 : direction === 1 ? 280 : 320,
+          easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)',
+        },
+      );
+    },
+    [],
+  );
+
   const handleSelectCard = useCallback(
-    (cardId: string) => {
+    (cardId: string, options?: { direction?: 1 | -1; fromY?: number }) => {
       if (cardId === activeCard?.id) {
         return;
       }
@@ -424,14 +466,36 @@ const MainApp: React.FC = () => {
         return;
       }
 
-      if (activeCard) {
-        createTransientOutgoing(activeCard, 'switch');
+      // Forward means further down the deck unless told otherwise.
+      const fromIndex = cards.findIndex((card) => card.id === activeCard?.id);
+      const toIndex = cards.findIndex((card) => card.id === cardId);
+      const direction: 1 | -1 =
+        options?.direction ?? (toIndex >= fromIndex ? 1 : -1);
+      const now = performance.now();
+      const isQuick = now - lastTurnAtRef.current < QUICK_TURN_MS;
+
+      lastTurnAtRef.current = now;
+
+      // A run of quick turns skips the old card's exit: only the new card
+      // settles, lightly, so fast scrubbing stays calm.
+      if (activeCard && !isQuick) {
+        createTransientOutgoing(activeCard, 'switch', {
+          direction,
+          fromY: options?.fromY,
+        });
       }
 
+      playCardEntrance(direction, isQuick);
       haptic(7);
       setActiveCardId(cardId);
     },
-    [activeCard, createTransientOutgoing, removePendingCompletedCard],
+    [
+      activeCard,
+      cards,
+      createTransientOutgoing,
+      playCardEntrance,
+      removePendingCompletedCard,
+    ],
   );
 
   const moveActiveCard = useCallback(
@@ -445,7 +509,7 @@ const MainApp: React.FC = () => {
       const nextIndex =
         (activeIndex + direction + cards.length) % cards.length;
 
-      handleSelectCard(cards[nextIndex]!.id);
+      handleSelectCard(cards[nextIndex]!.id, { direction });
     },
     [activeCardId, cards, handleSelectCard],
   );
@@ -475,16 +539,29 @@ const MainApp: React.FC = () => {
     scenePointerRef.current = {
       id: event.pointerId,
       y: event.clientY,
-      startIndex: Math.max(
-        0,
-        cards.findIndex((card) => card.id === activeCardId),
-      ),
+      isDragging: false,
     };
     event.currentTarget.setPointerCapture(event.pointerId);
   };
 
-  // Dragging up leafs forward through the deck, down leafs back, one card for
-  // every CARD_SCRUB_STEP_PX, and the list follows card by card.
+  const moveCardLayer = (offsetY: number, isEased: boolean) => {
+    const layer = cardLayerRef.current;
+
+    if (!layer) {
+      return;
+    }
+
+    layer.style.transition = isEased
+      ? 'transform 240ms cubic-bezier(0.2, 0.8, 0.2, 1)'
+      : 'none';
+    layer.style.transform =
+      offsetY === 0
+        ? ''
+        : `translate3d(0, ${offsetY}px, 0) rotate(${(offsetY / CARD_TURN_DISTANCE_PX) * 1.4}deg)`;
+  };
+
+  // The card follows the finger up or down; far enough, it is turned and the
+  // next one takes its place, and the drag goes on from there.
   const handleScenePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
     const gesture = scenePointerRef.current;
 
@@ -492,22 +569,48 @@ const MainApp: React.FC = () => {
       return;
     }
 
-    const steps = Math.trunc(
-      (gesture.y - event.clientY) / CARD_SCRUB_STEP_PX,
-    );
-    const target = cards[
-      Math.min(cards.length - 1, Math.max(0, gesture.startIndex + steps))
-    ];
+    const dy = event.clientY - gesture.y;
 
-    if (target && target.id !== activeCardId) {
-      handleSelectCard(target.id);
+    if (!gesture.isDragging && Math.abs(dy) < 6) {
+      return;
     }
+
+    gesture.isDragging = true;
+
+    const currentIndex = Math.max(
+      0,
+      cards.findIndex((card) => card.id === activeCardId),
+    );
+    // Dragging up goes on to the next card, down back to the previous one.
+    const direction: 1 | -1 = dy < 0 ? 1 : -1;
+    const target = cards[currentIndex + direction];
+
+    if (!target) {
+      // The end of the deck: the card only gives a little, then resists.
+      moveCardLayer(dy * 0.25, false);
+      return;
+    }
+
+    if (Math.abs(dy) >= CARD_TURN_DISTANCE_PX) {
+      moveCardLayer(0, false);
+      handleSelectCard(target.id, {
+        direction,
+        fromY: dy / sceneScale,
+      });
+      gesture.y = event.clientY;
+      return;
+    }
+
+    moveCardLayer(dy * 0.75, false);
   };
 
   const handleScenePointerEnd = (event: React.PointerEvent<HTMLDivElement>) => {
-    if (scenePointerRef.current?.id === event.pointerId) {
-      scenePointerRef.current = null;
+    if (scenePointerRef.current?.id !== event.pointerId) {
+      return;
     }
+
+    scenePointerRef.current = null;
+    moveCardLayer(0, true);
   };
 
   const handleSelectCardIndex = (index: number) => {
@@ -601,7 +704,8 @@ const MainApp: React.FC = () => {
       },
     );
     couponFlightInProgressRef.current = true;
-    haptic([14, 36, 10]);
+    // A short tear: a tick as it is pulled and a longer one as it comes off.
+    haptic([10, 28, 22]);
 
     if (isRepeating) {
       detachedCouponLayerRef.current?.launch({
@@ -1284,7 +1388,12 @@ const MainApp: React.FC = () => {
                   pointerEvents: isCreating ? 'none' : 'auto',
                 }}
               >
-                <TaskCard
+                <div
+                ref={cardLayerRef}
+                className="absolute inset-0"
+                style={{ willChange: 'transform' }}
+              >
+              <TaskCard
                   card={activeCard}
                   onComplete={handleCompleteCard}
                   onRecordSeriesStep={recordSeriesStep}
@@ -1306,6 +1415,7 @@ const MainApp: React.FC = () => {
                   }
                   isOverdue={overdueIds.has(activeCard.id)}
                 />
+              </div>
               </motion.div>
             )}
           </AnimatePresence>
@@ -1315,6 +1425,7 @@ const MainApp: React.FC = () => {
               key={transientOutgoing.key}
               card={transientOutgoing.card}
               kind={transientOutgoing.kind}
+              turn={transientOutgoing.turn}
               onFinish={handleTransientOutgoingFinish}
             />
           )}
