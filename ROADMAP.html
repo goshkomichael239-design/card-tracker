@@ -68,7 +68,7 @@
   .progress__main { font-size: 22px; font-weight: 600; }
   .progress__side { font-family: var(--font-mono); font-size: 12.5px; color: var(--ink-soft); letter-spacing: 0.04em; }
   .bar { height: 12px; border-radius: 7px; background: var(--paper-edge); box-shadow: inset 0 1px 3px rgba(0,0,0,0.25); overflow: hidden; }
-  .bar > i { display: block; height: 100%; width: 58%; background: var(--cloth); border-radius: 7px; }
+  .bar > i { display: block; height: 100%; width: 61%; background: var(--cloth); border-radius: 7px; }
 
   .filters { display: flex; flex-wrap: wrap; gap: 8px; }
   .chip {
@@ -132,10 +132,10 @@
 
   <div class="progress">
     <div class="progress__nums">
-      <span class="progress__main">Сделано 46 из 79</span>
-      <span class="progress__side">58% · впереди 33 · отменено 2</span>
+      <span class="progress__main">Сделано 48 из 79</span>
+      <span class="progress__side">61% · впереди 31 · отменено 2</span>
     </div>
-    <div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="79" aria-valuenow="46"><i></i></div>
+    <div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="79" aria-valuenow="48"><i></i></div>
   </div>
 
   <div class="filters" role="group" aria-label="Что показывать">
@@ -436,7 +436,7 @@
       <section class="block" data-block>
         <header class="block__head">
           <h2>Удобство</h2>
-          <span class="block__count">3 из 11</span>
+          <span class="block__count">4 из 11</span>
         </header>
         <ul class="list">
         <li class="item item--todo" data-status="todo">
@@ -471,13 +471,13 @@
           </div>
           <span class="state">сделано</span>
         </li>
-        <li class="item item--todo" data-status="todo">
+        <li class="item item--done" data-status="done">
           <span class="mark" aria-hidden="true"></span>
           <div class="body">
-            <p class="text">Режим «без анимаций» в настройках — для тех, кто спешит: отрыв купона, смена карточек, штампы и прочее происходят мгновенно (результат тот же, без секунды зрелища); вместе с существующим «Спокойные анимации» — возможно, тремя ступенями: как есть / спокойно / без анимаций</p>
+            <p class="text">Режим анимаций в настройках: «Все / Спокойно / Выкл» — действует на CSS, анимации карточек и купона и на библиотеку движения</p>
             
           </div>
-          <span class="state">впереди</span>
+          <span class="state">сделано</span>
         </li>
         <li class="item item--done" data-status="done">
           <span class="mark" aria-hidden="true"></span>
@@ -642,8 +642,8 @@
         <li class="item item--todo" data-status="todo">
           <span class="mark" aria-hidden="true"></span>
           <div class="body">
-            <p class="text">Корзина: четыре картинки с 1, 2, 3 и 4+ бумажками вместо нарисованных комков (счётчик по прилёту бумажки</p>
-            <p class="note">)</p>
+            <p class="text"><strong>Приоритет высокий, доработать позже:</strong> корзина и палочка — довести картинки (нужна картинка корзины с 4+ бумажками; возможно подставка под корзину; крупнее, заметнее, «стоят» на камне). Сделано: корзина 0–3 бумажки, тени и отражение, счётчик по прилёту, палочка в полосе архива</p>
+            
           </div>
           <span class="state">впереди</span>
         </li>
@@ -684,7 +684,7 @@
       <section class="block" data-block>
         <header class="block__head">
           <h2>Усиление скевоморфизма</h2>
-          <span class="block__count">1 из 12</span>
+          <span class="block__count">2 из 12</span>
         </header>
         <ul class="list">
         <li class="item item--todo" data-status="todo">
@@ -759,13 +759,13 @@
           </div>
           <span class="state">впереди</span>
         </li>
-        <li class="item item--todo" data-status="todo">
+        <li class="item item--done" data-status="done">
           <span class="mark" aria-hidden="true"></span>
           <div class="body">
             <p class="text">Звуки (шорох, треск перфорации, штамп) и вибрация, отключаемые</p>
-            
+            <p class="note">(61 запись, плеер, тумблер в настройках)</p>
           </div>
-          <span class="state">впереди</span>
+          <span class="state">сделано</span>
         </li>
         <li class="item item--done" data-status="done">
           <span class="mark" aria-hidden="true"></span>
