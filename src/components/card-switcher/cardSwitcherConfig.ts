@@ -25,6 +25,15 @@ export interface CardSwitcherConfig {
   textureOpacity: number;
 }
 
+/**
+ * Row size and how many rows show at once. On a phone the rows are taller
+ * (a finger needs about 36 px) and the list scrolls under the finger.
+ */
+export const getSwitcherMetrics = (isPhone: boolean) =>
+  isPhone
+    ? { rowHeight: 36, visibleRows: 3, fontSize: 14 }
+    : { rowHeight: 26, visibleRows: 4, fontSize: 12 };
+
 export const INITIAL_CARD_SWITCHER_CONFIG: CardSwitcherConfig = {
   width: 408,
   positionX: -1,

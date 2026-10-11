@@ -71,6 +71,8 @@ import { CardSwitcher } from '../components/card-switcher/CardSwitcher';
 import { INITIAL_CARD_SWITCHER_CONFIG } from '../components/card-switcher/cardSwitcherConfig';
 import { ARCHIVE_NAVIGATION_HEIGHT } from '../components/archive/ArchiveNavigation';
 import { getCardScale, useViewportSize } from './viewportScale';
+import { haptic } from './haptics';
+import { getSwitcherMetrics } from '../components/card-switcher/cardSwitcherConfig';
 import {
   DetachedCompletionCoupon,
   type DetachedCompletionCouponHandle,
@@ -122,6 +124,25 @@ interface TransientOutgoingCard {
   key: number;
   card: VisualCard;
   kind: TransientOutgoingKind;
+  /** Set when the card was thrown off by a swipe. */
+  swipe?: { x: number; direction: 1 | -1 };
+}
+
+/** A card is swiped away past this distance (px), or faster than the speed. */
+const SWIPE_DISTANCE_PX = 72;
+const SWIPE_FAST_DISTANCE_PX = 28;
+const SWIPE_SPEED_PX_PER_MS = 0.55;
+/** Below this width the scene is a phone's: cards a little smaller. */
+const PHONE_WIDTH_PX = 640;
+const PHONE_SCENE_FACTOR = 0.9;
+
+interface SceneGesture {
+  id: number;
+  x: number;
+  y: number;
+  time: number;
+  axis: 'x' | 'y' | null;
+  dx: number;
 }
 
 const getLocalDayKey = (date: Date): string =>
@@ -207,7 +228,8 @@ const MainApp: React.FC = () => {
   const pendingCompletedCardIdRef = useRef<string | null>(null);
   const pendingCompletedRemovalArmedRef = useRef(false);
   const transientSequenceRef = useRef(0);
-  const scenePointerRef = useRef<{ id: number; y: number } | null>(null);
+  const scenePointerRef = useRef<SceneGesture | null>(null);
+  const swipeLayerRef = useRef<HTMLDivElement | null>(null);
 
   const isCreating = draft.isCreating;
   const activeCard = cards.find((card) => card.id === activeCardId);
@@ -242,28 +264,39 @@ const MainApp: React.FC = () => {
     [cards, clockNow],
   );
 
-  const switcherRows = Math.min(4, Math.max(1, cards.length));
+  const isPhone = viewportWidth < PHONE_WIDTH_PX;
+  const switcherMetrics = getSwitcherMetrics(isPhone);
+  const switcherRows = Math.min(
+    switcherMetrics.visibleRows,
+    Math.max(1, cards.length),
+  );
   const switcherBottom =
     SWITCHER_TOP +
     INITIAL_CARD_SWITCHER_CONFIG.positionY +
     SWITCHER_CHROME +
-    switcherRows * INITIAL_CARD_SWITCHER_CONFIG.rowHeight +
+    switcherRows * switcherMetrics.rowHeight +
     (switcherRows - 1) * SWITCHER_ROW_GAP;
   const sceneTopReserve = switcherBottom + SCENE_TOP_OVERHANG;
   const sceneBottomReserve = ARCHIVE_NAVIGATION_HEIGHT + SCENE_BOTTOM_OVERHANG;
-  const sceneScale = getCardScale(
-    viewportWidth - sceneSideOverhang * 2,
-    viewportHeight - sceneTopReserve - sceneBottomReserve,
-    INITIAL_TASK_CARD_V2_CONFIG.width,
-    INITIAL_TASK_CARD_V2_CONFIG.height,
-  );
+  const sceneScale =
+    getCardScale(
+      viewportWidth - sceneSideOverhang * 2,
+      viewportHeight - sceneTopReserve - sceneBottomReserve,
+      INITIAL_TASK_CARD_V2_CONFIG.width,
+      INITIAL_TASK_CARD_V2_CONFIG.height,
+    ) * (isPhone ? PHONE_SCENE_FACTOR : 1);
   const createTransientOutgoing = useCallback(
-    (card: VisualCard, kind: TransientOutgoingKind) => {
+    (
+      card: VisualCard,
+      kind: TransientOutgoingKind,
+      swipe?: TransientOutgoingCard['swipe'],
+    ) => {
       transientSequenceRef.current += 1;
       setTransientOutgoing({
         key: transientSequenceRef.current,
         card,
         kind,
+        swipe,
       });
     },
     [],
@@ -386,7 +419,7 @@ const MainApp: React.FC = () => {
   ]);
 
   const handleSelectCard = useCallback(
-    (cardId: string) => {
+    (cardId: string, swipe?: TransientOutgoingCard['swipe']) => {
       if (cardId === activeCard?.id) {
         return;
       }
@@ -397,9 +430,10 @@ const MainApp: React.FC = () => {
       }
 
       if (activeCard) {
-        createTransientOutgoing(activeCard, 'switch');
+        createTransientOutgoing(activeCard, 'switch', swipe);
       }
 
+      haptic(7);
       setActiveCardId(cardId);
     },
     [activeCard, createTransientOutgoing, removePendingCompletedCard],
@@ -442,8 +476,58 @@ const MainApp: React.FC = () => {
       return;
     }
 
-    scenePointerRef.current = { id: event.pointerId, y: event.clientY };
+    scenePointerRef.current = {
+      id: event.pointerId,
+      x: event.clientX,
+      y: event.clientY,
+      time: performance.now(),
+      axis: null,
+      dx: 0,
+    };
     event.currentTarget.setPointerCapture(event.pointerId);
+  };
+
+  // The card follows a sideways finger; the layer is moved directly (no React
+  // render per frame), and eased back or thrown off when the finger lifts.
+  const moveSwipeLayer = (dx: number, withTransition: boolean) => {
+    const layer = swipeLayerRef.current;
+
+    if (!layer) {
+      return;
+    }
+
+    layer.style.transition = withTransition
+      ? 'transform 240ms cubic-bezier(0.2, 0.8, 0.2, 1)'
+      : 'none';
+    layer.style.transform =
+      dx === 0
+        ? ''
+        : `translate3d(${dx}px, 0, 0) rotate(${(dx / 396) * 5}deg)`;
+  };
+
+  const handleScenePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    const gesture = scenePointerRef.current;
+
+    if (!gesture || gesture.id !== event.pointerId) {
+      return;
+    }
+
+    const dx = event.clientX - gesture.x;
+    const dy = event.clientY - gesture.y;
+
+    if (gesture.axis === null && Math.max(Math.abs(dx), Math.abs(dy)) > 8) {
+      gesture.axis = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y';
+    }
+
+    if (gesture.axis !== 'x') {
+      return;
+    }
+
+    // With nothing to swipe to the card only gives a little, then resists.
+    const follow = cards.length > 1 ? 1 : 0.22;
+
+    gesture.dx = dx;
+    moveSwipeLayer(dx * follow, false);
   };
 
   const handleScenePointerEnd = (event: React.PointerEvent<HTMLDivElement>) => {
@@ -454,6 +538,40 @@ const MainApp: React.FC = () => {
     }
 
     scenePointerRef.current = null;
+
+    if (gesture.axis === 'x') {
+      const elapsed = Math.max(1, performance.now() - gesture.time);
+      const speed = Math.abs(gesture.dx) / elapsed;
+      const isThrown =
+        cards.length > 1 &&
+        (Math.abs(gesture.dx) > SWIPE_DISTANCE_PX ||
+          (speed > SWIPE_SPEED_PX_PER_MS &&
+            Math.abs(gesture.dx) > SWIPE_FAST_DISTANCE_PX));
+
+      if (!isThrown) {
+        moveSwipeLayer(0, true);
+        return;
+      }
+
+      // To the left is the next card, to the right the one before.
+      const direction: 1 | -1 = gesture.dx < 0 ? -1 : 1;
+      const currentIndex = cards.findIndex((card) => card.id === activeCardId);
+      const nextIndex =
+        (Math.max(0, currentIndex) - direction + cards.length) % cards.length;
+      const target = cards[nextIndex];
+
+      moveSwipeLayer(0, false);
+
+      if (target) {
+        handleSelectCard(target.id, {
+          x: gesture.dx / sceneScale,
+          direction,
+        });
+      }
+
+      return;
+    }
+
     const deltaY = event.clientY - gesture.y;
 
     if (Math.abs(deltaY) < 48) {
@@ -469,6 +587,7 @@ const MainApp: React.FC = () => {
 
   const handleScenePointerCancel = () => {
     scenePointerRef.current = null;
+    moveSwipeLayer(0, true);
   };
 
   useEffect(() => {
@@ -545,6 +664,7 @@ const MainApp: React.FC = () => {
       },
     );
     couponFlightInProgressRef.current = true;
+    haptic([14, 36, 10]);
 
     if (isRepeating) {
       detachedCouponLayerRef.current?.launch({
@@ -682,6 +802,7 @@ const MainApp: React.FC = () => {
 
   // Pins or unpins a card; the data layer keeps pinned cards at the head.
   const handleTogglePin = (cardId: string) => {
+    haptic(12);
     setCards((previous) =>
       previous.map((card) =>
         card.id === cardId && !card.completedAt
@@ -1129,6 +1250,7 @@ const MainApp: React.FC = () => {
             onSelectCard={handleSelectCard}
             onNextCard={handleNextCard}
             onPreviousCard={handlePreviousCard}
+            isPhone={isPhone}
             overdueIds={overdueIds}
           />
         </div>
@@ -1136,11 +1258,12 @@ const MainApp: React.FC = () => {
       <div
         className="relative z-10 flex h-full w-full items-center justify-center px-4"
         style={{
-          touchAction: 'pan-x',
+          touchAction: 'none',
           paddingTop: sceneTopReserve,
           paddingBottom: sceneBottomReserve,
         }}
         onPointerDown={handleScenePointerDown}
+        onPointerMove={handleScenePointerMove}
         onPointerUp={handleScenePointerEnd}
         onPointerCancel={handleScenePointerCancel}
       >
@@ -1212,7 +1335,12 @@ const MainApp: React.FC = () => {
                   pointerEvents: isCreating ? 'none' : 'auto',
                 }}
               >
-                <TaskCard
+                <div
+                ref={swipeLayerRef}
+                className="absolute inset-0"
+                style={{ willChange: 'transform' }}
+              >
+              <TaskCard
                   card={activeCard}
                   onComplete={handleCompleteCard}
                   onRecordSeriesStep={recordSeriesStep}
@@ -1234,6 +1362,7 @@ const MainApp: React.FC = () => {
                   }
                   isOverdue={overdueIds.has(activeCard.id)}
                 />
+              </div>
               </motion.div>
             )}
           </AnimatePresence>
@@ -1243,6 +1372,7 @@ const MainApp: React.FC = () => {
               key={transientOutgoing.key}
               card={transientOutgoing.card}
               kind={transientOutgoing.kind}
+              swipe={transientOutgoing.swipe}
               onFinish={handleTransientOutgoingFinish}
             />
           )}

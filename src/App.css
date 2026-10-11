@@ -694,3 +694,12 @@ body {
   font-size: 13.5px;
   color: rgba(48, 40, 31, 0.68);
 }
+
+/* A scrolling list without the scrollbar (a finger scrolls it). */
+.no-scrollbar {
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}

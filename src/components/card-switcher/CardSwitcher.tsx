@@ -1,9 +1,10 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 import cardboardTexture from '../../assets/cardboard.avif';
 import { getCardPalette, type VisualCard } from '../../app/cardTheme';
 import { CardSwitcherDebugPanel } from './CardSwitcherDebugPanel';
 import {
+  getSwitcherMetrics,
   INITIAL_CARD_SWITCHER_CONFIG,
   type CardSwitcherConfig,
 } from './cardSwitcherConfig';
@@ -16,11 +17,12 @@ interface CardSwitcherProps {
   onNextCard: () => void;
   onPreviousCard: () => void;
   mode?: 'main' | 'archive';
+  /** A phone: taller rows, three of them, scrolled by a finger. */
+  isPhone?: boolean;
   /** Cards that are overdue: marked red, and counted in the corner. */
   overdueIds?: ReadonlySet<string>;
 }
 
-const MAX_VISIBLE_ROWS = 4;
 
 const WHEEL_INTENT_THRESHOLD = 6;
 const WHEEL_GESTURE_END_MS = 90;
@@ -46,8 +48,11 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
   onNextCard,
   onPreviousCard,
   mode = 'main',
+  isPhone = false,
   overdueIds,
 }) => {
+  const metrics = getSwitcherMetrics(isPhone);
+  const listRef = useRef<HTMLDivElement | null>(null);
   const [config, setConfig] = useState<CardSwitcherConfig>(() => ({
     ...INITIAL_CARD_SWITCHER_CONFIG,
   }));
@@ -65,18 +70,30 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
     onPreviousCardRef.current = onPreviousCard;
   }, [cards, onNextCard, onPreviousCard]);
 
-  const activeIndex = Math.max(
-    0,
-    cards.findIndex((card) => card.id === activeCardId),
-  );
-  const windowStart = Math.min(
-    Math.max(0, activeIndex - (MAX_VISIBLE_ROWS - 1)),
-    Math.max(0, cards.length - MAX_VISIBLE_ROWS),
-  );
-  const visibleCards = useMemo(
-    () => cards.slice(windowStart, windowStart + MAX_VISIBLE_ROWS),
-    [cards, windowStart],
-  );
+  const visibleRows = Math.min(metrics.visibleRows, Math.max(1, cards.length));
+  const listHeight = visibleRows * metrics.rowHeight + (visibleRows - 1) * 2;
+
+  // The active card is always brought into view, whichever way it was chosen
+  // (a tap, the wheel, a swipe on the card).
+  useEffect(() => {
+    const list = listRef.current;
+    const row = list?.querySelector<HTMLElement>(
+      `[data-card-id="${CSS.escape(activeCardId)}"]`,
+    );
+
+    if (!list || !row) {
+      return;
+    }
+
+    const top = row.offsetTop;
+    const bottom = top + row.offsetHeight;
+
+    if (top < list.scrollTop) {
+      list.scrollTo({ top, behavior: 'smooth' });
+    } else if (bottom > list.scrollTop + list.clientHeight) {
+      list.scrollTo({ top: bottom - list.clientHeight, behavior: 'smooth' });
+    }
+  }, [activeCardId, cards.length, metrics.rowHeight]);
   useEffect(() => {
     const switcher = switcherRef.current;
 
@@ -191,8 +208,17 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
           />
 
           <div className="relative">
-            <div className="flex flex-col gap-0.5">
-              {visibleCards.map((card) => {
+            {/* Scrolls under a finger (and by wheel through the cards). */}
+            <div
+              ref={listRef}
+              className="no-scrollbar relative flex flex-col gap-0.5 overflow-y-auto"
+              style={{
+                height: listHeight,
+                overscrollBehavior: 'contain',
+                touchAction: 'pan-y',
+              }}
+            >
+              {cards.map((card) => {
                 const isActive = card.id === activeCardId;
                 const palette = getCardPalette(card);
                 const isOverdue = Boolean(overdueIds?.has(card.id));
@@ -201,10 +227,11 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
                   <button
                     key={card.id}
                     type="button"
+                    data-card-id={card.id}
                     onClick={() => onSelectCard(card.id)}
-                    className="relative flex w-full items-center overflow-hidden border-0 px-2.5 text-left"
+                    className="relative flex w-full shrink-0 items-center overflow-hidden border-0 px-2.5 text-left"
                     style={{
-                      height: config.rowHeight,
+                      height: metrics.rowHeight,
                       borderRadius: 8,
                       backgroundColor: isActive
                         ? `${palette.accent}1f`
@@ -218,8 +245,8 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
                         color: isActive
                           ? palette.accentDark
                           : 'rgba(40,35,29,0.68)',
-                        fontSize: config.fontSize,
-                        lineHeight: `${config.rowHeight}px`,
+                        fontSize: metrics.fontSize,
+                        lineHeight: `${metrics.rowHeight}px`,
                       }}
                     >
                       {card.pinned && (

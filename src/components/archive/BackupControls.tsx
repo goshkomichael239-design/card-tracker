@@ -3,6 +3,12 @@ import React, { useRef, useState } from 'react';
 import cardboardTexture from '../../assets/cardboard.avif';
 import type { BackupImportResult } from '../../app/backupUtils';
 import { AutoBackupSheet } from './AutoBackupSheet';
+import {
+  canVibrate,
+  haptic,
+  isHapticsEnabled,
+  setHapticsEnabled,
+} from '../../app/haptics';
 
 interface BackupControlsProps {
   onExport: () => void;
@@ -38,6 +44,7 @@ export const BackupControls: React.FC<BackupControlsProps> = ({
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [status, setStatus] = useState('');
   const [isAutoOpen, setIsAutoOpen] = useState(false);
+  const [isHapticsOn, setIsHapticsOn] = useState(isHapticsEnabled);
 
   const handleFileChange = async (
     event: React.ChangeEvent<HTMLInputElement>,
@@ -86,6 +93,26 @@ export const BackupControls: React.FC<BackupControlsProps> = ({
         >
           Автокопии
         </button>
+        {canVibrate() && (
+          <button
+            type="button"
+            onClick={() => {
+              const next = !isHapticsOn;
+
+              setHapticsEnabled(next);
+              setIsHapticsOn(next);
+
+              if (next) {
+                haptic(12);
+              }
+            }}
+            aria-pressed={isHapticsOn}
+            className="cursor-pointer rounded-[10px] border px-4 py-2 font-mono text-[12.5px] font-bold uppercase tracking-[0.12em]"
+            style={BUTTON_STYLE}
+          >
+            Вибрация: {isHapticsOn ? 'вкл' : 'выкл'}
+          </button>
+        )}
         <input
           ref={fileInputRef}
           type="file"
