@@ -44,12 +44,28 @@ export const useWheelNavigation = (
     }
 
     const handleWheel = (event: WheelEvent) => {
-      if (
-        ignoreWithin &&
-        event.target instanceof Element &&
-        event.target.closest(ignoreWithin)
-      ) {
-        return;
+      // A scrolling box inside keeps the wheel only while it can still scroll
+      // that way; at its end (or when it has nothing to scroll) the wheel
+      // turns the cards, so the deck never gets stuck on a long list.
+      const scroller =
+        ignoreWithin && event.target instanceof Element
+          ? event.target.closest(ignoreWithin)
+          : null;
+
+      if (scroller) {
+        const canScrollUp = scroller.scrollTop > 0;
+        const canScrollDown =
+          scroller.scrollTop + scroller.clientHeight < scroller.scrollHeight - 1;
+
+        if (
+          event.deltaY === 0 ||
+          (event.deltaY < 0 && canScrollUp) ||
+          (event.deltaY > 0 && canScrollDown) ||
+          // Text fields keep the wheel whatever they hold.
+          scroller.matches('input, textarea')
+        ) {
+          return;
+        }
       }
 
       event.preventDefault();
