@@ -72,7 +72,7 @@ export const CardFileTabs: React.FC<CardFileTabsProps> = ({
   return (
     <>
       <div
-        className="relative flex items-end gap-[3px] px-1.5"
+        className="relative flex items-end gap-[3px] px-[5px]"
         style={{ height: CARD_FILE_TAB_ROW_HEIGHT }}
       >
         {decks.map((deck) => {
@@ -219,6 +219,9 @@ export const CardFileTabs: React.FC<CardFileTabsProps> = ({
           zIndex: 2,
           height: CARD_FILE_DIVIDER_HEIGHT,
           marginTop: -1,
+          marginLeft: 5,
+          marginRight: 5,
+          borderRadius: '2px 2px 4px 4px',
           backgroundColor: activeBack.tab,
           backgroundImage:
             'linear-gradient(180deg, rgba(255,255,255,0.25) 0%, rgba(0,0,0,0.15) 100%)',

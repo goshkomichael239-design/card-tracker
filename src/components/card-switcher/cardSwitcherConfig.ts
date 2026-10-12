@@ -76,17 +76,13 @@ export const getSwitcherMetrics = (
  * Height of the list of edges for `count` cards. A list that scrolls is
  * scrolled so that the part of the top edge that lies under the card above it
  * is out of sight: every edge shows one step, and the last one ends at the
- * bottom. A list that does not scroll shows all its edges whole.
+ * bottom. A list with few cards is the same, only shorter.
  */
 export const getEdgesHeight = (
   metrics: SwitcherMetrics,
   count: number,
 ): number => {
-  if (count > metrics.visibleRows) {
-    return metrics.visibleRows * metrics.rowStep;
-  }
-
-  return (Math.max(1, count) - 1) * metrics.rowStep + metrics.rowHeight;
+  return Math.min(metrics.visibleRows, Math.max(1, count)) * metrics.rowStep;
 };
 
 /** The whole card file: tabs, divider and the edges. */

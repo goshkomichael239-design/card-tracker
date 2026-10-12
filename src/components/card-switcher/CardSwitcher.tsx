@@ -46,6 +46,8 @@ interface CardSwitcherProps {
 // above; this much of the file's width is left free at each side, so the
 // shadows are not cut by the list's own edge.
 const EDGE_INSET = 5;
+// The rounding of an edge, all four corners.
+const TILE_RADIUS = 10;
 
 const getCardDisplayLabel = (card: VisualCard) => {
   if (card.kind !== 'list' || !card.list?.items.length) {
@@ -170,7 +172,7 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
       return;
     }
 
-    let target = 0;
+    let target = metrics.overlap;
 
     if (canScroll) {
       // The copy of this card that is nearest to where the list is now, so
@@ -318,7 +320,7 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
               height: listHeight,
               overscrollBehavior: 'contain',
               touchAction: 'pan-y',
-              scrollSnapType: canScroll ? 'y mandatory' : undefined,
+              scrollSnapType: 'y mandatory',
             }}
             onScroll={handleListScroll}
             onTouchStart={() => {
@@ -337,108 +339,105 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
               const palette = getCardPalette(card);
               const isOverdue = Boolean(overdueIds?.has(card.id));
 
+              // The edge is a tile of one step's height with rounded corners
+              // all round. Above it lies a band (the overlap) that is cut
+              // off: under the corners of the tile above there is the cloth
+              // and the tile's shadow, never another card's paper.
               return (
-                <button
+                <div
                   key={copy + ':' + card.id}
-                  type="button"
-                  data-card-id={card.id}
-                  onClick={() => onSelectCard(card.id)}
-                  aria-pressed={isActive}
-                  className="engraved relative flex shrink-0 items-start border-0 px-3 text-left"
+                  className="relative shrink-0"
                   style={{
                     height: metrics.rowHeight,
                     width: `calc(100% - ${EDGE_INSET * 2}px)`,
                     marginLeft: 'auto',
                     marginRight: 'auto',
                     marginTop: index === 0 ? 0 : -metrics.overlap,
-                    // The chosen card lies in front of all the others; of
-                    // the rest each is under the one above it.
+                    // The chosen card lies in front of the rest.
                     zIndex: isActive ? rows.length + 1 : rows.length - index,
                     scrollSnapAlign: 'start',
-                    // Snap with the part under the card above out of sight.
                     scrollMarginTop: -metrics.overlap,
-                    // Rounded at the bottom for all; the chosen card, in
-                    // front, at the top too. The others' upper corners are
-                    // square and lie under the card above, so nothing shows
-                    // through the rounding of its lower corners.
-                    borderRadius: isActive ? 11 : '0 0 11px 11px',
-                    backgroundColor: palette.paper,
-                    // From the top: light falling on the paper, a soft
-                    // darkening towards the lower edge, the board's grain.
-                    backgroundImage: `linear-gradient(180deg, rgba(255,255,255,0.42) 0%, rgba(255,255,255,0.08) 38%, rgba(70,48,28,0.12) 100%), linear-gradient(100deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0) 42%, rgba(60,40,24,0.07) 100%), url(${cardboardTexture})`,
-                    backgroundSize: '100% 100%, 100% 100%, cover',
-                    backgroundPosition: 'center',
-                    backgroundBlendMode: 'normal, normal, multiply',
-                    border: '1px solid rgba(91,76,59,0.2)',
-                    borderTop: isActive
-                      ? '1px solid rgba(91,76,59,0.2)'
-                      : 'none',
-                    // The cut edge of a real card: a pale rim of the board's
-                    // thickness along the bottom, then the shadow it casts
-                    // on the card below (tight, then a soft one).
-                    boxShadow: isActive
-                      ? 'inset 0 -2px 0 rgba(255,255,255,0.62), inset 0 -3px 0 rgba(79,61,42,0.14), inset 0 1px 0 rgba(255,255,255,0.55), 0 3px 4px -1px rgba(20,17,14,0.4), 0 8px 12px -4px rgba(20,17,14,0.3)'
-                      : 'inset 0 -2px 0 rgba(255,255,255,0.55), inset 0 -3px 0 rgba(79,61,42,0.12), inset 0 1px 0 rgba(255,255,255,0.4), 0 3px 4px -1px rgba(20,17,14,0.36), 0 6px 9px -4px rgba(20,17,14,0.24)',
-                    filter: isActive ? 'brightness(1.05) saturate(1.04)' : undefined,
                   }}
                 >
-                  {/* The card's colour as a thin stripe on its left. */}
+                  {/* Its shadow, on a layer of its own (the paper is clipped
+                      and would take its shadow with it). */}
                   <span
                     aria-hidden="true"
-                    className="absolute"
+                    className="pointer-events-none absolute inset-x-0 bottom-0"
                     style={{
-                      left: 5,
-                      top: metrics.overlap + 5,
-                      bottom: 6,
-                      width: 3,
-                      borderRadius: 2,
-                      backgroundColor: palette.accent,
-                      opacity: isActive ? 0.9 : 0.6,
-                      boxShadow: 'inset 0 0 0 0.5px rgba(0,0,0,0.12)',
+                      top: metrics.overlap,
+                      borderRadius: TILE_RADIUS,
+                      boxShadow: isActive
+                        ? '0 3px 5px -1px rgba(20,17,14,0.42), 0 8px 12px -4px rgba(20,17,14,0.3)'
+                        : '0 2px 4px -1px rgba(20,17,14,0.36), 0 5px 8px -4px rgba(20,17,14,0.24)',
                     }}
                   />
-                  <span
-                    className="relative block min-w-0 flex-1 truncate"
+
+                  <button
+                    type="button"
+                    data-card-id={card.id}
+                    onClick={() => onSelectCard(card.id)}
+                    aria-pressed={isActive}
+                    className="engraved absolute inset-0 flex items-start border-0 px-3 text-left"
                     style={{
-                      color: palette.ink,
-                      fontFamily: "'Lora', Georgia, serif",
-                      fontWeight: isActive ? 700 : 600,
-                      letterSpacing: '0.008em',
-                      paddingLeft: 6,
-                      fontSize: metrics.fontSize,
-                      // The top of an edge lies under the card above: the
-                      // name stands in the part that shows.
-                      paddingTop: metrics.overlap,
-                      lineHeight: `${metrics.rowStep}px`,
+                      clipPath: `inset(${metrics.overlap}px 0 0 0 round ${TILE_RADIUS}px)`,
+                      backgroundColor: palette.paper,
+                      // From the top: light falling on the paper, a soft
+                      // darkening towards the lower edge, the board's grain.
+                      backgroundImage: `linear-gradient(180deg, rgba(255,255,255,0.42) 0%, rgba(255,255,255,0.08) 38%, rgba(70,48,28,0.12) 100%), linear-gradient(100deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0) 42%, rgba(60,40,24,0.07) 100%), url(${cardboardTexture})`,
+                      backgroundSize: '100% 100%, 100% 100%, cover',
+                      backgroundPosition: 'center',
+                      backgroundBlendMode: 'normal, normal, multiply',
+                      // The pale rim of the board's thickness at the bottom
+                      // and a fine line round the paper.
+                      boxShadow:
+                        'inset 0 0 0 1px rgba(91,76,59,0.2), inset 0 -2px 0 rgba(255,255,255,0.55), inset 0 -3px 0 rgba(79,61,42,0.12), inset 0 1px 0 rgba(255,255,255,0.45)',
+                      filter: isActive
+                        ? 'brightness(1.05) saturate(1.04)'
+                        : undefined,
                     }}
                   >
-                    {card.pinned && (
-                      <span
-                        className="mr-1.5"
-                        style={{ color: '#B8851F' }}
-                        role="img"
-                        aria-label="Закреплена"
-                      >
-                        ★
-                      </span>
-                    )}
-                    {/* Overdue: a red dot in front of the name. */}
-                    {isOverdue && (
-                      <span
-                        className="mr-2 inline-block h-[9px] w-[9px] rounded-full align-middle"
-                        style={{
-                          background:
-                            'radial-gradient(circle at 32% 28%, #E0705F 0%, #B8483A 55%, #8F3025 100%)',
-                          boxShadow:
-                            '0 0 0 1.5px rgba(255,255,255,0.85), 0 1px 2px rgba(40,12,8,0.4)',
-                        }}
-                        role="img"
-                        aria-label="Просрочено"
-                      />
-                    )}
-                    {getCardDisplayLabel(card)}
-                  </span>
-                </button>
+                    <span
+                      className="relative block min-w-0 flex-1 truncate"
+                      style={{
+                        color: palette.ink,
+                        fontFamily: "'Lora', Georgia, serif",
+                        fontWeight: isActive ? 700 : 600,
+                        letterSpacing: '0.008em',
+                        fontSize: metrics.fontSize,
+                        // The cut-off band is above the name.
+                        paddingTop: metrics.overlap,
+                        lineHeight: `${metrics.rowStep}px`,
+                      }}
+                    >
+                      {card.pinned && (
+                        <span
+                          className="mr-1.5"
+                          style={{ color: '#B8851F' }}
+                          role="img"
+                          aria-label="Закреплена"
+                        >
+                          ★
+                        </span>
+                      )}
+                      {/* Overdue: a red dot in front of the name. */}
+                      {isOverdue && (
+                        <span
+                          className="mr-2 inline-block h-[9px] w-[9px] rounded-full align-middle"
+                          style={{
+                            background:
+                              'radial-gradient(circle at 32% 28%, #E0705F 0%, #B8483A 55%, #8F3025 100%)',
+                            boxShadow:
+                              '0 0 0 1.5px rgba(255,255,255,0.85), 0 1px 2px rgba(40,12,8,0.4)',
+                          }}
+                          role="img"
+                          aria-label="Просрочено"
+                        />
+                      )}
+                      {getCardDisplayLabel(card)}
+                    </span>
+                  </button>
+                </div>
               );
             })}
           </div>
