@@ -102,6 +102,8 @@ export interface TaskListData {
 
 export interface DetachedCoupon {
   id: string;
+  /** What its torn edge is drawn from (see getCouponSeed). */
+  seed: string;
   left: number;
   top: number;
   width: number;
@@ -234,13 +236,3 @@ export const PHYSICAL_SPRING = {
   mass: 0.95,
 };
 
-export const COUPON_WIDTH = 236;
-export const COUPON_HEIGHT = 38;
-export const COUPON_RADIUS = 6;
-export const COUPON_DASH_LENGTH = 4.2;
-export const COUPON_DASH_GAP = 3;
-export const COUPON_CORE_THICKNESS = 1.15;
-export const COUPON_SHOULDER_THICKNESS = 2.8;
-export const COUPON_SHOULDER_OPACITY = 0.52;
-export const COUPON_STROKE_INSET =
-  COUPON_SHOULDER_THICKNESS / 2 + 0.35;

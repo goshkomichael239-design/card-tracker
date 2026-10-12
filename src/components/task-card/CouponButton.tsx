@@ -1,7 +1,6 @@
 import React from 'react';
 
 import cardboardTexture from '../../assets/cardboard.avif';
-import { CouponPerforation } from './CouponPerforation';
 
 interface CouponButtonProps {
   label: string;
@@ -18,8 +17,10 @@ interface CouponButtonProps {
 }
 
 /**
- * A cardboard pad with a perforated edge: the same object as the completion
- * coupon, reused for the card's other primary actions.
+ * A card's primary action as a pressed-in pad of the card's own paper: a
+ * shallow rounded recess with the lettering embossed in it, in the family of
+ * the card's other actions. It is a plain button; the perforation belongs only
+ * to things that tear off.
  */
 export const CouponButton: React.FC<CouponButtonProps> = ({
   label,
@@ -37,7 +38,7 @@ export const CouponButton: React.FC<CouponButtonProps> = ({
     onClick={onClick}
     disabled={disabled}
     aria-label={ariaLabel ?? label}
-    className="relative block w-full cursor-pointer overflow-hidden rounded-[8px] border-0 p-0 disabled:cursor-default disabled:opacity-45"
+    className="pad-button relative block w-full cursor-pointer overflow-hidden border-0 p-0 disabled:cursor-default disabled:opacity-45"
     style={{
       height,
       backgroundColor: paperTint,
@@ -45,8 +46,6 @@ export const CouponButton: React.FC<CouponButtonProps> = ({
       backgroundSize: 'cover',
       backgroundPosition: 'center',
       backgroundBlendMode: 'multiply',
-      boxShadow:
-        'inset 0 1px rgba(255,255,255,0.78), 0 1px 0 rgba(20,17,14,0.12)',
     }}
   >
     <span
@@ -58,9 +57,8 @@ export const CouponButton: React.FC<CouponButtonProps> = ({
       }}
       aria-hidden="true"
     />
-    <CouponPerforation />
     <span
-      className="absolute inset-0 flex select-none items-center justify-center px-3 text-center font-mono font-bold uppercase tracking-[0.16em]"
+      className="pad-button__label absolute inset-0 flex select-none items-center justify-center px-3 text-center font-mono font-bold uppercase tracking-[0.16em]"
       style={{ color, fontSize }}
     >
       {label}

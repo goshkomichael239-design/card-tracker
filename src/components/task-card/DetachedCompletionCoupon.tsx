@@ -8,8 +8,17 @@ import {
 import { flushSync } from 'react-dom';
 
 import type { DetachedCoupon } from '../../app/cardTheme';
+import { piecePath, tearLinesPath } from '../../app/couponEdge';
+import {
+  beginCouponTear,
+  getCouponTearProgress,
+} from '../../app/couponTear';
 import { CouponFace } from './CouponFace';
-import { INITIAL_TASK_CARD_V2_CONFIG } from './taskCardV2Config';
+import {
+  COUPON_BOX_HEIGHT,
+  COUPON_BOX_WIDTH,
+  getCouponEdge,
+} from './couponGeometry';
 
 interface DetachedCompletionCouponProps {
   /** `landed` is true when the coupon ended up speared on the spike. */
@@ -35,12 +44,11 @@ export interface DetachedCompletionCouponHandle {
 // with the whole scene. The flying copy is drawn at that natural size too and
 // scaled by the same factor, so its lettering, strokes, texture and shadows are
 // exactly those of the coupon it came from, at any screen size.
-const COUPON_BASE_WIDTH =
-  INITIAL_TASK_CARD_V2_CONFIG.width -
-  INITIAL_TASK_CARD_V2_CONFIG.contentPadding * 2;
-const COUPON_BASE_HEIGHT = INITIAL_TASK_CARD_V2_CONFIG.couponHeight;
+const COUPON_BASE_WIDTH = COUPON_BOX_WIDTH;
+const COUPON_BASE_HEIGHT = COUPON_BOX_HEIGHT;
 
 interface FaceState {
+  seed: string;
   paper: string;
   glow: string;
   progress?: number;
@@ -53,9 +61,14 @@ export const DetachedCompletionCoupon = forwardRef<
 >(({ onFlightComplete }, ref) => {
   const couponRef = useRef<HTMLDivElement | null>(null);
   const bodyRef = useRef<HTMLDivElement | null>(null);
+  const clipRef = useRef<HTMLDivElement | null>(null);
+  const outlineRef = useRef<SVGPathElement | null>(null);
+  const tearRef = useRef<SVGPathElement | null>(null);
+  const tearFrameRef = useRef(0);
   const animationRef = useRef<Animation | null>(null);
   const onFlightCompleteRef = useRef(onFlightComplete);
   const [face, setFace] = useState<FaceState>({
+    seed: '',
     paper: '#F7F2E8',
     glow: '#FFD9C2',
     label: 'Завершить',
@@ -79,12 +92,46 @@ export const DetachedCompletionCoupon = forwardRef<
       // Paint the face first, so the first frame of the flight is complete.
       flushSync(() =>
         setFace({
+          seed: coupon.seed,
           paper: coupon.palette.paper,
           glow: coupon.palette.glow,
           progress: coupon.progress,
           label: coupon.label ?? 'Завершить',
         }),
       );
+
+      // The perforation gives way from the corner the tear started at to the
+      // opposite one (the slot on the card runs the same clock). With
+      // animations off the piece simply has its torn rim at once.
+      const edge = getCouponEdge(coupon.seed);
+      const showTear = (progress: number) => {
+        const rim = piecePath(edge, progress);
+
+        if (clipRef.current) {
+          clipRef.current.style.clipPath = `path('${rim}')`;
+        }
+
+        outlineRef.current?.setAttribute('d', rim);
+        tearRef.current?.setAttribute('d', tearLinesPath(edge, progress));
+      };
+
+      window.cancelAnimationFrame(tearFrameRef.current);
+      const runTear = () => {
+        // The clock starts at the first frame (not before: the press's
+        // handler still has work to do, which must not eat the wave).
+        beginCouponTear(coupon.seed);
+
+        const progress = getCouponTearProgress(coupon.seed);
+
+        showTear(progress);
+
+        if (progress < 1) {
+          tearFrameRef.current = window.requestAnimationFrame(runTear);
+        }
+      };
+
+      showTear(getCouponTearProgress(coupon.seed));
+      tearFrameRef.current = window.requestAnimationFrame(runTear);
 
       const driftDirection = Math.random() < 0.5 ? -1 : 1;
       const rotationDirection = Math.random() < 0.5 ? -1 : 1;
@@ -194,6 +241,7 @@ export const DetachedCompletionCoupon = forwardRef<
   useEffect(() => {
     return () => {
       animationRef.current?.cancel();
+      window.cancelAnimationFrame(tearFrameRef.current);
     };
   }, []);
 
@@ -218,22 +266,57 @@ export const DetachedCompletionCoupon = forwardRef<
           transformOrigin: '0 0',
         }}
       >
-        {/* Shadow cast by the loose piece on whatever is below it. */}
+        {/* The loose piece casts a shadow that follows its torn rim (the shadow
+            belongs to the clipped shape, not to a rectangle). */}
         <div
-          className="pointer-events-none absolute rounded-[8px]"
+          className="absolute inset-0"
           style={{
-            inset: '5px -3px -6px 3px',
-            backgroundColor: 'rgba(0,0,0,0.32)',
-            boxShadow: '0 5px 9px rgba(0,0,0,0.32)',
+            filter:
+              'drop-shadow(0 4px 4px rgba(0,0,0,0.3)) drop-shadow(0 9px 9px rgba(0,0,0,0.2))',
           }}
-        />
+        >
+          <div
+            ref={clipRef}
+            className="absolute inset-0"
+            style={{
+              clipPath: `path('${piecePath(getCouponEdge(face.seed), 1)}')`,
+            }}
+          >
+            <CouponFace
+              edge={getCouponEdge(face.seed)}
+              mode="piece"
+              paper={face.paper}
+              glow={face.glow}
+              progress={face.progress}
+              label={face.label}
+            />
+          </div>
 
-        <CouponFace
-          paper={face.paper}
-          glow={face.glow}
-          progress={face.progress}
-          label={face.label}
-        />
+          {/* The rim: a thin light line (the paper's core) round the piece
+              and a brighter one across each torn neck. */}
+          <svg
+            className="pointer-events-none absolute inset-0 h-full w-full overflow-visible"
+            viewBox={`0 0 ${COUPON_BASE_WIDTH} ${COUPON_BASE_HEIGHT}`}
+            aria-hidden="true"
+          >
+            <path
+              ref={outlineRef}
+              d={piecePath(getCouponEdge(face.seed), 1)}
+              fill="none"
+              stroke="rgba(60,44,28,0.35)"
+              strokeWidth="0.6"
+              strokeLinejoin="round"
+            />
+            <path
+              ref={tearRef}
+              d={tearLinesPath(getCouponEdge(face.seed), 1)}
+              fill="none"
+              stroke="rgba(255,251,238,0.95)"
+              strokeWidth="0.9"
+              strokeLinecap="round"
+            />
+          </svg>
+        </div>
       </div>
     </div>
   );

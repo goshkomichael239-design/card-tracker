@@ -1,10 +1,22 @@
 import React from 'react';
 
 import spikeImage from '../../assets/spike.png';
+import {
+  buildCouponEdge,
+  piecePath,
+  tearLinesPath,
+} from '../../app/couponEdge';
+
+export interface SpikeSlip {
+  /** The paper colour of the card it was torn from. */
+  paper: string;
+  /** What its torn edge is drawn from (the same as the coupon's own). */
+  seed: string;
+}
 
 interface CouponSpikeProps {
-  /** Paper colours of the coupons torn off today, newest first. */
-  slipPapers: string[];
+  /** The coupons torn off today, newest first. */
+  slips: SpikeSlip[];
   /** Changes every time a coupon lands on the spike; replays the bump. */
   bumpKey: number;
   /** Height of the picture in px. */
@@ -23,6 +35,11 @@ const FIRST_SLIP_Y = 252;
 const SLIP_STEP = 24;
 const SLIP_WIDTH = 150;
 const SLIP_HEIGHT = 36;
+// A slip's perforation, in the picture's units (bigger than on the card, so it
+// reads when the whole picture is small).
+const SLIP_HOLE = 6.2;
+const SLIP_PITCH = 13;
+const SLIP_CORNER = 5;
 // The middle of the stand's foot (a disc seen at a slant: its lower edge is an
 // arc reaching to the bottom of the picture), and how deep its reflection in
 // the stone reaches. Shadow and reflection belong to the whole disc.
@@ -37,13 +54,13 @@ const REFLECTION_DEPTH = 120;
  * `data-coupon-spike` lets the flying coupon aim at it.
  */
 export const CouponSpike: React.FC<CouponSpikeProps> = ({
-  slipPapers,
+  slips: allSlips,
   bumpKey,
   pictureHeight,
   style,
 }) => {
-  const count = slipPapers.length;
-  const slips = slipPapers.slice(0, MAX_SLIPS).reverse();
+  const count = allSlips.length;
+  const slips = allSlips.slice(0, MAX_SLIPS).reverse();
 
   return (
     <div
@@ -120,35 +137,41 @@ export const CouponSpike: React.FC<CouponSpikeProps> = ({
           <image href={spikeImage} x="0" y="0" width="224" height="460" />
 
           {/* Coupons speared on the needle, oldest at the bottom. */}
-          {slips.map((paper, index) => {
+          {slips.map(({ paper, seed }, index) => {
             const y = FIRST_SLIP_Y - index * SLIP_STEP;
+            const edge = buildCouponEdge({
+              width: SLIP_WIDTH,
+              height: SLIP_HEIGHT,
+              radius: SLIP_CORNER,
+              hole: SLIP_HOLE,
+              pitch: SLIP_PITCH,
+              seed,
+            });
 
             return (
               <g
-                key={`${index}-${paper}`}
+                key={`${index}-${seed}`}
                 transform={`rotate(${SLIP_TILTS[index]} ${NEEDLE_X} ${y})`}
               >
-                <rect
-                  x={NEEDLE_X - SLIP_WIDTH / 2}
-                  y={y - SLIP_HEIGHT / 2}
-                  width={SLIP_WIDTH}
-                  height={SLIP_HEIGHT}
-                  rx="5"
-                  fill={paper}
-                  stroke="rgba(40,30,20,0.4)"
-                  strokeWidth="2"
-                />
-                <rect
-                  x={NEEDLE_X - SLIP_WIDTH / 2 + 5}
-                  y={y - SLIP_HEIGHT / 2 + 5}
-                  width={SLIP_WIDTH - 10}
-                  height={SLIP_HEIGHT - 10}
-                  rx="3"
-                  fill="none"
-                  stroke="rgba(40,30,20,0.4)"
-                  strokeWidth="1.8"
-                  strokeDasharray="6 4.5"
-                />
+                <g
+                  transform={`translate(${NEEDLE_X - SLIP_WIDTH / 2} ${y - SLIP_HEIGHT / 2})`}
+                >
+                  {/* the slip: a piece of the sheet with its torn rim */}
+                  <path
+                    d={piecePath(edge)}
+                    fill={paper}
+                    stroke="rgba(40,30,20,0.45)"
+                    strokeWidth="1.4"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    d={tearLinesPath(edge)}
+                    fill="none"
+                    stroke="rgba(255,251,238,0.9)"
+                    strokeWidth="1.1"
+                    strokeLinecap="round"
+                  />
+                </g>
               </g>
             );
           })}

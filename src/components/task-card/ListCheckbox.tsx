@@ -1,12 +1,16 @@
 import React, { useEffect, useRef, useState } from 'react';
 
+import { buildCouponEdge, piecePath, tearLinesPath } from '../../app/couponEdge';
 import { playSound } from '../../app/sounds';
+import { PerforationHoles } from './CouponPerforation';
 
 interface ListCheckboxProps {
   checked: boolean;
   size: number;
   accent: string;
   accentDark: string;
+  /** What the tab's torn edge is drawn from (the item's id). */
+  seed?: string;
 }
 
 const TEAR_MS = 520;
@@ -21,7 +25,19 @@ export const ListCheckbox: React.FC<ListCheckboxProps> = ({
   size,
   accent,
   accentDark,
+  seed = 'tab',
 }) => {
+  // The tab's own perforation, at its small scale.
+  const edge = buildCouponEdge({
+    width: size,
+    height: size,
+    radius: 5,
+    hole: 1.7,
+    pitch: 3.9,
+    seed,
+  });
+  const plateStyle = { inset: edge.inset, borderRadius: edge.contour.r } as React.CSSProperties;
+
   const wasCheckedRef = useRef(checked);
   const [isTearing, setIsTearing] = useState(false);
 
@@ -74,8 +90,39 @@ export const ListCheckbox: React.FC<ListCheckboxProps> = ({
           />
         </svg>
       )}
-      {!checked && <span className="list-check__tab" />}
-      {isTearing && <span className="list-check__tab list-check__tab--flying" />}
+      {!checked && (
+        <span className="list-check__tab">
+          <span className="list-check__plate" style={plateStyle} />
+          <PerforationHoles edge={edge} />
+        </span>
+      )}
+      {isTearing && (
+        <span className="list-check__tab list-check__tab--flying">
+          {/* The tab that comes away has the torn rim, a light core on it. */}
+          <span
+            className="list-check__plate"
+            style={{
+              inset: 0,
+              borderRadius: 0,
+              boxShadow: 'none',
+              clipPath: `path('${piecePath(edge)}')`,
+            }}
+          />
+          <svg
+            className="pointer-events-none absolute inset-0 h-full w-full overflow-visible"
+            viewBox={`0 0 ${size} ${size}`}
+            aria-hidden="true"
+          >
+            <path
+              d={tearLinesPath(edge)}
+              fill="none"
+              stroke="rgba(255,251,238,0.95)"
+              strokeWidth="0.6"
+              strokeLinecap="round"
+            />
+          </svg>
+        </span>
+      )}
     </span>
   );
 };

@@ -87,6 +87,8 @@ import { ARCHIVE_NAVIGATION_HEIGHT } from '../components/archive/ArchiveNavigati
 import { getCardScale, useViewportSize } from './viewportScale';
 import { haptic } from './haptics';
 import { playSound } from './sounds';
+import { getCouponSeed } from './couponEdge';
+import { clearCouponTear, markCouponTear } from './couponTear';
 import { SHOW_DEV_TOOLS } from './devTools';
 import { SettingsGear } from '../components/settings/SettingsGear';
 import { SettingsView } from '../components/settings/SettingsView';
@@ -355,7 +357,10 @@ const MainApp: React.FC = () => {
             card.completedAt !== undefined &&
             getLocalDayKey(new Date(card.completedAt)) === currentDayKey,
         )
-        .map((card) => getCardPalette(card).paper),
+        .map((card) => ({
+          paper: getCardPalette(card).paper,
+          seed: getCouponSeed(card),
+        })),
     [archivedCards, currentDayKey],
   );
   // On narrow screens the basket and the spike stand right beside the card, so
@@ -1241,10 +1246,17 @@ const MainApp: React.FC = () => {
     // A short tear: a tick as it is pulled and a longer one as it comes off.
     haptic([10, 28, 22]);
     playSound('tear');
+    // What the torn edge is drawn from. The perforation gives way from one
+    // corner to the opposite one, on the flying piece and on the slot it
+    // leaves, by one clock that starts when the piece is first drawn.
+    const couponSeed = getCouponSeed(cardToComplete);
+
+    markCouponTear(couponSeed);
 
     if (isRepeating) {
       detachedCouponLayerRef.current?.launch({
         id: completedCard.id,
+        seed: couponSeed,
         left: couponBounds.left,
         top: couponBounds.top,
         width: couponBounds.width,
@@ -1266,6 +1278,7 @@ const MainApp: React.FC = () => {
 
     detachedCouponLayerRef.current?.launch({
       id: completedCard.id,
+      seed: couponSeed,
       left: couponBounds.left,
       top: couponBounds.top,
       width: couponBounds.width,
@@ -1508,6 +1521,8 @@ const MainApp: React.FC = () => {
     setPendingCompletedCardId(null);
     detachedCouponLayerRef.current?.cancel();
     couponFlightInProgressRef.current = false;
+    // The coupon is whole again, with no trace of the tear.
+    clearCouponTear(getCouponSeed(before));
 
     setArchivedCards((previous) =>
       previous.filter((card) => card.id !== archivedId),
@@ -2349,7 +2364,7 @@ const MainApp: React.FC = () => {
       {/* The day's torn coupons on their brass spike in the corner opposite the
           basket: they land here, and pressing it opens the archive. */}
       <CouponSpike
-        slipPapers={todaySlipPapers}
+        slips={todaySlipPapers}
         bumpKey={spikeBumpKey}
         pictureHeight={BAR_OBJECT_HEIGHT.spike}
         style={{

@@ -56,6 +56,7 @@ export function TaskListContent({
                 <span className="mt-[1px] flex shrink-0">
                   <ListCheckbox
                     checked={completed}
+                    seed={item.id}
                     size={isSheet ? 28 : 26}
                     accent={palette.accent}
                     accentDark={palette.accentDark}

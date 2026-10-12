@@ -13,6 +13,8 @@ import {
   type CardFace,
   type FaceDirection,
 } from './CardFaceStage';
+import { getCouponSeed } from '../../app/couponEdge';
+import { MeasuredPerforation } from './CouponPerforation';
 import { CompletionCoupon } from './CompletionCoupon';
 import { CornerHint } from './CornerHint';
 import { CardPostponeFace } from './CardPostponeFace';
@@ -444,6 +446,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
             completedLabel={list ? `${listCompletedCount} / ${list.items.length}` : undefined}
             height={config.couponHeight}
             paperTint={palette.paper}
+            seed={getCouponSeed(card)}
           />
         </div>
       )}
@@ -624,10 +627,12 @@ export const TaskCard: React.FC<TaskCardProps> = ({
             {/* Style "coupon". */}
             <div className="swipe-coupon swipe-coupon--complete">
               <i className="swipe-coupon__fill" />
+              <MeasuredPerforation seed="swipe-complete" hole={3.2} pitch={7} radius={8} />
               <span>✓ Готово</span>
             </div>
             <div className="swipe-coupon swipe-coupon--delete">
               <i className="swipe-coupon__fill" />
+              <MeasuredPerforation seed="swipe-delete" hole={3.2} pitch={7} radius={8} />
               <span>Убрать</span>
             </div>
           </div>
