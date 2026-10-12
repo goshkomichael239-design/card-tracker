@@ -42,16 +42,10 @@ interface CardSwitcherProps {
   onCreateDeck: () => void;
 }
 
-const hashOf = (text: string): number => {
-  let hash = 2166136261;
-
-  for (let index = 0; index < text.length; index += 1) {
-    hash ^= text.charCodeAt(index);
-    hash = Math.imul(hash, 16777619);
-  }
-
-  return hash >>> 0;
-};
+// Every edge is as wide as the others and stands exactly under the one
+// above; this much of the file's width is left free at each side, so the
+// shadows are not cut by the list's own edge.
+const EDGE_INSET = 5;
 
 const getCardDisplayLabel = (card: VisualCard) => {
   if (card.kind !== 'list' || !card.list?.items.length) {
@@ -342,10 +336,6 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
               const isActive = card.id === activeCardId;
               const palette = getCardPalette(card);
               const isOverdue = Boolean(overdueIds?.has(card.id));
-              // Roughness drawn from the id: it never changes between renders.
-              const hash = hashOf(card.id);
-              const inset = isActive ? 0 : 6 + ((hash % 7) - 3) * 0.8;
-              const tilt = isActive ? 0 : (((hash >>> 4) % 9) - 4) * 0.1;
 
               return (
                 <button
@@ -357,36 +347,64 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
                   className="engraved relative flex shrink-0 items-start border-0 px-3 text-left"
                   style={{
                     height: metrics.rowHeight,
-                    width: `calc(100% - ${inset * 2}px)`,
+                    width: `calc(100% - ${EDGE_INSET * 2}px)`,
                     marginLeft: 'auto',
                     marginRight: 'auto',
                     marginTop: index === 0 ? 0 : -metrics.overlap,
-                    zIndex: rows.length - index,
+                    // The chosen card lies in front of all the others; of
+                    // the rest each is under the one above it.
+                    zIndex: isActive ? rows.length + 1 : rows.length - index,
                     scrollSnapAlign: 'start',
                     // Snap with the part under the card above out of sight.
                     scrollMarginTop: -metrics.overlap,
-                    borderRadius: '0 0 10px 10px',
+                    // Rounded at the bottom for all; the chosen card, in
+                    // front, at the top too. The others' upper corners are
+                    // square and lie under the card above, so nothing shows
+                    // through the rounding of its lower corners.
+                    borderRadius: isActive ? 11 : '0 0 11px 11px',
                     backgroundColor: palette.paper,
-                    backgroundImage: `url(${cardboardTexture})`,
-                    backgroundSize: 'cover',
+                    // From the top: light falling on the paper, a soft
+                    // darkening towards the lower edge, the board's grain.
+                    backgroundImage: `linear-gradient(180deg, rgba(255,255,255,0.42) 0%, rgba(255,255,255,0.08) 38%, rgba(70,48,28,0.12) 100%), linear-gradient(100deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0) 42%, rgba(60,40,24,0.07) 100%), url(${cardboardTexture})`,
+                    backgroundSize: '100% 100%, 100% 100%, cover',
                     backgroundPosition: 'center',
-                    backgroundBlendMode: 'multiply',
-                    border: '1px solid rgba(91,76,59,0.16)',
-                    borderTop: 'none',
+                    backgroundBlendMode: 'normal, normal, multiply',
+                    border: '1px solid rgba(91,76,59,0.2)',
+                    borderTop: isActive
+                      ? '1px solid rgba(91,76,59,0.2)'
+                      : 'none',
+                    // The cut edge of a real card: a pale rim of the board's
+                    // thickness along the bottom, then the shadow it casts
+                    // on the card below (tight, then a soft one).
                     boxShadow: isActive
-                      ? '0 3px 6px rgba(20,17,14,0.32), inset 0 -1px 0 rgba(79,61,42,0.1)'
-                      : '0 2px 3px rgba(20,17,14,0.26), inset 0 -1px 0 rgba(79,61,42,0.1)',
-                    filter: isActive ? 'brightness(1.045)' : undefined,
-                    transform: tilt ? `rotate(${tilt}deg)` : undefined,
-                    transformOrigin: 'center top',
+                      ? 'inset 0 -2px 0 rgba(255,255,255,0.62), inset 0 -3px 0 rgba(79,61,42,0.14), inset 0 1px 0 rgba(255,255,255,0.55), 0 3px 4px -1px rgba(20,17,14,0.4), 0 8px 12px -4px rgba(20,17,14,0.3)'
+                      : 'inset 0 -2px 0 rgba(255,255,255,0.55), inset 0 -3px 0 rgba(79,61,42,0.12), inset 0 1px 0 rgba(255,255,255,0.4), 0 3px 4px -1px rgba(20,17,14,0.36), 0 6px 9px -4px rgba(20,17,14,0.24)',
+                    filter: isActive ? 'brightness(1.05) saturate(1.04)' : undefined,
                   }}
                 >
+                  {/* The card's colour as a thin stripe on its left. */}
+                  <span
+                    aria-hidden="true"
+                    className="absolute"
+                    style={{
+                      left: 5,
+                      top: metrics.overlap + 5,
+                      bottom: 6,
+                      width: 3,
+                      borderRadius: 2,
+                      backgroundColor: palette.accent,
+                      opacity: isActive ? 0.9 : 0.6,
+                      boxShadow: 'inset 0 0 0 0.5px rgba(0,0,0,0.12)',
+                    }}
+                  />
                   <span
                     className="relative block min-w-0 flex-1 truncate"
                     style={{
                       color: palette.ink,
                       fontFamily: "'Lora', Georgia, serif",
                       fontWeight: isActive ? 700 : 600,
+                      letterSpacing: '0.008em',
+                      paddingLeft: 6,
                       fontSize: metrics.fontSize,
                       // The top of an edge lies under the card above: the
                       // name stands in the part that shows.
