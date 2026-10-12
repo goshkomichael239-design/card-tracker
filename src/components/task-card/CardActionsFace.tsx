@@ -9,6 +9,8 @@ interface CardActionsFaceProps {
   onEdit: () => void;
   /** Absent for cards that cannot be put off (series and lists have no date). */
   onPostpone?: () => void;
+  /** Only for a series that is still running: close it before its last step. */
+  onFinishSeries?: () => void;
   onDelete: () => void;
 }
 
@@ -28,10 +30,11 @@ export const CardActionsFace: React.FC<CardActionsFaceProps> = ({
   palette,
   onEdit,
   onPostpone,
+  onFinishSeries,
   onDelete,
 }) => {
   // With three slots they are set a little denser so all of them fit.
-  const slotClass = onPostpone
+  const slotClass = onPostpone || onFinishSeries
     ? 'etched-action etched-action--compact draw-in'
     : 'etched-action draw-in';
   const [isConfirming, setIsConfirming] = useState(false);
@@ -84,7 +87,10 @@ export const CardActionsFace: React.FC<CardActionsFaceProps> = ({
           they read as the card's content and not as a list under the title. */}
       <div
         className="absolute left-0 right-0 flex flex-col gap-3"
-        style={{ top: onPostpone ? '47%' : '43%', transform: 'translateY(-50%)' }}
+        style={{
+          top: onPostpone || onFinishSeries ? '47%' : '43%',
+          transform: 'translateY(-50%)',
+        }}
       >
         <button
           type="button"
@@ -106,6 +112,18 @@ export const CardActionsFace: React.FC<CardActionsFaceProps> = ({
             style={{ ...drawDelay(245), ...glowStyle }}
           >
             <span className="etched-action__text">Отложить</span>
+          </button>
+        )}
+
+        {onFinishSeries && (
+          <button
+            type="button"
+            onClick={onFinishSeries}
+            onTouchStart={() => undefined}
+            className={slotClass}
+            style={{ ...drawDelay(245), ...glowStyle }}
+          >
+            <span className="etched-action__text">Завершить серию</span>
           </button>
         )}
 

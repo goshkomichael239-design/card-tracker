@@ -360,31 +360,13 @@ export const TaskCard: React.FC<TaskCardProps> = ({
             {series.entries.length} / {series.targetCount}
           </p>
           {lastSeriesEntry ? (
-            <div className="mt-2 font-mono text-[12.5px] leading-snug text-[#776E63]">
-              <p>Последняя · {new Date(lastSeriesEntry.completedAt).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}</p>
-              <p>За · {formatSeriesDuration(lastSeriesEntry.durationMs)}</p>
-            </div>
+            <p className="mt-2 font-mono text-[12.5px] leading-snug text-[#776E63]">
+              Последняя · {new Date(lastSeriesEntry.completedAt).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })} · за {formatSeriesDuration(lastSeriesEntry.durationMs)}
+            </p>
           ) : (
             <p className="mt-2 font-mono text-[12.5px] text-[#776E63]">
               Начато · {new Date(series.startedAt).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
             </p>
-          )}
-          {!card.completedAt && onFinishSeries && canOpenMenu && (
-            <button
-              type="button"
-              onClick={() => goToFace('finish', 1)}
-              onTouchStart={() => undefined}
-              className="pill-action mt-3"
-              style={
-                {
-                  ['--pill-bg' as string]: `${palette.accent}1d`,
-                  ['--pill-ink' as string]: palette.accentDark,
-                  ['--pill-glow' as string]: palette.glow,
-                } as React.CSSProperties
-              }
-            >
-              Завершить серию
-            </button>
           )}
         </div>
       ) : targetAt ? (
@@ -558,6 +540,12 @@ export const TaskCard: React.FC<TaskCardProps> = ({
               onPostpone={
                 onPostpone && card.kind !== 'series' && !card.pinned
                   ? () => goToFace('postpone', 1)
+                  : undefined
+              }
+              // Finishing a series early lives on the card's back, not on its face.
+              onFinishSeries={
+                series && !card.completedAt && onFinishSeries
+                  ? () => goToFace('finish', 1)
                   : undefined
               }
               onDelete={() => {

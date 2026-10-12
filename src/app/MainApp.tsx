@@ -163,9 +163,11 @@ interface TransientOutgoingCard {
 
 /** Below this width the scene is a phone's: cards a little smaller. */
 const PHONE_WIDTH_PX = 640;
-const PHONE_SCENE_FACTOR = 0.9;
+const PHONE_SCENE_FACTOR = 0.92;
 /** The stack stands this share of the screen's width left of the middle. */
 const STACK_SHIFT_RATIO = 0.03;
+// On a phone the stack stands further left: the dots on its right must fit.
+const PHONE_STACK_SHIFT_RATIO = 0.05;
 /**
  * A finger dragging the card turns it once it has gone this far (px): slower
  * than over the dots, so the card can be turned through with some care.
@@ -234,7 +236,7 @@ const STACK_PEEK_BELOW = 12;
 // same on every screen. The "done / take back" line stands in it.
 const CARD_BOTTOM_GAP = 48;
 const SCENE_SIDE_OVERHANG = 44;
-const NARROW_SCENE_SIDE_OVERHANG = 64;
+const NARROW_SCENE_SIDE_OVERHANG = 50;
 // The card file (tabs, divider, edges) hangs this far from the top edge: just
 // under the row of the search and settings buttons.
 const SWITCHER_TOP = 44;
@@ -1984,7 +1986,7 @@ const MainApp: React.FC = () => {
             height: INITIAL_TASK_CARD_V2_CONFIG.height * sceneScale,
             // The stack stands a little left of the middle, leaving room for
             // the dots on its right.
-            transform: `translateX(${-viewportWidth * STACK_SHIFT_RATIO}px)`,
+            transform: `translateX(${-viewportWidth * (isPhone ? PHONE_STACK_SHIFT_RATIO : STACK_SHIFT_RATIO)}px)`,
           }}
         >
           <DeckDots
