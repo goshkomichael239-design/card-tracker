@@ -150,7 +150,7 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
         { transform: 'translate3d(0, -22px, 0)', opacity: 0 },
         { transform: 'translate3d(0, 0, 0)', opacity: 1 },
       ],
-      { duration: 300, easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)' },
+      { duration: 420, easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)' },
     );
   }, [activeDeckId]);
 

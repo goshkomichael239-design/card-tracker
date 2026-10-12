@@ -394,7 +394,7 @@ export const ArchiveCatalog: React.FC<ArchiveCatalogProps> = ({
               initial="enter"
               animate="center"
               exit="exit"
-              transition={{ duration: 0.2, ease: [0.32, 0.72, 0, 1] }}
+              transition={{ duration: 0.24, ease: [0.32, 0.72, 0, 1] }}
               style={{ transformOrigin: '50% 100%' }}
             >
               {pageMonths.map((month) => (

@@ -82,7 +82,7 @@ export function DraftDateStep({
                 y: 2,
                 boxShadow:
                   'inset 0 2px 4px rgba(48,34,24,0.2), 0 1px 0 rgba(72,52,37,0.2)',
-                transition: { duration: 0.07, ease: 'easeOut' },
+                transition: { duration: 0.15, ease: 'easeOut' },
               }}
               className="min-h-[43px] rounded-[10px] border-0 px-2 py-2 font-mono text-[10.5px] font-semibold uppercase tracking-[0.09em]"
               style={{
@@ -109,7 +109,7 @@ export function DraftDateStep({
               y: 2,
               boxShadow:
                 'inset 0 2px 4px rgba(48,34,24,0.2), 0 1px 0 rgba(72,52,37,0.2)',
-              transition: { duration: 0.07, ease: 'easeOut' },
+              transition: { duration: 0.15, ease: 'easeOut' },
             }}
             className="min-h-[43px] rounded-[10px] border-0 px-2 py-2 font-mono text-[10.5px] font-semibold uppercase tracking-[0.09em]"
             style={{
@@ -156,7 +156,7 @@ export function DraftDateStep({
             <motion.button
               type="button"
               onClick={() => onChangeYear(1)}
-              whileTap={{ y: 1, transition: { duration: 0.07 } }}
+              whileTap={{ y: 1, transition: { duration: 0.15 } }}
               className="h-[28px] rounded-[8px] border-0 bg-transparent font-mono text-[16px]"
               style={{ color: palette.accentDark }}
               aria-label="Следующий год"
@@ -185,7 +185,7 @@ export function DraftDateStep({
             <motion.button
               type="button"
               onClick={() => onChangeMonth(1)}
-              whileTap={{ y: 1, transition: { duration: 0.07 } }}
+              whileTap={{ y: 1, transition: { duration: 0.15 } }}
               className="h-[28px] rounded-[8px] border-0 bg-transparent font-mono text-[16px]"
               style={{ color: palette.accentDark }}
               aria-label="Следующий месяц"
@@ -228,7 +228,7 @@ export function DraftDateStep({
                   whileTap={
                     isPast
                       ? undefined
-                      : { y: 1, transition: { duration: 0.06 } }
+                      : { y: 1, transition: { duration: 0.15 } }
                   }
                   className="h-[24px] rounded-[7px] border-0 p-0 text-center font-mono text-[10.5px] font-semibold disabled:cursor-default"
                   style={{

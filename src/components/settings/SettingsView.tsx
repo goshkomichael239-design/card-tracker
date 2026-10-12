@@ -4,6 +4,7 @@ import { SETTINGS, useSettings } from '../../app/settings';
 import { MotionSetting } from './MotionSetting';
 import { SearchHitsSetting } from './SearchHitsSetting';
 import { SwipeStyleSetting } from './SwipeStyleSetting';
+import { canVibrate } from '../../app/haptics';
 import { playSound } from '../../app/sounds';
 
 interface SettingsViewProps {
@@ -47,7 +48,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       style={{
         opacity: isOpen ? 1 : 0,
         pointerEvents: isOpen ? 'auto' : 'none',
-        transition: 'opacity 260ms ease-out',
+        transition: 'opacity 240ms ease-out',
       }}
       role="dialog"
       aria-modal="true"
@@ -68,7 +69,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           <SearchHitsSetting style={lit(150)} />
 
           <ul>
-            {SETTINGS.map((setting, index) => {
+            {SETTINGS.filter(
+              // A phone that cannot vibrate (an iPhone) has nothing to switch.
+              (setting) => setting.id !== 'haptics' || canVibrate(),
+            ).map((setting, index) => {
               const isOn = values[setting.id];
 
               return (
@@ -82,9 +86,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                       className={`lit-text${isOn ? '' : ' lit-text--dim'} text-[19px] font-semibold leading-[1.2]`}
                     >
                       {setting.label}
-                      {setting.isStub && (
-                        <span className="lit-soon">скоро</span>
-                      )}
                     </p>
                     <p className="lit-hint mt-1 text-[13px] leading-[1.35]">
                       {setting.hint}
@@ -110,19 +111,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             })}
           </ul>
 
-          <p
-            className="lit-in lit-hint mt-6 text-center text-[12.5px]"
-            style={lit(160 + SETTINGS.length * 90 + 60)}
-          >
-            Выключатели с пометкой «скоро» пока ничего не меняют.
-          </p>
-
           <button
             type="button"
             onClick={onClose}
             onTouchStart={() => undefined}
             className="lit-in lit-text lit-done mx-auto mt-6 block font-mono text-[13px] font-bold uppercase tracking-[0.24em]"
-            style={lit(160 + SETTINGS.length * 90 + 140)}
+            style={lit(160 + SETTINGS.length * 90 + 60)}
           >
             Готово
           </button>

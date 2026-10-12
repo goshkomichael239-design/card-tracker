@@ -30,7 +30,7 @@ const tap = {
   filter: 'brightness(0.98)',
   boxShadow:
     'inset 0 2px 4px rgba(48,34,24,0.2), 0 1px 0 rgba(72,52,37,0.2)',
-  transition: { duration: 0.07, ease: 'easeOut' as const },
+  transition: { duration: 0.15, ease: 'easeOut' as const },
 };
 
 export function DraftNavigation({
@@ -67,7 +67,7 @@ export function DraftNavigation({
               initial={{ opacity: 0, y: 5 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.16 }}
+              transition={{ duration: 0.24 }}
               whileHover={hover}
               whileTap={tap}
               onClick={onNext}

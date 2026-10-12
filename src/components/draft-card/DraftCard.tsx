@@ -147,7 +147,7 @@ export function DraftCard(props: DraftCardProps) {
         className="engraved absolute inset-0 flex flex-col overflow-hidden"
         initial={{ backgroundColor: config.paperTint }}
         animate={{ backgroundColor: props.palette.paper }}
-        transition={{ duration: 0.3 }}
+        transition={{ duration: 0.42 }}
         style={{
         borderRadius: `${config.borderRadius}px`,
         padding: `${config.contentPadding}px`,
@@ -184,8 +184,8 @@ export function DraftCard(props: DraftCardProps) {
             key={props.draftStep}
             initial={{ opacity: 0, y: 5 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -3, transition: { duration: 0.1, ease: 'easeOut' } }}
-            transition={{ duration: 0.18, ease: 'easeOut' }}
+            exit={{ opacity: 0, y: -3, transition: { duration: 0.15, ease: 'easeOut' } }}
+            transition={{ duration: 0.24, ease: 'easeOut' }}
             className="absolute inset-0 flex flex-col"
           >
             {props.draftStep === 'title' && (

@@ -1,5 +1,7 @@
 import React from 'react';
 
+import { useSettings } from '../../app/settings';
+
 /**
  * The table: clean emerald cloth, lighter under the lamp in the middle and
  * darker toward the edges, with a very fine tooth so the surface does not read
@@ -34,6 +36,16 @@ const CLOTH = `
   )
 `;
 
+/** The cloth with the lamp switched off: even, darker only at the very edge. */
+const CLOTH_EVEN = `
+  radial-gradient(
+    ellipse 120% 110% at 50% 50%,
+    #08623a 0%,
+    #075a35 60%,
+    #04412a 100%
+  )
+`;
+
 interface TableSurfaceProps {
   /** The whole table (lamp, thin rim); false for a plain strip of cloth. */
   isFull?: boolean;
@@ -41,41 +53,49 @@ interface TableSurfaceProps {
 
 export const TableSurface: React.FC<TableSurfaceProps> = ({
   isFull = true,
-}) => (
-  <>
-    <div
-      className="absolute inset-0"
-      style={{
-        backgroundColor: '#065030',
-        backgroundImage: isFull
-          ? CLOTH
-          : 'linear-gradient(180deg, #0a6a3c 0%, #065030 100%)',
-      }}
-    />
+}) => {
+  // "Свет лампы" off: the cloth is lit evenly, with only the dark edge.
+  const { values } = useSettings();
+  const hasLamp = values.lamp;
 
-    {/* The tooth of the cloth. */}
-    <div
-      className="pointer-events-none absolute inset-0"
-      style={{
-        backgroundImage: TOOTH,
-        backgroundSize: '256px 256px',
-        mixBlendMode: 'soft-light',
-        opacity: 0.22,
-      }}
-      aria-hidden="true"
-    />
+  return (
+    <>
+      <div
+        className="absolute inset-0"
+        style={{
+          backgroundColor: '#065030',
+          backgroundImage: isFull
+            ? hasLamp
+              ? CLOTH
+              : CLOTH_EVEN
+            : 'linear-gradient(180deg, #0a6a3c 0%, #065030 100%)',
+        }}
+      />
 
-    {isFull && (
-      /* A thin, dark rim along the screen edge. */
+      {/* The tooth of the cloth. */}
       <div
         className="pointer-events-none absolute inset-0"
         style={{
-          border: 'clamp(3px, 0.55vw, 6px) solid #1c1410',
-          boxShadow:
-            'inset 0 0 0 1px rgba(255,226,190,0.06), inset 0 0 28px rgba(0,0,0,0.42)',
+          backgroundImage: TOOTH,
+          backgroundSize: '256px 256px',
+          mixBlendMode: 'soft-light',
+          opacity: 0.22,
         }}
         aria-hidden="true"
       />
-    )}
-  </>
-);
+
+      {isFull && (
+        /* A thin, dark rim along the screen edge. */
+        <div
+          className="pointer-events-none absolute inset-0"
+          style={{
+            border: 'clamp(3px, 0.55vw, 6px) solid #1c1410',
+            boxShadow:
+              'inset 0 0 0 1px rgba(255,226,190,0.06), inset 0 0 28px rgba(0,0,0,0.42)',
+          }}
+          aria-hidden="true"
+        />
+      )}
+    </>
+  );
+};

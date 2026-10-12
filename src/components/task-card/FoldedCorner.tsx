@@ -29,7 +29,7 @@ export const FoldedFlap: React.FC<{
       filter: lifted
         ? 'drop-shadow(-2px 4px 3.5px rgba(38,27,16,0.5))'
         : 'drop-shadow(-1px 2px 2px rgba(38,27,16,0.36))',
-      transition: 'filter 160ms ease-out',
+      transition: 'filter 240ms ease-out',
     }}
   >
     <span

@@ -148,7 +148,7 @@ export const PinStar: React.FC<PinStarProps> = ({
             y: -26,
             opacity: 0,
             rotate: -5,
-            transition: { duration: 0.2, ease: 'easeIn' },
+            transition: { duration: 0.24, ease: 'easeIn' },
           }}
           style={{ filter: 'drop-shadow(0.5px 1px 0.5px rgba(30,20,10,0.25))' }}
         >
@@ -165,7 +165,7 @@ export const PinStar: React.FC<PinStarProps> = ({
               opacity: 0,
               scale: 0.4,
               rotate: 40,
-              transition: { duration: 0.14 },
+              transition: { duration: 0.15 },
             }}
             style={{ transformOrigin: `${STAR_X}px ${STAR_Y}px` }}
           >

@@ -252,7 +252,7 @@ export const CardFileTabs: React.FC<CardFileTabsProps> = ({
             'linear-gradient(180deg, rgba(255,255,255,0.25) 0%, rgba(0,0,0,0.15) 100%)',
           borderBottom: GOLD_EDGE,
           boxShadow: '0 2px 4px rgba(0,0,0,0.3)',
-          transition: 'background-color 260ms ease-out',
+          transition: 'background-color 240ms ease-out',
         }}
       />
     </>

@@ -6,7 +6,6 @@ import { readValue, writeValue } from './storage/kv';
 export type SettingId =
   | 'haptics'
   | 'sounds'
-  | 'reminders'
   | 'hints'
   | 'lamp'
   | 'overdueCounter';
@@ -15,8 +14,6 @@ export interface SettingDefinition {
   id: SettingId;
   label: string;
   hint: string;
-  /** A placeholder: it is stored, but nothing in the app reads it yet. */
-  isStub: boolean;
   defaultValue: boolean;
 }
 
@@ -25,42 +22,30 @@ export const SETTINGS: SettingDefinition[] = [
     id: 'haptics',
     label: 'Вибрация',
     hint: 'Лёгкий отклик при листании, закреплении и отрыве купона',
-    isStub: false,
     defaultValue: true,
   },
   {
     id: 'sounds',
     label: 'Звуки',
     hint: 'Шорох карточек, треск перфорации, штамп',
-    isStub: false,
     defaultValue: true,
-  },
-  {
-    id: 'reminders',
-    label: 'Напоминания',
-    hint: 'Уведомления о сроках и напоминаниях',
-    isStub: true,
-    defaultValue: false,
   },
   {
     id: 'hints',
     label: 'Подсказки',
-    hint: 'Стрелка у загнутого уголка и другие подсказки',
-    isStub: true,
+    hint: 'Стрелка у загнутого уголка и подсказка про свайп',
     defaultValue: true,
   },
   {
     id: 'lamp',
     label: 'Свет лампы',
-    hint: 'Светлое пятно на сукне под стопкой',
-    isStub: true,
+    hint: 'Светлое пятно на сукне, как под настольной лампой',
     defaultValue: true,
   },
   {
     id: 'overdueCounter',
-    label: 'Счётчик просроченных',
-    hint: 'Красная метка «N просрочено» у списка',
-    isStub: true,
+    label: 'Метки просроченного',
+    hint: 'Красные флажки на язычках колод, на строках и на карточке',
     defaultValue: true,
   },
 ];

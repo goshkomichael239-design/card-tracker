@@ -53,7 +53,7 @@ export const CouponButton: React.FC<CouponButtonProps> = ({
       style={{
         backgroundColor: color,
         opacity: filled ? 0.22 : 0,
-        transition: 'opacity 160ms ease-out',
+        transition: 'opacity 240ms ease-out',
       }}
       aria-hidden="true"
     />

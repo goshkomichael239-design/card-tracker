@@ -13,7 +13,7 @@ interface ListCheckboxProps {
   seed?: string;
 }
 
-const TEAR_MS = 520;
+const TEAR_MS = 420;
 
 /**
  * A list item's box, as a small coupon on the card: a square paper tab with a

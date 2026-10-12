@@ -164,6 +164,7 @@ interface TransientOutgoingCard {
 /** Below this width the scene is a phone's: cards a little smaller. */
 const PHONE_WIDTH_PX = 640;
 const PHONE_SCENE_FACTOR = 0.92;
+const NO_DECK_IDS: ReadonlySet<string> = new Set();
 /** The stack stands this share of the screen's width left of the middle. */
 const STACK_SHIFT_RATIO = 0.03;
 // On a phone the stack stands further left: the dots on its right must fit.
@@ -1902,10 +1903,14 @@ const MainApp: React.FC = () => {
             onPreviousCard={handlePreviousCard}
             isPhone={isPhone}
             viewportHeight={viewportHeight}
-            overdueIds={isSearching ? undefined : overdueIds}
+            overdueIds={
+              isSearching || !appSettings.overdueCounter ? undefined : overdueIds
+            }
             decks={decks}
             activeDeckId={activeDeckId}
-            overdueDeckIds={overdueDeckIds}
+            overdueDeckIds={
+              appSettings.overdueCounter ? overdueDeckIds : NO_DECK_IDS
+            }
             hitCounts={
               isSearching && searchHitsStyle === 'tabs' ? deckHitCounts : null
             }
@@ -1992,7 +1997,7 @@ const MainApp: React.FC = () => {
           <DeckDots
             cards={navCards}
             activeCardId={activeCardId}
-            overdueIds={overdueIds}
+            overdueIds={appSettings.overdueCounter ? overdueIds : undefined}
             onSelectIndex={handleSelectCardIndex}
             onNext={handleNextCard}
             onPrevious={handlePreviousCard}
@@ -2098,6 +2103,7 @@ const MainApp: React.FC = () => {
                   onDelete={() => handleDeleteCard(activeCard.id)}
                   onTogglePin={() => handleTogglePin(activeCard.id)}
                   showCornerHint={
+                    appSettings.hints &&
                     !isCornerHintDismissed &&
                     // The arrow points at the first card that has no pin on it.
                     activeCard.id === cards.find((card) => !card.pinned)?.id
@@ -2106,7 +2112,9 @@ const MainApp: React.FC = () => {
                   onAddListItem={(text) =>
                     addListItem(activeCard.id, text)
                   }
-                  isOverdue={overdueIds.has(activeCard.id)}
+                  isOverdue={
+                    appSettings.overdueCounter && overdueIds.has(activeCard.id)
+                  }
                 />
               </div>
               </motion.div>
@@ -2204,7 +2212,7 @@ const MainApp: React.FC = () => {
                         `
                       : GHOST_SHADOW,
                   }}
-                  transition={{ duration: 0.18 }}
+                  transition={{ duration: 0.24 }}
                   style={{
                     borderRadius: `${CARD_RADIUS}px`,
                     backgroundColor: PALETTES.none.paper,
@@ -2232,7 +2240,7 @@ const MainApp: React.FC = () => {
                       opacity: isGhostHovered ? 1 : 0.78,
                       scale: isGhostHovered ? 1.015 : 1,
                     }}
-                    transition={{ duration: 0.18 }}
+                    transition={{ duration: 0.24 }}
                     className="absolute right-[18px] top-[13px] flex select-none items-center gap-2 whitespace-nowrap text-left"
                   >
                     {/* Stamped into the ghost sheet: a dark edge up-left and a
@@ -2375,7 +2383,7 @@ const MainApp: React.FC = () => {
           right: 16,
           bottom: BAR_FLOOR,
           opacity: isArchiveOpen ? 0 : 1,
-          transition: 'opacity 200ms ease-out',
+          transition: 'opacity 240ms ease-out',
         }}
       />
 

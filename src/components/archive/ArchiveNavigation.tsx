@@ -14,7 +14,7 @@ interface ArchiveNavigationProps {
 export const ARCHIVE_NAVIGATION_HEIGHT = 72;
 
 const NAV_SURFACE_TRANSITION = {
-  duration: 0.22,
+  duration: 0.24,
   ease: [0.32, 0.72, 0, 1] as const,
 };
 
@@ -95,7 +95,7 @@ export const ArchiveNavigation: React.FC<ArchiveNavigationProps> = ({
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -8 }}
-          transition={{ duration: 0.3 }}
+          transition={{ duration: 0.42 }}
           data-text={isArchiveOpen ? 'Главный экран' : 'Архив'}
           className={`foil-text foil-text--sweep${isArchiveOpen ? ' foil-text--on-dark' : ''} relative z-10 leading-none ${isArchiveOpen ? 'text-[20px]' : 'text-[27px]'}`}
         >

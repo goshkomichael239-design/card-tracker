@@ -115,7 +115,7 @@ export function DraftClockStep({
                 y: 2,
                 boxShadow:
                   'inset 0 2px 4px rgba(48,34,24,0.2), 0 1px 0 rgba(72,52,37,0.2)',
-                transition: { duration: 0.07 },
+                transition: { duration: 0.15 },
               }}
               className="min-h-[42px] w-full rounded-[10px] border-0 font-mono text-[20px] font-bold"
               style={{
@@ -145,7 +145,7 @@ export function DraftClockStep({
                 y: 2,
                 boxShadow:
                   'inset 0 2px 4px rgba(48,34,24,0.2), 0 1px 0 rgba(72,52,37,0.2)',
-                transition: { duration: 0.07 },
+                transition: { duration: 0.15 },
               }}
               className="min-h-[42px] w-full rounded-[10px] border-0 font-mono text-[20px] font-bold"
               style={{

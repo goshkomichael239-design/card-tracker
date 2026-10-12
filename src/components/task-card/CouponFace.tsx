@@ -71,7 +71,7 @@ export const CouponFace: React.FC<CouponFaceProps> = ({
               transform: `scaleX(${Math.min(1, Math.max(0, progress))})`,
               backgroundColor: glow,
               opacity: 0.7,
-              transition: animateProgress ? 'transform 180ms ease-out' : undefined,
+              transition: animateProgress ? 'transform 240ms ease-out' : undefined,
               willChange: animateProgress ? 'transform' : undefined,
             }}
           />

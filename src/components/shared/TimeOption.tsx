@@ -37,7 +37,7 @@ export const TimeOption: React.FC<TimeOptionProps> = ({
         filter: 'brightness(0.98)',
         boxShadow:
           'inset 0 2px 4px rgba(48,34,24,0.2), 0 1px 0 rgba(72,52,37,0.2)',
-        transition: { duration: 0.07, ease: 'easeOut' },
+        transition: { duration: 0.15, ease: 'easeOut' },
       }}
       onClick={onClick}
       className="flex min-h-[88px] flex-col items-center justify-center rounded-[13px] px-1 py-3 text-center"

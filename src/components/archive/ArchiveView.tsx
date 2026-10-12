@@ -128,7 +128,7 @@ export const ArchiveView: React.FC<ArchiveViewProps> = ({
       <motion.div
         initial={false}
         animate={{ y: isOpen ? '0%' : '100%' }}
-        transition={{ duration: 0.85, ease: CUBIC_EASE }}
+        transition={{ duration: 0.64, ease: CUBIC_EASE }}
         className="absolute inset-0 h-full w-full"
         style={{ willChange: 'transform' }}
       >
@@ -147,7 +147,7 @@ export const ArchiveView: React.FC<ArchiveViewProps> = ({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.35 }}
+              transition={{ duration: 0.42 }}
               className="absolute inset-0 flex flex-col items-center overflow-y-auto px-4 pb-[110px] text-center sm:px-5"
             >
               <ArchiveContents {...contentProps} />

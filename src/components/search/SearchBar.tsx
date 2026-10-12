@@ -141,7 +141,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
       style={{
         opacity: isHidden ? 0 : 1,
         pointerEvents: isHidden ? 'none' : 'auto',
-        transition: 'opacity 200ms ease-out',
+        transition: 'opacity 240ms ease-out',
       }}
     >
       <div

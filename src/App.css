@@ -149,7 +149,7 @@
     inset 0 -1px 0 rgba(255, 255, 255, 0.78),
     0 1px 0 rgba(255, 255, 255, 0.7);
   pointer-events: none;
-  transition: box-shadow 180ms ease-out;
+  transition: box-shadow 240ms ease-out;
 }
 
 /* The light: the card's brighter pastel, hidden until the slot is touched. */
@@ -165,7 +165,7 @@
     0 0 20px -2px var(--etched-glow, #ffd9c2);
   opacity: 0;
   pointer-events: none;
-  transition: opacity 220ms ease-out;
+  transition: opacity 240ms ease-out;
 }
 
 .etched-action:focus-visible {
@@ -280,7 +280,7 @@
 
 .slot-fill {
   transform-origin: left center;
-  animation: slot-fill 640ms cubic-bezier(0.2, 0.8, 0.2, 1) 140ms backwards;
+  animation: slot-fill 640ms cubic-bezier(0.2, 0.8, 0.2, 1) 150ms backwards;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -351,7 +351,7 @@
 .trash-bin {
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
-  transition: transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1), filter 180ms ease-out;
+  transition: transform 240ms cubic-bezier(0.2, 0.8, 0.2, 1), filter 240ms ease-out;
 }
 
 @media (hover: hover) {
@@ -387,7 +387,7 @@
 
 .trash-bump {
   transform-origin: 50% 90%;
-  animation: trash-bump 380ms cubic-bezier(0.3, 0.7, 0.3, 1);
+  animation: trash-bump 420ms cubic-bezier(0.3, 0.7, 0.3, 1);
 }
 
 /* Undo ticket: slides up from the table edge, a strip burns down meanwhile. */
@@ -543,7 +543,7 @@ section:first-child > .archive-divider {
   box-shadow:
     0 2px 4px rgba(40, 28, 16, 0.2),
     inset 0 1px 0 rgba(255, 255, 255, 0.55);
-  transition: transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition: transform 240ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 @media (hover: hover) {
@@ -565,7 +565,7 @@ section:first-child > .archive-divider {
 }
 
 .archive-pull-out {
-  animation: archive-pull-out 320ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  animation: archive-pull-out 420ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -709,7 +709,7 @@ body {
 /* While the settings are open everything on the table fades away; only the
    cloth, the gear and the settings themselves stay. */
 main > * {
-  transition: opacity 260ms ease-out;
+  transition: opacity 240ms ease-out;
 }
 
 main[data-settings-open='true'] > :not([data-settings-keep]) {
@@ -917,7 +917,7 @@ main[data-settings-open='true'] > :not([data-settings-keep]) {
       rgba(255, 228, 140, 0.55),
       transparent 72%
     );
-  animation: archive-glint 520ms ease-out both;
+  animation: archive-glint 420ms ease-out both;
 }
 
 .archive-spark {
@@ -937,7 +937,7 @@ main[data-settings-open='true'] > :not([data-settings-keep]) {
     38% 38%
   );
   filter: drop-shadow(0 0 3px rgba(255, 222, 130, 0.9));
-  animation: archive-spark 480ms ease-out both;
+  animation: archive-spark 420ms ease-out both;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -981,7 +981,7 @@ main[data-settings-open='true'] > :not([data-settings-keep]) {
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
-  transition: background-color 160ms ease-out, box-shadow 160ms ease-out;
+  transition: background-color 240ms ease-out, box-shadow 240ms ease-out;
 }
 
 .embossed-action:hover,
@@ -1051,7 +1051,7 @@ main[data-settings-open='true'] > :not([data-settings-keep]) {
 .list-check__tab--flying {
   z-index: 2;
   transform-origin: 0% 100%;
-  animation: list-check-tear 520ms cubic-bezier(0.3, 0.6, 0.3, 1) both;
+  animation: list-check-tear 420ms cubic-bezier(0.3, 0.6, 0.3, 1) both;
 }
 
 @keyframes list-check-tear {
@@ -1159,7 +1159,7 @@ main[data-settings-open='true'] > :not([data-settings-keep]) {
 
 /* One pass of light over the letters when the label appears. */
 .foil-text--sweep::after {
-  animation: foil-sweep 1100ms ease-out 120ms both;
+  animation: foil-sweep 1100ms ease-out 150ms both;
 }
 
 @keyframes foil-sweep {
@@ -1317,7 +1317,7 @@ main[data-settings-open='true'] > :not([data-settings-keep]) {
     0 0 14px rgba(255, 190, 90, 0.5);
   pointer-events: none;
   will-change: transform, opacity;
-  transition: transform 110ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition: transform 150ms cubic-bezier(0.2, 0.8, 0.2, 1);
   animation: search-caret-breathe 1.15s ease-in-out infinite;
 }
 
@@ -1470,7 +1470,7 @@ html[data-swipe-style='stamp'] [data-swipe-side='left'] .swipe-stamp--delete {
 }
 
 [data-swipe-ready='true'] .swipe-stamp {
-  animation: swipe-stamp-bang 300ms cubic-bezier(0.2, 0.9, 0.3, 1.3) both;
+  animation: swipe-stamp-bang 420ms cubic-bezier(0.2, 0.9, 0.3, 1.3) both;
 }
 
 @keyframes swipe-stamp-bang {
@@ -1536,7 +1536,7 @@ html[data-swipe-style='coupon'] [data-swipe-side='left'] .swipe-coupon--delete {
 }
 
 [data-swipe-ready='true'] .swipe-coupon {
-  animation: swipe-coupon-tick 260ms cubic-bezier(0.2, 0.9, 0.3, 1.3) both;
+  animation: swipe-coupon-tick 240ms cubic-bezier(0.2, 0.9, 0.3, 1.3) both;
   box-shadow: inset 0 0 0 1.5px var(--ink);
 }
 
@@ -1559,7 +1559,7 @@ html[data-swipe-style='coupon'] [data-swipe-side='left'] .swipe-coupon--delete {
 [data-swipe-side='left'] [role='note'],
 [data-swipe-side='right'] [role='note'] {
   opacity: 0;
-  transition: opacity 90ms linear;
+  transition: opacity 150ms linear;
 }
 
 
@@ -1573,7 +1573,7 @@ html[data-swipe-style='coupon'] [data-swipe-side='left'] .swipe-coupon--delete {
 }
 
 .coupon-press__lift {
-  transition: transform 140ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition: transform 150ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .coupon-press__lift[data-corner='0'] {
@@ -1600,7 +1600,7 @@ html[data-swipe-style='coupon'] [data-swipe-side='left'] .swipe-coupon--delete {
     rgba(30, 20, 10, 0.28) 0%,
     rgba(30, 20, 10, 0) 72%
   );
-  transition: opacity 140ms ease-out;
+  transition: opacity 150ms ease-out;
 }
 .coupon-press__shade[data-corner='0'] { left: -1px; top: 0; }
 .coupon-press__shade[data-corner='1'] { right: -1px; top: 0; }
