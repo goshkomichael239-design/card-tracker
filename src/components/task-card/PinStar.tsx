@@ -1,6 +1,8 @@
 import React from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 
+import clipImage from '../../assets/clip.png';
+
 interface PinStarProps {
   pinned: boolean;
   /** Only the front of the card shows the star; the clip stays on every face. */
@@ -50,11 +52,15 @@ const StarMark: React.FC = () => (
   </svg>
 );
 
-// The wire: from its free end (under the star) down the left side, round the
-// bottom, up the right side, over the top (above the edge of the card) and a
-// little way down again, where it slips behind the paper.
-const WIRE =
-  'M10 30 V68 A10 10 0 0 0 30 68 V13 A7.5 7.5 0 0 0 15 13 V24';
+// The clip is a picture (a gold paper clip, cut out of its background; the
+// star it came with was taken off, ours is drawn in code at the wire's end).
+// It is 92 x 300 in the file; in the 40 x 90 drawing it is shown CLIP_HEIGHT
+// tall, and placed so that the end of its inner wire (at 20% of its width and
+// 31.7% of its height) is exactly under the star.
+const CLIP_HEIGHT = 70;
+const CLIP_WIDTH = (CLIP_HEIGHT * 92) / 300;
+const CLIP_X = STAR_X - 0.2 * CLIP_WIDTH;
+const CLIP_Y = STAR_Y - 0.317 * CLIP_HEIGHT;
 
 /**
  * A gold paper clip over the top edge of the card; its free end carries the
@@ -70,19 +76,6 @@ const ClipMark: React.FC = () => (
     style={{ overflow: 'visible' }}
   >
     <defs>
-      <linearGradient
-        id="clip-gold"
-        gradientUnits="userSpaceOnUse"
-        x1="4"
-        y1="0"
-        x2="36"
-        y2="0"
-      >
-        <stop offset="0" stopColor="#A87718" />
-        <stop offset="0.4" stopColor="#F6DA7C" />
-        <stop offset="0.7" stopColor="#D6A63A" />
-        <stop offset="1" stopColor="#9A6C14" />
-      </linearGradient>
       <linearGradient id="star-gold" x1="0" y1="0" x2="1" y2="1">
         <stop offset="0" stopColor="#FFF3BD" />
         <stop offset="0.5" stopColor="#F2C54E" />
@@ -90,52 +83,45 @@ const ClipMark: React.FC = () => (
       </linearGradient>
     </defs>
 
-    {/* what the clip casts onto the paper */}
-    <path
-      d={WIRE}
-      transform="translate(2.2 3)"
-      fill="none"
-      stroke="rgba(30,20,10,0.3)"
-      strokeWidth="3.4"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      style={{ filter: 'blur(1.4px)' }}
+    {/* What the clip casts onto the paper: a soft one a little to the lower
+        right, and a tight one under the wire that holds it to the card. */}
+    <image
+      href={clipImage}
+      x={CLIP_X + 1.6}
+      y={CLIP_Y + 2.4}
+      width={CLIP_WIDTH}
+      height={CLIP_HEIGHT}
+      style={{
+        filter: 'brightness(0) blur(1.6px)',
+        opacity: 0.26,
+      }}
     />
+    <image
+      href={clipImage}
+      x={CLIP_X + 0.5}
+      y={CLIP_Y + 0.9}
+      width={CLIP_WIDTH}
+      height={CLIP_HEIGHT}
+      style={{
+        filter: 'brightness(0) blur(0.5px)',
+        opacity: 0.34,
+      }}
+    />
+    <image
+      href={clipImage}
+      x={CLIP_X}
+      y={CLIP_Y}
+      width={CLIP_WIDTH}
+      height={CLIP_HEIGHT}
+    />
+
+    {/* the star at the end of the wire, with its own shadow */}
     <polygon
       points={STAR_POINTS}
-      transform="translate(2.2 3)"
-      fill="rgba(30,20,10,0.25)"
-      style={{ filter: 'blur(1.4px)' }}
+      transform="translate(1.4 2)"
+      fill="rgba(30,20,10,0.3)"
+      style={{ filter: 'blur(1.1px)' }}
     />
-
-    {/* the wire: a dark edge, the gold, and a thin light along it */}
-    <path
-      d={WIRE}
-      fill="none"
-      stroke="rgba(90,60,10,0.85)"
-      strokeWidth="4.2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-    <path
-      d={WIRE}
-      fill="none"
-      stroke="url(#clip-gold)"
-      strokeWidth="3"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-    <path
-      d={WIRE}
-      fill="none"
-      stroke="rgba(255,250,215,0.65)"
-      strokeWidth="0.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      transform="translate(-0.7 -0.5)"
-    />
-
-    {/* the star at the end of the wire */}
     <polygon
       points={STAR_POINTS}
       fill="url(#star-gold)"
