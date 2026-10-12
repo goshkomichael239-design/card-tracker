@@ -1687,3 +1687,53 @@ html[data-swipe-style='coupon'] [data-swipe-side='left'] .swipe-coupon--delete {
   outline: 2px solid rgba(60, 45, 30, 0.45);
   outline-offset: 2px;
 }
+
+/* The edge of the table where the archive begins: dark wood, light from the
+   top-left (a lit top edge, a darker underside) and a thin brass inlay. */
+.table-rim {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 5;
+  height: 10px;
+  background-color: #6a4325;
+  background-image:
+    linear-gradient(
+      180deg,
+      rgba(255, 226, 180, 0.38) 0%,
+      rgba(255, 226, 180, 0) 38%,
+      rgba(20, 8, 0, 0.42) 100%
+    ),
+    repeating-linear-gradient(
+      91deg,
+      rgba(40, 18, 4, 0.34) 0 1px,
+      rgba(40, 18, 4, 0) 1px 6px,
+      rgba(255, 220, 170, 0.09) 6px 7px,
+      rgba(40, 18, 4, 0) 7px 13px
+    ),
+    repeating-linear-gradient(
+      89deg,
+      rgba(30, 12, 0, 0.16) 0 2px,
+      rgba(30, 12, 0, 0) 2px 23px
+    );
+  box-shadow:
+    inset 0 1px 0 rgba(255, 233, 190, 0.55),
+    0 1px 0 rgba(222, 184, 96, 0.9),
+    0 2px 0 rgba(120, 88, 30, 0.7);
+}
+
+.table-rim-shadow {
+  position: absolute;
+  top: 12px;
+  left: 0;
+  right: 0;
+  z-index: 4;
+  height: 20px;
+  background: linear-gradient(
+    180deg,
+    rgba(30, 20, 10, 0.5) 0%,
+    rgba(30, 20, 10, 0.2) 40%,
+    rgba(30, 20, 10, 0) 100%
+  );
+}

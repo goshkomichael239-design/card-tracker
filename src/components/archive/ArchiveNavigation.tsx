@@ -43,7 +43,7 @@ export const ArchiveNavigation: React.FC<ArchiveNavigationProps> = ({
           backgroundImage: `url(${whiteMarbleTexture})`,
           backgroundSize: 'cover',
           backgroundPosition: 'bottom center',
-          boxShadow: '0 -8px 24px rgba(0,0,0,0.7)',
+          boxShadow: '0 -3px 10px rgba(0,0,0,0.4)',
           willChange: 'opacity',
         }}
       >
@@ -57,12 +57,18 @@ export const ArchiveNavigation: React.FC<ArchiveNavigationProps> = ({
         transition={NAV_SURFACE_TRANSITION}
         className="pointer-events-none absolute inset-0"
         style={{
-          boxShadow: '0 -8px 24px rgba(0,0,0,0.5)',
+          boxShadow: '0 -3px 10px rgba(0,0,0,0.35)',
           willChange: 'opacity',
         }}
       >
         <TableSurface isFull={false} />
       </motion.div>
+
+      {/* The table's rim: a strip of dark wood with a brass line along the
+          table's edge, and the shadow it throws on what lies below it (the
+          marble of the archive, or the cloth strip of the way back). */}
+      <span aria-hidden="true" className="table-rim pointer-events-none" />
+      <span aria-hidden="true" className="table-rim-shadow pointer-events-none" />
 
       {/* A brief, quiet glint around the archive when a coupon lands. */}
       {glintKey > 0 && !isArchiveOpen && (

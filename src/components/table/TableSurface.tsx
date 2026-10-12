@@ -19,10 +19,14 @@ const TOOTH = `url("data:image/svg+xml,${encodeURIComponent(
   </svg>`,
 )}")`;
 
-/** The cloth colour, from the lit middle out to the shadowed edge. */
+/**
+ * The cloth colour, from the lit patch out to the shadowed edge. The lamp
+ * hangs up and to the left, so it lights the upper left more, and every
+ * object's shadow on the table falls to the lower right.
+ */
 const CLOTH = `
   radial-gradient(
-    ellipse 78% 72% at 50% 42%,
+    ellipse 86% 78% at 42% 34%,
     #0d7a46 0%,
     #0a6a3c 34%,
     #065030 66%,

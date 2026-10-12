@@ -47,7 +47,10 @@ export const CardStackLayer: React.FC<CardStackLayerProps> = ({
               ...back!.paper,
               backgroundSize: 'auto',
               backgroundBlendMode: 'normal',
-              boxShadow: `${back!.paper!.boxShadow}, ${cast}`,
+              // Every back has a thin gilt edge (a dark line outside it and a
+              // lit one inside), so a layer never melts into the cloth.
+              border: '1.5px solid rgba(232,200,112,0.95)',
+              boxShadow: `${back!.paper!.boxShadow}, inset 0 1px 0 rgba(255,244,200,0.55), 0 0 0 0.75px rgba(52,34,8,0.55), ${cast}`,
             }
           : {}),
       }}
