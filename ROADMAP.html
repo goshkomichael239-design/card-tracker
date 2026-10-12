@@ -68,7 +68,7 @@
   .progress__main { font-size: 22px; font-weight: 600; }
   .progress__side { font-family: var(--font-mono); font-size: 12.5px; color: var(--ink-soft); letter-spacing: 0.04em; }
   .bar { height: 12px; border-radius: 7px; background: var(--paper-edge); box-shadow: inset 0 1px 3px rgba(0,0,0,0.25); overflow: hidden; }
-  .bar > i { display: block; height: 100%; width: 67%; background: var(--cloth); border-radius: 7px; }
+  .bar > i { display: block; height: 100%; width: 69%; background: var(--cloth); border-radius: 7px; }
 
   .filters { display: flex; flex-wrap: wrap; gap: 8px; }
   .chip {
@@ -125,17 +125,17 @@
 
 <main class="page">
   <header class="head">
-    <p class="eyebrow">Card Tracker · состояние на 11 октября 2026 г.</p>
+    <p class="eyebrow">Card Tracker · состояние на 12 октября 2026 г.</p>
     <h1>Дорожная карта</h1>
     <p class="principle">Принцип: функция появляется, только если у неё есть физический прообраз на столе. Нет прообраза — функцию не делаем или прячем.</p>
   </header>
 
   <div class="progress">
     <div class="progress__nums">
-      <span class="progress__main">Сделано 52 из 78</span>
-      <span class="progress__side">67% · впереди 26 · отменено 3</span>
+      <span class="progress__main">Сделано 58 из 84</span>
+      <span class="progress__side">69% · впереди 26 · отменено 3</span>
     </div>
-    <div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="78" aria-valuenow="52"><i></i></div>
+    <div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="84" aria-valuenow="58"><i></i></div>
   </div>
 
   <div class="filters" role="group" aria-label="Что показывать">
@@ -148,7 +148,7 @@
       <section class="block" data-block>
         <header class="block__head">
           <h2>Уже сделано</h2>
-          <span class="block__count">22 из 22</span>
+          <span class="block__count">28 из 28</span>
         </header>
         <ul class="list">
         <li class="item item--done" data-status="done">
@@ -323,6 +323,54 @@
           <span class="mark" aria-hidden="true"></span>
           <div class="body">
             <p class="text">Листание колоды: пять точек-страниц справа от стопки (нажать, вести пальцем или мышью), колесо над списком, стопкой и точками, клавиши ↑↓; на карточке вертикальный свайп листает медленнее и синхронно со списком; на телефоне список прокручивается пальцем, вибрация</p>
+            
+          </div>
+          <span class="state">сделано</span>
+        </li>
+        <li class="item item--done" data-status="done">
+          <span class="mark" aria-hidden="true"></span>
+          <div class="body">
+            <p class="text">Настоящая перфорация купона: круглые отверстия на контуре, рваный край оторванного купона и парная лунка, рисунок разрыва у каждой карточки свой (из её полей), отрыв волной от угла; кнопки без перфорации, тиснёные</p>
+            <p class="note">(ветка coupon-perforation)</p>
+          </div>
+          <span class="state">сделано</span>
+        </li>
+        <li class="item item--done" data-status="done">
+          <span class="mark" aria-hidden="true"></span>
+          <div class="body">
+            <p class="text">Просрочено флажками: красный флажок-закладка на язычке колоды (с числом на активной, нажатие — к следующей просроченной) и у правого края строки; плашка «N просрочено» убрана; один «штемпельный» красный</p>
+            
+          </div>
+          <span class="state">сделано</span>
+        </li>
+        <li class="item item--done" data-status="done">
+          <span class="mark" aria-hidden="true"></span>
+          <div class="body">
+            <p class="text">Стол и архив: кромка стола из тёмного дерева с латунной линией и тенью на мрамор, золотая кромка у всех рубашек, тени под один источник света (лампа сверху-слева)</p>
+            
+          </div>
+          <span class="state">сделано</span>
+        </li>
+        <li class="item item--done" data-status="done">
+          <span class="mark" aria-hidden="true"></span>
+          <div class="body">
+            <p class="text">Карточка: убрана нижняя строка (дата создания — в правке и архиве), один штамп «Отложено» со счётчиком ×N, серия — прогресс и одна строка про темп («Завершить серию» на обороте), на телефоне на 14% крупнее</p>
+            
+          </div>
+          <span class="state">сделано</span>
+        </li>
+        <li class="item item--done" data-status="done">
+          <span class="mark" aria-hidden="true"></span>
+          <div class="body">
+            <p class="text">Настройки без заглушек: вибрация, звуки, подсказки, свет лампы, метки просроченного — все действуют</p>
+            <p class="note">; длительности анимаций сведены к ступеням 150 / 240 / 420 / 640 мс</p>
+          </div>
+          <span class="state">сделано</span>
+        </li>
+        <li class="item item--done" data-status="done">
+          <span class="mark" aria-hidden="true"></span>
+          <div class="body">
+            <p class="text">Если база браузера не отвечает 3 секунды, приложение стартует из памяти и предупреждает, что изменения не сохранятся</p>
             
           </div>
           <span class="state">сделано</span>
