@@ -223,9 +223,53 @@ export const playSound = (
   });
 };
 
+const loadAll = () => {
+  for (const urls of variants.values()) {
+    for (const url of urls) {
+      void loadBuffer(url);
+    }
+  }
+};
+
 // Browsers let sound start only after the person has touched the page: the
-// first touch wakes the audio and loads every recording (about 200 KB).
+// first touch wakes the audio.
+//
+// The audio context is made, and the recordings (about 200 KB) fetched and
+// decoded, while the page is idle after it has loaded: making a context on a
+// first press cost hundreds of milliseconds there, in the middle of a tear.
+// The context starts suspended and is only resumed by the first touch.
 if (typeof window !== 'undefined') {
+  const warmUp = () => {
+    if (!isSoundEnabled() || !getContext()) {
+      return;
+    }
+
+    loadAll();
+  };
+
+  const scheduleWarmUp = () => {
+    const idle = (
+      window as unknown as {
+        requestIdleCallback?: (
+          callback: () => void,
+          options?: { timeout: number },
+        ) => number;
+      }
+    ).requestIdleCallback;
+
+    if (idle) {
+      idle.call(window, warmUp, { timeout: 4000 });
+    } else {
+      window.setTimeout(warmUp, 1500);
+    }
+  };
+
+  if (document.readyState === 'complete') {
+    scheduleWarmUp();
+  } else {
+    window.addEventListener('load', scheduleWarmUp, { once: true });
+  }
+
   const unlock = () => {
     window.removeEventListener('pointerdown', unlock, true);
     window.removeEventListener('keydown', unlock, true);
@@ -237,12 +281,7 @@ if (typeof window !== 'undefined') {
     }
 
     void audio.resume().catch(() => undefined);
-
-    for (const urls of variants.values()) {
-      for (const url of urls) {
-        void loadBuffer(url);
-      }
-    }
+    loadAll();
   };
 
   window.addEventListener('pointerdown', unlock, true);
