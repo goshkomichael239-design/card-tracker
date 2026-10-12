@@ -46,11 +46,8 @@ interface CardSwitcherProps {
 // above; this much of the file's width is left free at each side, so the
 // shadows are not cut by the list's own edge.
 const EDGE_INSET = 5;
-// The rounding of an edge: its lower corners only; the upper ones are square
-// and lie under the edge above.
+// The rounding of an edge, all four corners.
 const TILE_RADIUS = 10;
-// How far an edge goes under the one above it, so that no cloth shows between.
-const TILE_TUCK = 2;
 
 const getCardDisplayLabel = (card: VisualCard) => {
   if (card.kind !== 'list' || !card.list?.items.length) {
@@ -342,10 +339,10 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
               const palette = getCardPalette(card);
               const isOverdue = Boolean(overdueIds?.has(card.id));
 
-              // The edge is a card's strip with rounded lower corners. It goes
-              // a little under the edge above (TILE_TUCK), which lies in
-              // front, so the cards stand one under another with no cloth
-              // between them.
+              // The edge is a tile of one step's height with rounded corners
+              // all round. Above it lies a band (the overlap) that is cut
+              // off: under the corners of the tile above there is the cloth
+              // and the tile's shadow, never another card's paper.
               return (
                 <div
                   key={copy + ':' + card.id}
@@ -368,8 +365,8 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
                     aria-hidden="true"
                     className="pointer-events-none absolute inset-x-0 bottom-0"
                     style={{
-                      top: metrics.overlap - TILE_TUCK,
-                      borderRadius: `0 0 ${TILE_RADIUS}px ${TILE_RADIUS}px`,
+                      top: metrics.overlap,
+                      borderRadius: TILE_RADIUS,
                       boxShadow: isActive
                         ? '0 3px 5px -1px rgba(20,17,14,0.42), 0 8px 12px -4px rgba(20,17,14,0.3)'
                         : '0 2px 4px -1px rgba(20,17,14,0.36), 0 5px 8px -4px rgba(20,17,14,0.24)',
@@ -383,7 +380,7 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
                     aria-pressed={isActive}
                     className="engraved absolute inset-0 flex items-start border-0 px-3 text-left"
                     style={{
-                      clipPath: `inset(${metrics.overlap - TILE_TUCK}px 0 0 0 round 0 0 ${TILE_RADIUS}px ${TILE_RADIUS}px)`,
+                      clipPath: `inset(${metrics.overlap}px 0 0 0 round ${TILE_RADIUS}px)`,
                       backgroundColor: palette.paper,
                       // From the top: light falling on the paper, a soft
                       // darkening towards the lower edge, the board's grain.
