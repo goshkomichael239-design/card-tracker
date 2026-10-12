@@ -16,7 +16,7 @@ export const StorageNotice: React.FC = () => {
     getStorageStatus,
   );
 
-  if (!status.isStale && !status.hasWriteError) {
+  if (!status.isStale && !status.hasWriteError && !status.isUnavailable) {
     return null;
   }
 
@@ -30,7 +30,9 @@ export const StorageNotice: React.FC = () => {
         boxShadow: '0 4px 10px rgba(40,12,8,0.3)',
       }}
     >
-      {status.isStale ? (
+      {status.isUnavailable ? (
+        <span>Хранилище не отвечает — изменения не сохранятся</span>
+      ) : status.isStale ? (
         <>
           <span>Данные изменены в другой вкладке</span>
           <button

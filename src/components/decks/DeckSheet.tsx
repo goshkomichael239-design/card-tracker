@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 
 import cardboardTexture from '../../assets/cardboard.avif';
 import { DECK_BACKS, getDeckBack } from '../../app/deckBacks';
+import { STAMP_RED } from '../../app/stampRed';
 import {
   DEFAULT_DECK_ID,
   MAX_DECK_NAME_LENGTH,
@@ -187,7 +188,7 @@ export const DeckSheet: React.FC<DeckSheetProps> = ({
                 }
               }}
               className="cursor-pointer border-0 bg-transparent px-0 py-2 text-left font-mono text-[11.5px] font-bold uppercase tracking-[0.12em]"
-              style={{ color: '#A5473A' }}
+              style={{ color: STAMP_RED }}
             >
               {isConfirmingDelete
                 ? cardCount > 0

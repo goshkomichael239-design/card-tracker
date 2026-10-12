@@ -34,6 +34,8 @@ export interface StorageStatus {
   isStale: boolean;
   /** The last write failed; the data is only in memory right now. */
   hasWriteError: boolean;
+  /** The database did not answer at start: nothing is saved this time. */
+  isUnavailable: boolean;
 }
 
 interface KvState {
@@ -48,6 +50,7 @@ interface KvState {
   isFlushing: boolean;
   isStale: boolean;
   hasWriteError: boolean;
+  isUnavailable: boolean;
   tabId: string;
   channel: BroadcastChannel | null;
   listeners: Set<() => void>;
@@ -70,10 +73,16 @@ const state: KvState = (globalScope.__cardTrackerKv ??= {
   isFlushing: false,
   isStale: false,
   hasWriteError: false,
+  isUnavailable: false,
   tabId: `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`,
   channel: null,
   listeners: new Set(),
-  status: { mode: 'memory', isStale: false, hasWriteError: false },
+  status: {
+    mode: 'memory',
+    isStale: false,
+    hasWriteError: false,
+    isUnavailable: false,
+  },
   initialised: false,
 });
 
@@ -90,6 +99,7 @@ const publishStatus = () => {
     mode: state.mode,
     isStale: state.isStale,
     hasWriteError: state.hasWriteError,
+    isUnavailable: state.isUnavailable,
   };
   state.listeners.forEach((listener) => listener());
 };
@@ -158,9 +168,20 @@ export const initStorage = async (): Promise<void> => {
     return;
   }
 
-  state.db = await openDatabase();
+  const opened = await openDatabase();
 
-  if (state.db) {
+  state.db = opened.db;
+
+  if (opened.timedOut) {
+    // The browser's database does not answer: start without it rather than
+    // show an empty screen. What is shown is the old copy kept in
+    // localStorage (if any), nothing is written anywhere until the next start,
+    // and the person is told so: a late answer must never be overwritten by
+    // a stale copy.
+    state.mode = 'memory';
+    state.isUnavailable = true;
+    state.memory = readLegacyLocalStorage();
+  } else if (state.db) {
     state.mode = 'idb';
     state.memory = await readAllKeyValues(state.db);
 
@@ -278,7 +299,7 @@ export const flushNow = async (): Promise<void> => {
     return;
   }
 
-  if (state.dirty.size === 0 || state.isStale) {
+  if (state.dirty.size === 0 || state.isStale || state.isUnavailable) {
     return;
   }
 

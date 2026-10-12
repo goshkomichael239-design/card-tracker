@@ -25,8 +25,36 @@ export interface SnapshotRecord {
 
 export type SnapshotMeta = Omit<SnapshotRecord, 'payload'>;
 
-export const openDatabase = (): Promise<IDBDatabase | null> =>
-  new Promise((resolve) => {
+export interface OpenResult {
+  db: IDBDatabase | null;
+  /** The browser did not answer in time (the database may be stuck). */
+  timedOut: boolean;
+}
+
+/** How long the app waits for the browser's database before starting without it. */
+export const OPEN_TIMEOUT_MS = 3_000;
+
+export const openDatabase = (
+  timeoutMs: number = OPEN_TIMEOUT_MS,
+): Promise<OpenResult> =>
+  new Promise((resolveResult) => {
+    let isSettled = false;
+
+    const settle = (db: IDBDatabase | null, timedOut = false) => {
+      if (isSettled) {
+        // It answered after the wait was over: nothing uses it, let go of it
+        // so that it cannot hold up whoever needs the database next.
+        db?.close();
+        return;
+      }
+
+      isSettled = true;
+      window.clearTimeout(timer);
+      resolveResult({ db, timedOut });
+    };
+    const resolve = (db: IDBDatabase | null) => settle(db);
+    const timer = window.setTimeout(() => settle(null, true), timeoutMs);
+
     if (typeof indexedDB === 'undefined') {
       resolve(null);
       return;

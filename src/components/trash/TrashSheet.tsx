@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 
 import cardboardTexture from '../../assets/cardboard.avif';
 import { getCardPalette } from '../../app/cardTheme';
+import { STAMP_RED_DARK } from '../../app/stampRed';
 import {
   formatTrashedAgo,
   getTrashDaysLeft,
@@ -211,7 +212,7 @@ export const TrashSheet: React.FC<TrashSheetProps> = ({
                         confirmDelete(deleteKey, () => onDeleteForever(item.card.id))
                       }
                       className="min-h-[30px] cursor-pointer border-0 bg-transparent px-1 font-mono text-[11.5px] font-bold uppercase tracking-[0.1em]"
-                      style={{ color: isArmed ? '#8F3025' : 'rgba(40,35,29,0.5)' }}
+                      style={{ color: isArmed ? STAMP_RED_DARK : 'rgba(40,35,29,0.5)' }}
                     >
                       {isArmed ? 'Точно?' : 'Удалить'}
                     </button>
@@ -234,7 +235,7 @@ export const TrashSheet: React.FC<TrashSheetProps> = ({
               type="button"
               onClick={() => confirmDelete('empty', onEmpty)}
               className="min-h-[36px] cursor-pointer border-0 bg-transparent px-1 font-mono text-[12.5px] font-bold uppercase tracking-[0.1em]"
-              style={{ color: confirmId === 'empty' ? '#8F3025' : 'rgba(40,35,29,0.6)' }}
+              style={{ color: confirmId === 'empty' ? STAMP_RED_DARK : 'rgba(40,35,29,0.6)' }}
             >
               {confirmId === 'empty' ? 'Точно очистить?' : 'Очистить корзину'}
             </button>

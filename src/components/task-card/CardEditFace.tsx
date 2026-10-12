@@ -15,7 +15,11 @@ import type {
   TaskListItem,
   VisualCard,
 } from '../../app/cardTheme';
-import { MONTH_NAMES_RU, padNumber } from '../../app/dateTimeUtils';
+import {
+  formatHumanDate,
+  MONTH_NAMES_RU,
+  padNumber,
+} from '../../app/dateTimeUtils';
 import { INITIAL_TASK_CARD_V2_CONFIG } from './taskCardV2Config';
 import { CouponButton } from './CouponButton';
 
@@ -495,6 +499,14 @@ export const CardEditFace: React.FC<CardEditFaceProps> = ({
             )}
           </>
         )}
+
+        {/* When the card was made (it no longer sits on the card's face). */}
+        <p
+          className="mt-auto pt-3 text-[11px] uppercase tracking-[0.12em]"
+          style={{ color: 'rgba(40,35,29,0.4)' }}
+        >
+          Создана · {formatHumanDate(card.createdAt)}
+        </p>
       </div>
 
       <div

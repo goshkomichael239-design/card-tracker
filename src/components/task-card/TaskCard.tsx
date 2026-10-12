@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 
 import cardboardTexture from '../../assets/cardboard.avif';
 import { getCardPalette, type VisualCard } from '../../app/cardTheme';
-import { formatHumanDate, formatShortDate } from '../../app/dateTimeUtils';
+import { formatHumanDate } from '../../app/dateTimeUtils';
 import { getListCompletedCount, getListProgress } from '../../app/listUtils';
 import { formatSeriesDuration } from '../../app/seriesUtils';
 import { CardActionsFace } from './CardActionsFace';
@@ -14,6 +14,7 @@ import {
   type FaceDirection,
 } from './CardFaceStage';
 import { getCouponSeed } from '../../app/couponEdge';
+import { STAMP_RED_DOT_BACKGROUND } from '../../app/stampRed';
 import { MeasuredPerforation } from './CouponPerforation';
 import { CompletionCoupon } from './CompletionCoupon';
 import { CornerHint } from './CornerHint';
@@ -297,8 +298,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
             <span
               className="h-2.5 w-2.5 shrink-0 rounded-full"
               style={{
-                background:
-                  'radial-gradient(circle at 32% 28%, #E0705F 0%, #B8483A 55%, #8F3025 100%)',
+                background: STAMP_RED_DOT_BACKGROUND,
                 boxShadow: '0 1px 2px rgba(40,12,8,0.4)',
               }}
               role="img"
@@ -450,11 +450,6 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           />
         </div>
       )}
-
-      <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between font-mono text-[10.5px] uppercase tracking-[0.15em] text-black/30">
-        <span>Задача</span>
-        <span>{formatShortDate(card.createdAt)}</span>
-      </div>
     </div>
   );
 

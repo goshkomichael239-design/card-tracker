@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 
 import { getCardPalette, type VisualCard } from '../../app/cardTheme';
+import { formatHumanDate } from '../../app/dateTimeUtils';
 import { getCardScale, useViewportSize } from '../../app/viewportScale';
 import { TaskCard } from '../task-card/TaskCard';
 import { INITIAL_TASK_CARD_V2_CONFIG } from '../task-card/taskCardV2Config';
@@ -123,6 +124,13 @@ export const ArchiveCardViewer: React.FC<ArchiveCardViewerProps> = ({
           )}
         </div>
       </div>
+
+      <p
+        className="-mt-2 text-center text-[11px] uppercase tracking-[0.12em]"
+        style={{ color: 'rgba(250,244,226,0.7)' }}
+      >
+        Создана · {formatHumanDate(card.createdAt)}
+      </p>
 
       <div className="engraved flex flex-wrap items-center justify-center gap-3">
         {hasHistory && (

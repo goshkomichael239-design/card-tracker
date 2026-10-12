@@ -4,16 +4,14 @@ import cardboardTexture from '../../assets/cardboard.avif';
 import { getCardPalette, type VisualCard } from '../../app/cardTheme';
 import type { Deck } from '../../app/decks';
 import {
-  CARD_FILE_DIVIDER_HEIGHT,
   CARD_FILE_MAX_WIDTH,
-  CARD_FILE_TAB_ROW_HEIGHT,
   getEdgesHeight,
   getSwitcherMetrics,
 } from './cardSwitcherConfig';
 import { CardFileTabs } from './CardFileTabs';
 import { useWheelNavigation } from '../../app/useWheelNavigation';
 import { haptic } from '../../app/haptics';
-import { OverdueBadge } from './OverdueBadge';
+import { OverdueFlag } from './OverdueFlag';
 
 interface CardSwitcherProps {
   cards: VisualCard[];
@@ -300,6 +298,8 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
         activeDeckId={activeDeckId}
         overdueDeckIds={overdueDeckIds}
         hitCounts={hitCounts}
+        activeOverdueCount={overdueIds?.size ?? 0}
+        onOverduePress={goToNextOverdue}
         canCreate={canCreateDeck}
         onSelect={onSelectDeck}
         onEdit={onEditDeck}
@@ -355,6 +355,8 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
                     marginTop: index === 0 ? 0 : -metrics.overlap,
                     // The chosen card lies in front of the rest.
                     zIndex: isActive ? rows.length + 1 : rows.length - index,
+                    // The chosen card stands a little higher than the rest.
+                    transform: isActive ? 'translateY(-2px)' : undefined,
                     scrollSnapAlign: 'start',
                     scrollMarginTop: -metrics.overlap,
                   }}
@@ -368,7 +370,7 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
                       top: metrics.overlap,
                       borderRadius: TILE_RADIUS,
                       boxShadow: isActive
-                        ? '0 3px 5px -1px rgba(20,17,14,0.42), 0 8px 12px -4px rgba(20,17,14,0.3)'
+                        ? '0 4px 6px -1px rgba(20,17,14,0.46), 0 10px 14px -4px rgba(20,17,14,0.34)'
                         : '0 2px 4px -1px rgba(20,17,14,0.36), 0 5px 8px -4px rgba(20,17,14,0.24)',
                     }}
                   />
@@ -393,7 +395,7 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
                       boxShadow:
                         'inset 0 0 0 1px rgba(91,76,59,0.2), inset 0 -2px 0 rgba(255,255,255,0.55), inset 0 -3px 0 rgba(79,61,42,0.12), inset 0 1px 0 rgba(255,255,255,0.45)',
                       filter: isActive
-                        ? 'brightness(1.05) saturate(1.04)'
+                        ? 'brightness(1.1) saturate(1.05)'
                         : undefined,
                     }}
                   >
@@ -410,33 +412,40 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
                         lineHeight: `${metrics.rowStep}px`,
                       }}
                     >
-                      {card.pinned && (
-                        <span
-                          className="mr-1.5"
-                          style={{ color: '#B8851F' }}
-                          role="img"
-                          aria-label="Закреплена"
-                        >
-                          ★
-                        </span>
-                      )}
-                      {/* Overdue: a red dot in front of the name. */}
-                      {isOverdue && (
-                        <span
-                          className="mr-2 inline-block h-[9px] w-[9px] rounded-full align-middle"
-                          style={{
-                            background:
-                              'radial-gradient(circle at 32% 28%, #E0705F 0%, #B8483A 55%, #8F3025 100%)',
-                            boxShadow:
-                              '0 0 0 1.5px rgba(255,255,255,0.85), 0 1px 2px rgba(40,12,8,0.4)',
-                          }}
-                          role="img"
-                          aria-label="Просрочено"
-                        />
-                      )}
                       {getCardDisplayLabel(card)}
                     </span>
+
+                    {/* The star stands at the right end, so the names begin
+                        at the same place on every edge. */}
+                    {card.pinned && (
+                      <span
+                        className="shrink-0"
+                        style={{
+                          color: '#B8851F',
+                          paddingTop: metrics.overlap,
+                          paddingRight: isOverdue ? 10 : 0,
+                          fontSize: metrics.fontSize - 1,
+                          lineHeight: `${metrics.rowStep}px`,
+                        }}
+                        role="img"
+                        aria-label="Закреплена"
+                      >
+                        ★
+                      </span>
+                    )}
                   </button>
+
+                  {/* Overdue: a red flag stands out of the edge's right end. */}
+                  {isOverdue && (
+                    <OverdueFlag
+                      size="small"
+                      className="absolute"
+                      style={{
+                        right: -3,
+                        top: metrics.overlap + (metrics.rowStep - 13) / 2,
+                      }}
+                    />
+                  )}
                 </div>
               );
             })}
@@ -444,17 +453,6 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
         </div>
       )}
 
-      {/* Overdue: a red dot on the divider's right end, saying what it is. */}
-      <OverdueBadge
-        count={overdueIds?.size ?? 0}
-        label="просрочено"
-        className="absolute z-10"
-        style={{
-          right: 6,
-          top: CARD_FILE_TAB_ROW_HEIGHT + CARD_FILE_DIVIDER_HEIGHT / 2 - 11,
-        }}
-        onPress={goToNextOverdue}
-      />
     </div>
   );
 };

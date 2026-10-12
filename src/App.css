@@ -1465,7 +1465,7 @@ html[data-swipe-style='stamp'] [data-swipe-side='left'] .swipe-stamp--delete {
 }
 
 .swipe-stamp--delete {
-  --ink: #a5473a;
+  --ink: #b8483a;
   --tilt: 6deg;
 }
 
@@ -1513,8 +1513,8 @@ html[data-swipe-style='coupon'] [data-swipe-side='left'] .swipe-coupon--delete {
 }
 
 .swipe-coupon--delete {
-  --ink: #a5473a;
-  --fill: rgba(190, 90, 70, 0.5);
+  --ink: #b8483a;
+  --fill: rgba(184, 72, 58, 0.5);
 }
 
 .swipe-coupon__fill {

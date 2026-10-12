@@ -1,76 +1,67 @@
 import React from 'react';
 
 import type { Postponement } from '../../app/cardTheme';
+import { STAMP_RED_DARK } from '../../app/stampRed';
 import { formatStampDay } from '../../app/timeOps';
 
 interface PostponeStampsProps {
   postponements: Postponement[];
 }
 
-const MAX_STAMPS = 3;
-// Each new stamp lands a little off from the previous one, like a real one.
-const PLACEMENTS = [
-  { rotate: -8, x: 0, y: 0 },
-  { rotate: 5, x: -16, y: -12 },
-  { rotate: -3, x: 10, y: -24 },
-];
-
 /**
- * Ink stamps "ОТЛОЖЕНО до …" pressed onto the card, the most recent on top.
- * Up to three are drawn; older ones are summed up in a small "×N" mark.
+ * The ink stamp "ОТЛОЖЕНО до …" pressed onto the card: only the last one (the
+ * ones under it were unreadable), with how many times the card has been put
+ * off as "×N" in its corner. Older ones stay in the card's history.
  */
 export const PostponeStamps: React.FC<PostponeStampsProps> = ({
   postponements,
 }) => {
-  if (postponements.length === 0) {
+  const latest = postponements.at(-1);
+
+  if (!latest) {
     return null;
   }
 
-  const shown = postponements.slice(-MAX_STAMPS);
-  const hidden = postponements.length - shown.length;
+  const count = postponements.length;
 
   return (
     <div
       className="pointer-events-none absolute right-0"
       style={{ bottom: 92, width: 150, height: 70 }}
-      aria-label={`Отложено ${postponements.length} раз`}
+      aria-label={`Отложено ${count} раз`}
     >
-      {shown.map((stamp, index) => {
-        const placement = PLACEMENTS[index]!;
-        const isLatest = index === shown.length - 1;
-
-        return (
-          <div
-            key={`${stamp.at}-${index}`}
-            className="absolute bottom-0 right-0 flex flex-col items-center justify-center rounded-[6px] px-3 py-1.5"
+      <div
+        className="absolute bottom-0 right-0 flex flex-col items-center justify-center rounded-[6px] px-3 py-1.5"
+        style={{
+          transform: 'rotate(-6deg)',
+          border: '2px solid currentColor',
+          outline: '1px solid currentColor',
+          outlineOffset: -5,
+          color: STAMP_RED_DARK,
+          opacity: 0.66,
+          mixBlendMode: 'multiply',
+          textShadow: 'none',
+        }}
+      >
+        <span className="font-mono text-[12px] font-bold uppercase leading-none tracking-[0.2em]">
+          Отложено
+        </span>
+        <span className="mt-1 font-mono text-[11px] font-bold uppercase leading-none tracking-[0.08em]">
+          до {formatStampDay(latest.until)}
+        </span>
+        {count > 1 && (
+          <span
+            className="absolute -right-2 -top-2.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1 font-mono text-[10.5px] font-bold leading-none"
             style={{
-              transform: `translate(${placement.x}px, ${placement.y}px) rotate(${placement.rotate}deg)`,
-              border: '2px solid currentColor',
-              outline: '1px solid currentColor',
-              outlineOffset: -5,
-              color: '#8F3025',
-              opacity: isLatest ? 0.62 : 0.3,
-              mixBlendMode: 'multiply',
-              textShadow: 'none',
+              color: STAMP_RED_DARK,
+              border: '1.5px solid currentColor',
+              background: 'rgba(255,250,240,0.7)',
             }}
           >
-            <span className="font-mono text-[12px] font-bold uppercase leading-none tracking-[0.2em]">
-              Отложено
-            </span>
-            <span className="mt-1 font-mono text-[11px] font-bold uppercase leading-none tracking-[0.08em]">
-              до {formatStampDay(stamp.until)}
-            </span>
-          </div>
-        );
-      })}
-      {hidden > 0 && (
-        <span
-          className="absolute -top-3 right-1 font-mono text-[11px] font-bold"
-          style={{ color: '#8F3025', opacity: 0.55 }}
-        >
-          ×{postponements.length}
-        </span>
-      )}
+            ×{count}
+          </span>
+        )}
+      </div>
     </div>
   );
 };

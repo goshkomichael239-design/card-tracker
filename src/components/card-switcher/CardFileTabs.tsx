@@ -1,6 +1,7 @@
 import React from 'react';
 
 import { getDeckBack } from '../../app/deckBacks';
+import { OverdueFlag } from './OverdueFlag';
 import type { Deck } from '../../app/decks';
 import {
   CARD_FILE_DIVIDER_HEIGHT,
@@ -17,6 +18,10 @@ export interface CardFileTabsProps {
    * has for the query. Null: the tabs do not show hits.
    */
   hitCounts: Readonly<Record<string, number>> | null;
+  /** How many cards of the deck on the table are overdue (0: no flag). */
+  activeOverdueCount: number;
+  /** The flag on the tab of the deck on the table was pressed. */
+  onOverduePress: () => void;
   canCreate: boolean;
   onSelect: (deckId: string) => void;
   /** The tab of the deck on the table was pressed again. */
@@ -60,6 +65,8 @@ export const CardFileTabs: React.FC<CardFileTabsProps> = ({
   activeDeckId,
   overdueDeckIds,
   hitCounts,
+  activeOverdueCount,
+  onOverduePress,
   canCreate,
   onSelect,
   onEdit,
@@ -81,21 +88,31 @@ export const CardFileTabs: React.FC<CardFileTabsProps> = ({
           const hits = hitCounts ? (hitCounts[deck.id] ?? 0) : null;
           const hasOverdue = !isActive && overdueDeckIds.has(deck.id);
           const isDimmed = hits !== null && !isActive && hits === 0;
+          const showsNumberedFlag =
+            isActive && activeOverdueCount > 0 && hits === null;
 
           return (
-            <button
+            <div
               key={deck.id}
+              className="relative flex min-w-0"
+              style={{
+                flex: isActive ? '0 1 auto' : '1 1 0',
+                maxWidth: isActive ? '62%' : 84,
+                minWidth: isActive ? 0 : 30,
+                zIndex: isActive ? 3 : 1,
+              }}
+            >
+            <button
               type="button"
               onClick={() => (isActive ? onEdit(deck.id) : onSelect(deck.id))}
               onTouchStart={() => undefined}
               aria-pressed={isActive}
               aria-label={`Колода «${deck.name}»${isActive ? ', настройки' : ''}${hits ? `, найдено: ${hits}` : ''}`}
               title={deck.name}
-              className="relative flex min-w-0 cursor-pointer items-center justify-center border-0 px-1.5 text-center"
+              className="relative flex min-w-0 flex-1 cursor-pointer items-center justify-center border-0 px-1.5 text-center"
               style={{
-                flex: isActive ? '0 1 auto' : '1 1 0',
-                maxWidth: isActive ? '62%' : 84,
-                minWidth: isActive ? 0 : 30,
+                paddingRight: showsNumberedFlag ? 22 : undefined,
+                alignSelf: 'flex-end',
                 height: isActive ? ACTIVE_HEIGHT : QUIET_HEIGHT,
                 borderRadius: '9px 9px 0 0',
                 borderTop: GOLD_EDGE,
@@ -110,7 +127,6 @@ export const CardFileTabs: React.FC<CardFileTabsProps> = ({
                   : '0 -1px 3px rgba(0,0,0,0.22), inset 0 1px 0 rgba(255,255,255,0.3)',
                 filter: isActive ? 'none' : 'brightness(0.86) saturate(0.9)',
                 opacity: isDimmed ? 0.5 : 1,
-                zIndex: isActive ? 3 : 1,
                 transition:
                   'height 200ms cubic-bezier(0.2, 0.8, 0.2, 1), opacity 200ms ease-out, filter 200ms ease-out',
               }}
@@ -156,23 +172,32 @@ export const CardFileTabs: React.FC<CardFileTabsProps> = ({
                 </span>
               )}
 
+            </button>
+
+              {/* The flag: a red bookmark standing out of the tab's top edge.
+                  On the deck on the table it carries the number and is a
+                  button (to the next overdue card); on the others it marks. */}
+              {showsNumberedFlag && (
+                <button
+                  type="button"
+                  onClick={onOverduePress}
+                  onTouchStart={() => undefined}
+                  aria-label={`Просрочено: ${activeOverdueCount}. К следующей просроченной`}
+                  title={`Просрочено: ${activeOverdueCount}`}
+                  className="absolute z-10 cursor-pointer border-0 bg-transparent p-0 active:translate-y-px"
+                  style={{ right: 6, top: -8, lineHeight: 0 }}
+                >
+                  <OverdueFlag size="large" count={activeOverdueCount} />
+                </button>
+              )}
               {hasOverdue && hits === null && (
-                <span
-                  aria-label="Есть просроченное"
+                <OverdueFlag
+                  size="small"
                   className="absolute"
-                  style={{
-                    top: 3,
-                    right: 3,
-                    width: 9,
-                    height: 9,
-                    borderRadius: '50%',
-                    background:
-                      'radial-gradient(circle at 32% 28%, #E0705F 0%, #B8483A 55%, #8F3025 100%)',
-                    boxShadow: '0 0 0 1.5px rgba(255,255,255,0.8)',
-                  }}
+                  style={{ right: 5, top: -5 }}
                 />
               )}
-            </button>
+            </div>
           );
         })}
 

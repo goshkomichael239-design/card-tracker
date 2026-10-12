@@ -1,6 +1,7 @@
 import React, { useRef } from 'react';
 
 import type { VisualCard } from '../../app/cardTheme';
+import { STAMP_RED_GLOW } from '../../app/stampRed';
 import { useWheelNavigation } from '../../app/useWheelNavigation';
 
 interface DeckDotsProps {
@@ -178,7 +179,7 @@ export const DeckDots: React.FC<DeckDotsProps> = ({
         const scale = isShort ? 1 : SCALE_BY_DISTANCE[distance]!;
         const opacity = isShort ? 1 : OPACITY_BY_DISTANCE[distance]!;
         const isOverdue = Boolean(overdueIds?.has(card.id));
-        const ring = isOverdue ? '#F0907F' : 'rgba(250,244,226,0.9)';
+        const ring = isOverdue ? STAMP_RED_GLOW : 'rgba(250,244,226,0.9)';
 
         return (
           <span
