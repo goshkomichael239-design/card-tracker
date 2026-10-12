@@ -1,13 +1,16 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 
 import cardboardTexture from '../../assets/cardboard.avif';
 import { getCardPalette, type VisualCard } from '../../app/cardTheme';
-import { CardSwitcherDebugPanel } from './CardSwitcherDebugPanel';
+import type { Deck } from '../../app/decks';
 import {
+  CARD_FILE_DIVIDER_HEIGHT,
+  CARD_FILE_MAX_WIDTH,
+  CARD_FILE_TAB_ROW_HEIGHT,
+  getEdgesHeight,
   getSwitcherMetrics,
-  INITIAL_CARD_SWITCHER_CONFIG,
-  type CardSwitcherConfig,
 } from './cardSwitcherConfig';
+import { CardFileTabs } from './CardFileTabs';
 import { useWheelNavigation } from '../../app/useWheelNavigation';
 import { haptic } from '../../app/haptics';
 import { OverdueBadge } from './OverdueBadge';
@@ -20,14 +23,35 @@ interface CardSwitcherProps {
   onNextCard: () => void;
   onPreviousCard: () => void;
   mode?: 'main' | 'archive';
-  /** A phone: taller rows, three of them, scrolled by a finger. */
+  /** A phone: taller edges, scrolled by a finger. */
   isPhone?: boolean;
+  /** The window's height: a tall one shows one more edge. */
+  viewportHeight?: number;
   /** Cards that are overdue: marked red, and counted in the corner. */
   overdueIds?: ReadonlySet<string>;
+
+  // The deck tabs the file carries.
+  decks: Deck[];
+  activeDeckId: string;
+  overdueDeckIds: ReadonlySet<string>;
+  /** Hits per deck while searching with "on the tabs"; null otherwise. */
+  hitCounts: Readonly<Record<string, number>> | null;
+  canCreateDeck: boolean;
+  onSelectDeck: (deckId: string) => void;
+  onEditDeck: (deckId: string) => void;
+  onCreateDeck: () => void;
 }
 
+const hashOf = (text: string): number => {
+  let hash = 2166136261;
 
-const SHOW_CARD_SWITCHER_DEBUG = false;
+  for (let index = 0; index < text.length; index += 1) {
+    hash ^= text.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+
+  return hash >>> 0;
+};
 
 const getCardDisplayLabel = (card: VisualCard) => {
   if (card.kind !== 'list' || !card.list?.items.length) {
@@ -42,18 +66,35 @@ const getCardDisplayLabel = (card: VisualCard) => {
     : firstItem.text;
 };
 
+/**
+ * The card file at the top of the table: a row of deck tabs, the divider they
+ * stand on and, from under it, the top edges of the deck's cards laid one over
+ * another like a fan, each in its card's paper. The edge at the top is the
+ * card on the table.
+ */
 export const CardSwitcher: React.FC<CardSwitcherProps> = ({
   cards,
   activeCardId,
   onSelectCard,
   onNextCard,
   onPreviousCard,
-  mode = 'main',
   isPhone = false,
+  viewportHeight = 800,
   overdueIds,
+  decks,
+  activeDeckId,
+  overdueDeckIds,
+  hitCounts,
+  canCreateDeck,
+  onSelectDeck,
+  onEditDeck,
+  onCreateDeck,
 }) => {
-  const metrics = getSwitcherMetrics(isPhone);
+  const metrics = getSwitcherMetrics(isPhone, viewportHeight);
   const listRef = useRef<HTMLDivElement | null>(null);
+  const edgesRef = useRef<HTMLDivElement | null>(null);
+  const switcherRef = useRef<HTMLDivElement | null>(null);
+  const previousDeckIdRef = useRef(activeDeckId);
 
   // The red dot jumps to the next overdue card after the current one, round
   // the deck, with a light tap.
@@ -72,15 +113,11 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
       }
     }
   };
-  const [config, setConfig] = useState<CardSwitcherConfig>(() => ({
-    ...INITIAL_CARD_SWITCHER_CONFIG,
-  }));
-  const switcherRef = useRef<HTMLDivElement | null>(null);
 
-  const visibleRows = Math.min(metrics.visibleRows, Math.max(1, cards.length));
-  const listHeight = visibleRows * metrics.rowHeight + (visibleRows - 1) * 2;
+  const count = cards.length;
+  const listHeight = getEdgesHeight(metrics, count);
 
-  // The list picks by itself: the row at the top is the chosen card, so
+  // The list picks by itself: the edge at the top is the chosen card, so
   // scrolling the list chooses cards, and a card chosen any other way is
   // scrolled up to the top.
   //
@@ -88,8 +125,7 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
   // that from an ordinary scrolling box the deck is drawn several times end to
   // end and the scroll position is kept in the middle copy: when the scrolling
   // settles, the list is moved back by whole copies, which looks the same.
-  const rowStep = metrics.rowHeight + 2;
-  const count = cards.length;
+  const rowStep = metrics.rowStep;
   const canScroll = count > metrics.visibleRows;
   const copies = !canScroll ? 1 : count <= 100 ? 7 : 3;
   const middleOffsetRows = canScroll ? Math.floor(copies / 2) * count : 0;
@@ -107,6 +143,22 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
     },
     [],
   );
+
+  // A changed deck: its edges slide out from under the divider.
+  useEffect(() => {
+    if (previousDeckIdRef.current === activeDeckId) {
+      return;
+    }
+
+    previousDeckIdRef.current = activeDeckId;
+    edgesRef.current?.animate?.(
+      [
+        { transform: 'translate3d(0, -22px, 0)', opacity: 0 },
+        { transform: 'translate3d(0, 0, 0)', opacity: 1 },
+      ],
+      { duration: 300, easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)' },
+    );
+  }, [activeDeckId]);
 
   useEffect(() => {
     const list = listRef.current;
@@ -132,13 +184,19 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
       const middle = index + middleOffsetRows;
       // The first time the list is placed it goes to the middle copy.
       const copyShift = hasAlignedRef.current
-        ? Math.round((list.scrollTop / rowStep - middle) / count)
+        ? Math.round(
+            ((list.scrollTop - metrics.overlap) / rowStep - middle) / count,
+          )
         : 0;
-      const lastTop = (copies * count - metrics.visibleRows) * rowStep;
+      const lastTop =
+        (copies * count - metrics.visibleRows) * rowStep + metrics.overlap;
 
       target = Math.min(
         lastTop,
-        Math.max(0, (middle + copyShift * count) * rowStep),
+        Math.max(
+          metrics.overlap,
+          (middle + copyShift * count) * rowStep + metrics.overlap,
+        ),
       );
     }
 
@@ -159,6 +217,7 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
     count,
     middleOffsetRows,
     metrics.visibleRows,
+    metrics.overlap,
     rowStep,
   ]);
 
@@ -175,9 +234,9 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
         return;
       }
 
-      const row = Math.round(list.scrollTop / rowStep);
+      const row = Math.round((list.scrollTop - metrics.overlap) / rowStep);
       const index = ((row % count) + count) % count;
-      const home = (index + middleOffsetRows) * rowStep;
+      const home = (index + middleOffsetRows) * rowStep + metrics.overlap;
 
       if (Math.abs(list.scrollTop - home) > 1) {
         ignoreScrollUntilRef.current = performance.now() + 80;
@@ -201,7 +260,7 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
     lastUserScrollAtRef.current = performance.now();
     scheduleRecentre();
 
-    const row = Math.round(list.scrollTop / rowStep);
+    const row = Math.round((list.scrollTop - metrics.overlap) / rowStep);
     const index = ((row % count) + count) % count;
     const card = cards[index];
 
@@ -226,147 +285,159 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
     isEnabled: cards.length > 1,
   });
 
+  const rows = Array.from({ length: copies }, (_, copy) =>
+    cards.map((card) => ({ card, copy })),
+  ).flat();
+
   return (
-    <>
-      <div
-        ref={switcherRef}
-        className="relative"
-        style={{
-          // Sized by the container (not 100vw) so it can never overflow the
-          // window, whatever the page zoom or scrollbar situation.
-          width: `min(${config.width}px, 100%)`,
-          display: cards.length > 0 ? 'block' : 'none',
-          transform:
-            mode === 'archive'
-              ? 'translate3d(0, 0, 0)'
-              : `translate3d(${config.positionX}px, ${config.positionY}px, 0)`,
-        }}
-      >
+    <div
+      ref={switcherRef}
+      className="relative"
+      style={{
+        // Sized by the container (not 100vw) so it can never overflow the
+        // window, whatever the page zoom or scrollbar situation.
+        width: `min(${CARD_FILE_MAX_WIDTH}px, 100%)`,
+      }}
+    >
+      <CardFileTabs
+        decks={decks}
+        activeDeckId={activeDeckId}
+        overdueDeckIds={overdueDeckIds}
+        hitCounts={hitCounts}
+        canCreate={canCreateDeck}
+        onSelect={onSelectDeck}
+        onEdit={onEditDeck}
+        onCreate={onCreateDeck}
+      />
+
+      {count > 0 && (
         <div
-          className="engraved relative w-full overflow-hidden border"
-          style={{
-            borderRadius: config.borderRadius,
-            padding: '6px 8px',
-            backgroundColor: 'rgba(247,242,232,0.84)',
-            borderColor: 'rgba(103,86,65,0.2)',
-            boxShadow:
-              '0 10px 24px rgba(20,17,14,0.18), inset 0 1px 0 rgba(255,255,255,0.72)',
-          }}
+          ref={edgesRef}
+          className="relative"
+          style={{ height: listHeight, zIndex: 1 }}
         >
+          {/* Scrolls under a finger (and by wheel through the cards). */}
           <div
-            className="pointer-events-none absolute inset-0"
+            ref={listRef}
+            className="no-scrollbar relative flex flex-col overflow-y-auto"
             style={{
-              backgroundImage: `url(${cardboardTexture})`,
-              backgroundPosition: 'center',
-              backgroundSize: 'cover',
-              mixBlendMode: 'multiply',
-              opacity: 0.08,
+              height: listHeight,
+              overscrollBehavior: 'contain',
+              touchAction: 'pan-y',
+              scrollSnapType: canScroll ? 'y mandatory' : undefined,
             }}
-          />
+            onScroll={handleListScroll}
+            onTouchStart={() => {
+              isTouchingRef.current = true;
+              ignoreScrollUntilRef.current = 0;
+            }}
+            onTouchEnd={() => {
+              isTouchingRef.current = false;
+            }}
+            onTouchCancel={() => {
+              isTouchingRef.current = false;
+            }}
+          >
+            {rows.map(({ card, copy }, index) => {
+              const isActive = card.id === activeCardId;
+              const palette = getCardPalette(card);
+              const isOverdue = Boolean(overdueIds?.has(card.id));
+              // Roughness drawn from the id: it never changes between renders.
+              const hash = hashOf(card.id);
+              const inset = isActive ? 0 : 6 + ((hash % 7) - 3) * 0.8;
+              const tilt = isActive ? 0 : (((hash >>> 4) % 9) - 4) * 0.1;
 
-          <div className="relative">
-            {/* Scrolls under a finger (and by wheel through the cards). */}
-            <div
-              ref={listRef}
-              className="no-scrollbar relative flex flex-col gap-0.5 overflow-y-auto"
-              style={{
-                height: listHeight,
-                overscrollBehavior: 'contain',
-                touchAction: 'pan-y',
-                scrollSnapType: canScroll ? 'y mandatory' : undefined,
-              }}
-              onScroll={handleListScroll}
-              onTouchStart={() => {
-                isTouchingRef.current = true;
-                ignoreScrollUntilRef.current = 0;
-              }}
-              onTouchEnd={() => {
-                isTouchingRef.current = false;
-              }}
-              onTouchCancel={() => {
-                isTouchingRef.current = false;
-              }}
-            >
-              {Array.from({ length: copies }, (_, copy) =>
-                cards.map((card) => ({ card, copy })),
-              )
-                .flat()
-                .map(({ card, copy }) => {
-                const isActive = card.id === activeCardId;
-                const palette = getCardPalette(card);
-                const isOverdue = Boolean(overdueIds?.has(card.id));
-
-                return (
-                  <button
-                    key={copy + ':' + card.id}
-                    type="button"
-                    data-card-id={card.id}
-                    onClick={() => onSelectCard(card.id)}
-                    className="relative flex w-full shrink-0 items-center overflow-hidden border-0 px-2.5 text-left"
+              return (
+                <button
+                  key={copy + ':' + card.id}
+                  type="button"
+                  data-card-id={card.id}
+                  onClick={() => onSelectCard(card.id)}
+                  aria-pressed={isActive}
+                  className="engraved relative flex shrink-0 items-start border-0 px-3 text-left"
+                  style={{
+                    height: metrics.rowHeight,
+                    width: `calc(100% - ${inset * 2}px)`,
+                    marginLeft: 'auto',
+                    marginRight: 'auto',
+                    marginTop: index === 0 ? 0 : -metrics.overlap,
+                    zIndex: rows.length - index,
+                    scrollSnapAlign: 'start',
+                    // Snap with the part under the card above out of sight.
+                    scrollMarginTop: -metrics.overlap,
+                    borderRadius: '0 0 10px 10px',
+                    backgroundColor: palette.paper,
+                    backgroundImage: `url(${cardboardTexture})`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    backgroundBlendMode: 'multiply',
+                    border: '1px solid rgba(91,76,59,0.16)',
+                    borderTop: 'none',
+                    boxShadow: isActive
+                      ? '0 3px 6px rgba(20,17,14,0.32), inset 0 -1px 0 rgba(79,61,42,0.1)'
+                      : '0 2px 3px rgba(20,17,14,0.26), inset 0 -1px 0 rgba(79,61,42,0.1)',
+                    filter: isActive ? 'brightness(1.045)' : undefined,
+                    transform: tilt ? `rotate(${tilt}deg)` : undefined,
+                    transformOrigin: 'center top',
+                  }}
+                >
+                  <span
+                    className="relative block min-w-0 flex-1 truncate"
                     style={{
-                      height: metrics.rowHeight,
-                      scrollSnapAlign: 'start',
-                      borderRadius: 8,
-                      backgroundColor: isActive
-                        ? `${palette.accent}1f`
-                        : 'transparent',
+                      color: palette.ink,
+                      fontFamily: "'Lora', Georgia, serif",
+                      fontWeight: isActive ? 700 : 600,
+                      fontSize: metrics.fontSize,
+                      // The top of an edge lies under the card above: the
+                      // name stands in the part that shows.
+                      paddingTop: metrics.overlap,
+                      lineHeight: `${metrics.rowStep}px`,
                     }}
-                    aria-pressed={isActive}
                   >
-                    <span
-                      className="relative z-10 block min-w-0 flex-1 truncate font-mono font-semibold"
-                      style={{
-                        color: isActive
-                          ? palette.accentDark
-                          : 'rgba(40,35,29,0.68)',
-                        fontSize: metrics.fontSize,
-                        lineHeight: `${metrics.rowHeight}px`,
-                      }}
-                    >
-                      {card.pinned && (
-                        <span
-                          className="mr-1.5"
-                          style={{ color: '#C9972A' }}
-                          role="img"
-                          aria-label="Закреплена"
-                        >
-                          ★
-                        </span>
-                      )}
-                      {/* Overdue: a red dot in front of the name. */}
-                      {isOverdue && (
-                        <span
-                          className="mr-2 inline-block h-[9px] w-[9px] rounded-full align-middle"
-                          style={{
-                            background:
-                              'radial-gradient(circle at 32% 28%, #E0705F 0%, #B8483A 55%, #8F3025 100%)',
-                            boxShadow: '0 1px 2px rgba(40,12,8,0.4)',
-                          }}
-                          role="img"
-                          aria-label="Просрочено"
-                        />
-                      )}
-                      {getCardDisplayLabel(card)}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
+                    {card.pinned && (
+                      <span
+                        className="mr-1.5"
+                        style={{ color: '#B8851F' }}
+                        role="img"
+                        aria-label="Закреплена"
+                      >
+                        ★
+                      </span>
+                    )}
+                    {/* Overdue: a red dot in front of the name. */}
+                    {isOverdue && (
+                      <span
+                        className="mr-2 inline-block h-[9px] w-[9px] rounded-full align-middle"
+                        style={{
+                          background:
+                            'radial-gradient(circle at 32% 28%, #E0705F 0%, #B8483A 55%, #8F3025 100%)',
+                          boxShadow:
+                            '0 0 0 1.5px rgba(255,255,255,0.85), 0 1px 2px rgba(40,12,8,0.4)',
+                        }}
+                        role="img"
+                        aria-label="Просрочено"
+                      />
+                    )}
+                    {getCardDisplayLabel(card)}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </div>
-
-        {/* Overdue: a red dot on the corner of the list, saying what it is. */}
-        <OverdueBadge
-          count={overdueIds?.size ?? 0}
-          label="просрочено"
-          className="absolute -right-2 -top-2 z-10"
-          onPress={goToNextOverdue}
-        />
-      </div>
-
-      {import.meta.env.DEV && SHOW_CARD_SWITCHER_DEBUG && (
-        <CardSwitcherDebugPanel config={config} onChange={setConfig} />
       )}
-    </>
+
+      {/* Overdue: a red dot on the divider's right end, saying what it is. */}
+      <OverdueBadge
+        count={overdueIds?.size ?? 0}
+        label="просрочено"
+        className="absolute z-10"
+        style={{
+          right: 6,
+          top: CARD_FILE_TAB_ROW_HEIGHT + CARD_FILE_DIVIDER_HEIGHT / 2 - 11,
+        }}
+        onPress={goToNextOverdue}
+      />
+    </div>
   );
 };

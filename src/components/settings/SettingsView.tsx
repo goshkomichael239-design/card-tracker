@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 
 import { SETTINGS, useSettings } from '../../app/settings';
 import { MotionSetting } from './MotionSetting';
+import { SearchHitsSetting } from './SearchHitsSetting';
 import { SwipeStyleSetting } from './SwipeStyleSetting';
 import { playSound } from '../../app/sounds';
 
@@ -64,6 +65,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
           <MotionSetting style={lit(110)} />
           <SwipeStyleSetting style={lit(135)} />
+          <SearchHitsSetting style={lit(150)} />
 
           <ul>
             {SETTINGS.map((setting, index) => {

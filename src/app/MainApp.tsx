@@ -67,7 +67,6 @@ import { useCardDraft } from './useCardDraft';
 import { purgeExpiredTrash } from './trash';
 import { DebugCardsPanel } from '../components/DebugCardsPanel';
 import { DeckSheet } from '../components/decks/DeckSheet';
-import { DeckTabs } from '../components/decks/DeckTabs';
 import { TrashBin } from '../components/trash/TrashBin';
 import { CouponSpike } from '../components/table/CouponSpike';
 import { TableSurface } from '../components/table/TableSurface';
@@ -84,7 +83,6 @@ import { searchCards } from './searchCards';
 import { filterArchive } from './archiveUtils';
 import { CardStack } from '../components/card-stack/CardStack';
 import { CardSwitcher } from '../components/card-switcher/CardSwitcher';
-import { INITIAL_CARD_SWITCHER_CONFIG } from '../components/card-switcher/cardSwitcherConfig';
 import { ARCHIVE_NAVIGATION_HEIGHT } from '../components/archive/ArchiveNavigation';
 import { getCardScale, useViewportSize } from './viewportScale';
 import { haptic } from './haptics';
@@ -94,7 +92,11 @@ import { SettingsGear } from '../components/settings/SettingsGear';
 import { SettingsView } from '../components/settings/SettingsView';
 import { useWheelNavigation } from './useWheelNavigation';
 import { DeckDots } from '../components/card-stack/DeckDots';
-import { getSwitcherMetrics } from '../components/card-switcher/cardSwitcherConfig';
+import {
+  getCardFileHeight,
+  getSwitcherMetrics,
+} from '../components/card-switcher/cardSwitcherConfig';
+import { useSearchHitsStyle } from './searchHitsStyle';
 import {
   DetachedCompletionCoupon,
   type DetachedCompletionCouponHandle,
@@ -231,10 +233,11 @@ const STACK_PEEK_BELOW = 12;
 const CARD_BOTTOM_GAP = 48;
 const SCENE_SIDE_OVERHANG = 44;
 const NARROW_SCENE_SIDE_OVERHANG = 64;
-// The overview tabs hanging under the card list.
-const SWITCHER_TOP = 16;
-const SWITCHER_CHROME = 14;
-const SWITCHER_ROW_GAP = 2;
+// The card file (tabs, divider, edges) hangs this far from the top edge: just
+// under the row of the search and settings buttons.
+const SWITCHER_TOP = 44;
+// A little air under the file's last edge.
+const SWITCHER_CHROME = 10;
 
 const MainApp: React.FC = () => {
   const { width: viewportWidth, height: viewportHeight } = useViewportSize();
@@ -386,17 +389,11 @@ const MainApp: React.FC = () => {
   }, [allCards, decks, clockNow]);
 
   const isPhone = viewportWidth < PHONE_WIDTH_PX;
-  const switcherMetrics = getSwitcherMetrics(isPhone);
-  const switcherRows = Math.min(
-    switcherMetrics.visibleRows,
-    Math.max(1, cards.length),
-  );
+  const switcherMetrics = getSwitcherMetrics(isPhone, viewportHeight);
   const switcherBottom =
     SWITCHER_TOP +
-    INITIAL_CARD_SWITCHER_CONFIG.positionY +
-    SWITCHER_CHROME +
-    switcherRows * switcherMetrics.rowHeight +
-    (switcherRows - 1) * SWITCHER_ROW_GAP;
+    getCardFileHeight(switcherMetrics, cards.length) +
+    SWITCHER_CHROME;
   const sceneTopReserve = switcherBottom + SCENE_TOP_OVERHANG;
   // The stack stands as high as it can, under the list; the cloth left under
   // it (never less than the gap) holds the "take back" line.
@@ -988,6 +985,18 @@ const MainApp: React.FC = () => {
       }))
       .filter((hit) => hit.matches.length > 0);
   }, [isSearching, decks, activeDeckId, allCards, searchQuery]);
+
+  // How the hits in the other decks are shown, and their numbers per deck.
+  const searchHitsStyle = useSearchHitsStyle();
+  const deckHitCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+
+    for (const hit of otherDeckHits) {
+      counts[hit.deck.id] = hit.matches.length;
+    }
+
+    return counts;
+  }, [otherDeckHits]);
 
   // ---- decks: switching and the settings sheet ---------------------------
   const [deckSheet, setDeckSheet] = useState<{ deckId: string | null } | null>(
@@ -1862,7 +1871,10 @@ const MainApp: React.FC = () => {
       />
 
       <div className="absolute inset-0 z-20 h-full w-full">
-        <div className="absolute inset-x-3 top-4 z-30 flex justify-center">
+        <div
+          className="absolute inset-x-3 z-30 flex flex-col items-center"
+          style={{ top: SWITCHER_TOP }}
+        >
           <CardSwitcher
             cards={navCards}
             activeCardId={activeCardId}
@@ -1872,12 +1884,30 @@ const MainApp: React.FC = () => {
             onNextCard={handleNextCard}
             onPreviousCard={handlePreviousCard}
             isPhone={isPhone}
+            viewportHeight={viewportHeight}
             overdueIds={isSearching ? undefined : overdueIds}
+            decks={decks}
+            activeDeckId={activeDeckId}
+            overdueDeckIds={overdueDeckIds}
+            hitCounts={
+              isSearching && searchHitsStyle === 'tabs' ? deckHitCounts : null
+            }
+            canCreateDeck={decks.length < MAX_DECKS && !isCreating}
+            onSelectDeck={(deckId) => {
+              // A tab with a number leads to the first card it found.
+              const hit = otherDeckHits.find((item) => item.deck.id === deckId);
+
+              switchDeck(deckId, hit?.matches[0]?.id);
+            }}
+            onEditDeck={(deckId) => setDeckSheet({ deckId })}
+            onCreateDeck={() => setDeckSheet({ deckId: null })}
           />
 
           {/* Nothing here: say so, and offer the other decks and the archive. */}
           {isSearching &&
-            (navCards.length === 0 || otherDeckHits.length > 0) && (
+            (navCards.length === 0 ||
+              (searchHitsStyle === 'buttons' &&
+                otherDeckHits.length > 0)) && (
               <div
                 className="lit-in flex flex-col items-center gap-2 pt-4 text-center"
                 style={{ pointerEvents: 'auto' }}
@@ -1889,7 +1919,8 @@ const MainApp: React.FC = () => {
                       : 'Ничего не найдено'}
                   </p>
                 )}
-                {otherDeckHits.map((hit) => (
+                {searchHitsStyle === 'buttons' &&
+                  otherDeckHits.map((hit) => (
                   <button
                     key={hit.deck.id}
                     type="button"
@@ -1968,17 +1999,6 @@ const MainApp: React.FC = () => {
               )}
             />
           )}
-
-          {/* The decks' tabs stand out of the stack's top edge. */}
-          <DeckTabs
-            decks={decks}
-            activeDeckId={activeDeckId}
-            overdueDeckIds={overdueDeckIds}
-            canCreate={decks.length < MAX_DECKS && !isCreating}
-            onSelect={(deckId) => switchDeck(deckId)}
-            onEdit={(deckId) => setDeckSheet({ deckId })}
-            onCreate={() => setDeckSheet({ deckId: null })}
-          />
 
           {/* A card pulled sideways uncovers the next one, whole. */}
           {isSwipeActive && swipeNextCard && (

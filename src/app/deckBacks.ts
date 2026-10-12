@@ -33,8 +33,8 @@ export const DECK_BACKS: DeckBack[] = [
   {
     id: 'emerald',
     name: 'Изумруд',
-    tab: '#2F8A5B',
-    tabInk: '#F4EBC8',
+    tab: '#2A7A4F',
+    tabInk: '#FFF6D6',
     paper: {
       backgroundColor: '#1F6B45',
       backgroundImage: diagonal('rgba(255,255,255,0.07)'),
