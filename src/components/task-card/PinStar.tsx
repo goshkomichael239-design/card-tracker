@@ -52,19 +52,20 @@ const StarMark: React.FC = () => (
   </svg>
 );
 
-// The clip is a picture (a gold paper clip, cut out of its background; the
-// star it came with was taken off, ours is drawn in code at the wire's end).
-// It is 92 x 300 in the file; in the 40 x 90 drawing it is shown CLIP_HEIGHT
-// tall, and placed so that the end of its inner wire (at 20% of its width and
-// 31.7% of its height) is exactly under the star.
-const CLIP_HEIGHT = 70;
-const CLIP_WIDTH = (CLIP_HEIGHT * 92) / 300;
-const CLIP_X = STAR_X - 0.2 * CLIP_WIDTH;
-const CLIP_Y = STAR_Y - 0.317 * CLIP_HEIGHT;
+// The clip is the finished picture (src/assets/clip.png), shown as it was
+// drawn, with its own star. It is 94 x 300 in the file; its star's centre lies
+// at 30.9% of its width and 25.8% of its height. In the 40 x 90 drawing it is
+// shown CLIP_HEIGHT tall and placed so that its star stands exactly where the
+// card's own star stood: the clip simply takes the star's place.
+const CLIP_HEIGHT = 78;
+const CLIP_WIDTH = (CLIP_HEIGHT * 94) / 300;
+const CLIP_X = STAR_X - 0.309 * CLIP_WIDTH;
+const CLIP_Y = STAR_Y - 0.258 * CLIP_HEIGHT;
 
 /**
- * A gold paper clip over the top edge of the card; its free end carries the
- * star the card was marked with, at the very place where it was pressed.
+ * The gold paper clip over the top edge of the card, with the star that is
+ * drawn on it. Only a soft and a tight shadow are added, so that it lies on
+ * the paper.
  */
 const ClipMark: React.FC = () => (
   <svg
@@ -75,37 +76,23 @@ const ClipMark: React.FC = () => (
     className="absolute left-0 top-0"
     style={{ overflow: 'visible' }}
   >
-    <defs>
-      <linearGradient id="star-gold" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0" stopColor="#FFF3BD" />
-        <stop offset="0.5" stopColor="#F2C54E" />
-        <stop offset="1" stopColor="#B07C1C" />
-      </linearGradient>
-    </defs>
-
     {/* What the clip casts onto the paper: a soft one a little to the lower
         right, and a tight one under the wire that holds it to the card. */}
     <image
       href={clipImage}
-      x={CLIP_X + 1.6}
-      y={CLIP_Y + 2.4}
+      x={CLIP_X + 1.8}
+      y={CLIP_Y + 2.6}
       width={CLIP_WIDTH}
       height={CLIP_HEIGHT}
-      style={{
-        filter: 'brightness(0) blur(1.6px)',
-        opacity: 0.26,
-      }}
+      style={{ filter: 'brightness(0) blur(1.7px)', opacity: 0.26 }}
     />
     <image
       href={clipImage}
-      x={CLIP_X + 0.5}
-      y={CLIP_Y + 0.9}
+      x={CLIP_X + 0.6}
+      y={CLIP_Y + 1}
       width={CLIP_WIDTH}
       height={CLIP_HEIGHT}
-      style={{
-        filter: 'brightness(0) blur(0.5px)',
-        opacity: 0.34,
-      }}
+      style={{ filter: 'brightness(0) blur(0.5px)', opacity: 0.34 }}
     />
     <image
       href={clipImage}
@@ -113,25 +100,6 @@ const ClipMark: React.FC = () => (
       y={CLIP_Y}
       width={CLIP_WIDTH}
       height={CLIP_HEIGHT}
-    />
-
-    {/* the star at the end of the wire, with its own shadow */}
-    <polygon
-      points={STAR_POINTS}
-      transform="translate(1.4 2)"
-      fill="rgba(30,20,10,0.3)"
-      style={{ filter: 'blur(1.1px)' }}
-    />
-    <polygon
-      points={STAR_POINTS}
-      fill="url(#star-gold)"
-      stroke="rgba(110,76,14,0.9)"
-      strokeWidth="1.1"
-      strokeLinejoin="round"
-    />
-    <polygon
-      points={`${STAR_X},${STAR_Y - 8.5} ${STAR_X + 2.3},${STAR_Y - 3.6} ${STAR_X + 5.6},${STAR_Y - 3.2} ${STAR_X + 2.6},${STAR_Y - 0.4}`}
-      fill="rgba(255,255,255,0.6)"
     />
   </svg>
 );
