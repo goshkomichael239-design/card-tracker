@@ -1591,21 +1591,21 @@ html[data-swipe-style='coupon'] [data-swipe-side='left'] .swipe-coupon--delete {
 
 .coupon-press__shade {
   position: absolute;
-  width: 46px;
-  height: 22px;
+  width: 34px;
+  height: 16px;
   opacity: 0;
   pointer-events: none;
   background: radial-gradient(
     ellipse at 50% 50%,
-    rgba(30, 20, 10, 0.34) 0%,
-    rgba(30, 20, 10, 0) 70%
+    rgba(30, 20, 10, 0.28) 0%,
+    rgba(30, 20, 10, 0) 72%
   );
   transition: opacity 140ms ease-out;
 }
-.coupon-press__shade[data-corner='0'] { left: -4px; top: -1px; }
-.coupon-press__shade[data-corner='1'] { right: -4px; top: -1px; }
-.coupon-press__shade[data-corner='2'] { right: -4px; bottom: -1px; }
-.coupon-press__shade[data-corner='3'] { left: -4px; bottom: -1px; }
+.coupon-press__shade[data-corner='0'] { left: -1px; top: 0; }
+.coupon-press__shade[data-corner='1'] { right: -1px; top: 0; }
+.coupon-press__shade[data-corner='2'] { right: -1px; bottom: 0; }
+.coupon-press__shade[data-corner='3'] { left: -1px; bottom: 0; }
 
 .coupon-press:active:not(:disabled) .coupon-press__shade {
   opacity: 1;
