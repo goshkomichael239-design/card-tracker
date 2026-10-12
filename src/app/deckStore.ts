@@ -3,9 +3,12 @@ import { create } from 'zustand';
 import { createAutoBackup } from './storage/autoBackup';
 import type { TimeMode, VisualCard } from './cardTheme';
 import { createId, pinnedFirst } from './cardOps';
-import { createDemoCards } from './demoCards';
+import { createDemoSet } from './demoCards';
 
-/** A first run starts with thirty varied cards (set false for a single one). */
+/**
+ * A first run starts with the test set: three decks and a hundred varied
+ * cards (set false for a single card).
+ */
 const SHOW_DEMO_DECK = true;
 import {
   loadActiveCards,
@@ -14,7 +17,13 @@ import {
   saveArchivedCards,
 } from './persistence';
 import { loadTrash, saveTrash, type TrashedCard } from './trash';
-import { loadDecksState, saveDecksState, type Deck } from './decks';
+import {
+  DEFAULT_DECK_ID,
+  loadDecksState,
+  MAX_DECKS,
+  saveDecksState,
+  type Deck,
+} from './decks';
 
 /**
  * The data layer: the cards on the table, the archive and the bin.
@@ -46,12 +55,8 @@ const resolve = <T,>(next: Updater<T>, previous: T): T =>
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-/** What a first run (nothing stored) starts with: a full demonstration deck. */
+/** What a first run (nothing stored) starts with, besides the demo set. */
 const createFirstRunCards = (): VisualCard[] => {
-  if (SHOW_DEMO_DECK) {
-    return createDemoCards();
-  }
-
   if (!import.meta.env.DEV) {
     return [
       {
@@ -94,7 +99,17 @@ const createFirstRunCards = (): VisualCard[] => {
   });
 };
 
-const initialDecks = loadDecksState();
+const storedCards = loadActiveCards();
+// A first run (no cards stored) gets the whole test set: its decks and cards.
+const demoSet =
+  storedCards === null && SHOW_DEMO_DECK ? createDemoSet() : null;
+const storedDecks = loadDecksState();
+const initialDecks = demoSet
+  ? {
+      decks: [...storedDecks.decks, ...demoSet.decks].slice(0, MAX_DECKS),
+      activeDeckId: DEFAULT_DECK_ID,
+    }
+  : storedDecks;
 
 export const useDeckStore = create<DeckState>((set) => ({
   decks: initialDecks.decks,
@@ -108,7 +123,7 @@ export const useDeckStore = create<DeckState>((set) => ({
     set((state) =>
       activeDeckId === state.activeDeckId ? state : { activeDeckId },
     ),
-  cards: loadActiveCards() ?? createFirstRunCards(),
+  cards: storedCards ?? demoSet?.cards ?? createFirstRunCards(),
   archivedCards: loadArchivedCards(),
   trash: loadTrash(),
   // Whatever changes the deck, pinned cards stay at its head.
@@ -183,7 +198,11 @@ useDeckStore.subscribe((state, previous) => {
 // A first run stores its starting cards at once, and every start leaves one
 // snapshot of what was loaded (before anything is changed).
 {
-  const { cards, archivedCards, trash } = getDeckState();
+  const { cards, archivedCards, trash, decks, activeDeckId } = getDeckState();
+
+  if (demoSet) {
+    saveDecksState({ decks, activeDeckId });
+  }
 
   saveActiveCards(cards);
   saveArchivedCards(archivedCards);
