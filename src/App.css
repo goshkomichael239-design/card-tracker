@@ -1647,11 +1647,7 @@ html[data-swipe-style='coupon'] [data-swipe-side='left'] .swipe-coupon--delete {
    button: no perforation, nothing to tear. */
 .pad-button {
   border-radius: 10px;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.8),
-    inset 0 -2px 3px rgba(60, 45, 30, 0.14),
-    0 1px 0 rgba(255, 255, 255, 0.55),
-    0 2px 4px -1px rgba(40, 28, 16, 0.28);
+  box-shadow: var(--rim-lit), var(--rim-dark), var(--shadow-0);
   transition:
     box-shadow 160ms ease-out,
     transform 140ms cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -1667,20 +1663,13 @@ html[data-swipe-style='coupon'] [data-swipe-side='left'] .swipe-coupon--delete {
 
 @media (hover: hover) {
   .pad-button:hover:not(:disabled) {
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.9),
-      inset 0 -2px 3px rgba(60, 45, 30, 0.1),
-      0 1px 0 rgba(255, 255, 255, 0.55),
-      0 3px 6px -1px rgba(40, 28, 16, 0.32);
+    box-shadow: var(--rim-lit), var(--rim-dark), 2px 4px 6px rgba(28, 18, 10, 0.26);
   }
 }
 
 .pad-button:active:not(:disabled) {
   transform: translateY(1px);
-  box-shadow:
-    inset 0 2px 5px rgba(40, 28, 16, 0.3),
-    inset 0 -1px 0 rgba(255, 255, 255, 0.7),
-    0 1px 0 rgba(255, 255, 255, 0.55);
+  box-shadow: var(--well);
 }
 
 .pad-button:focus-visible {
@@ -1736,4 +1725,24 @@ html[data-swipe-style='coupon'] [data-swipe-side='left'] .swipe-coupon--delete {
     rgba(30, 20, 10, 0.2) 40%,
     rgba(30, 20, 10, 0) 100%
   );
+}
+
+/* ---- One lamp ------------------------------------------------------------
+   The lamp hangs over the upper left: every shadow falls to the lower right
+   (about one across for two down), is the same warm dark and differs only in
+   how high the object lies. Edges follow the same light: a lit line on the
+   upper left, a dark one on the lower right; what is pressed in (a slot, a
+   hole, a pressed button) is the other way round.
+   0: lies on the card (tabs, buttons, badges, edges of the card file)
+   1: lies on the table (the card, the stack)
+   2: lifted into the air (the torn piece, a stamp being pressed)           */
+:root {
+  --shadow-0: 1px 1px 1px rgba(28, 18, 10, 0.3), 2px 3px 5px rgba(28, 18, 10, 0.18);
+  --shadow-1: 1px 2px 2px rgba(28, 18, 10, 0.28), 6px 12px 20px -2px rgba(28, 18, 10, 0.3);
+  --shadow-2: 2px 4px 4px rgba(28, 18, 10, 0.26), 12px 24px 30px -4px rgba(28, 18, 10, 0.3);
+  /* The layers of a stack under the front card. */
+  --shadow-stack: 3px 6px 10px -2px rgba(28, 18, 10, 0.3);
+  --rim-lit: inset 1px 1px 0 rgba(255, 255, 255, 0.5);
+  --rim-dark: inset -1px -1px 0 rgba(28, 18, 10, 0.2);
+  --well: inset 1px 2px 3px rgba(28, 18, 10, 0.34), inset -1px -1px 0 rgba(255, 255, 255, 0.55);
 }

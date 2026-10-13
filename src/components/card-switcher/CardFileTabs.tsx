@@ -123,8 +123,8 @@ export const CardFileTabs: React.FC<CardFileTabsProps> = ({
                   'linear-gradient(180deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0) 55%, rgba(0,0,0,0.16) 100%)',
                 color: back.tabInk,
                 boxShadow: isActive
-                  ? '3px 0 5px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.45)'
-                  : '2px 0 3px rgba(0,0,0,0.24), inset 0 1px 0 rgba(255,255,255,0.3)',
+                  ? 'var(--shadow-0), inset 1px 1px 0 rgba(255,255,255,0.5)'
+                  : 'var(--shadow-0), inset 1px 1px 0 rgba(255,255,255,0.35)',
                 filter: isActive ? 'none' : 'brightness(0.86) saturate(0.9)',
                 opacity: isDimmed ? 0.5 : 1,
                 transition:
@@ -219,7 +219,7 @@ export const CardFileTabs: React.FC<CardFileTabsProps> = ({
               backgroundColor: '#E9E1CE',
               backgroundImage:
                 'linear-gradient(180deg, rgba(255,255,255,0.35) 0%, rgba(0,0,0,0.08) 100%)',
-              boxShadow: '2px 0 3px rgba(0,0,0,0.22)',
+              boxShadow: 'var(--shadow-0)',
             }}
           >
             {/* A plus drawn by hand in pencil. */}

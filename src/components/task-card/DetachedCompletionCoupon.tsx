@@ -272,7 +272,7 @@ export const DetachedCompletionCoupon = forwardRef<
           className="absolute inset-0"
           style={{
             filter:
-              'drop-shadow(0 4px 4px rgba(0,0,0,0.3)) drop-shadow(0 9px 9px rgba(0,0,0,0.2))',
+              'drop-shadow(2px 4px 3px rgba(28,18,10,0.26)) drop-shadow(10px 20px 14px rgba(28,18,10,0.2))',
           }}
         >
           <div

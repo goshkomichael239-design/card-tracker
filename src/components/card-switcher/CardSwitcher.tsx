@@ -382,8 +382,8 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
                       bottom: isActive ? -CHOSEN_OVERLAP : 0,
                       borderRadius: TILE_RADIUS,
                       boxShadow: isActive
-                        ? '0 4px 6px -1px rgba(20,17,14,0.46), 0 10px 14px -4px rgba(20,17,14,0.34)'
-                        : '0 2px 4px -1px rgba(20,17,14,0.36), 0 5px 8px -4px rgba(20,17,14,0.24)',
+                        ? 'var(--shadow-1)'
+                        : 'var(--shadow-0)',
                     }}
                   />
 

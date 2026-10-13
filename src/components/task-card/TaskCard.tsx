@@ -467,7 +467,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
         className="pointer-events-none absolute inset-0"
         style={{
           borderRadius: config.borderRadius,
-          boxShadow: `${config.shadowX}px ${config.shadowY}px ${config.shadowBlur}px rgba(20,17,14,${config.shadowOpacity})`,
+          boxShadow: 'var(--shadow-1)',
         }}
         aria-hidden="true"
       />

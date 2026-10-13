@@ -24,7 +24,7 @@ export const CardStackLayer: React.FC<CardStackLayerProps> = ({
     depth * config.stackRotation * (sequenceIndex % 2 === 0 ? 1 : -0.65);
   const scale = 1 - depth * 0.012;
   const hasBack = Boolean(back?.paper);
-  const cast = `${config.shadowX * 0.55}px ${config.shadowY * 0.6}px ${config.shadowBlur * 0.6}px rgba(20,17,14,${config.shadowOpacity * 0.58})`;
+  const cast = 'var(--shadow-stack)';
 
   return (
     <div
