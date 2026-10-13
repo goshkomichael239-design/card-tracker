@@ -14,6 +14,7 @@ import {
   type FaceDirection,
 } from './CardFaceStage';
 import { getCouponSeed } from '../../app/couponEdge';
+import { PAPER_GRAIN } from '../../app/paperGrain';
 import { STAMP_RED_DOT_BACKGROUND } from '../../app/stampRed';
 import { MeasuredPerforation } from './CouponPerforation';
 import { CompletionCoupon } from './CompletionCoupon';
@@ -492,6 +493,17 @@ export const TaskCard: React.FC<TaskCardProps> = ({
             mixBlendMode: 'multiply',
             opacity: config.paperTextureOpacity,
           }}
+        />
+        {/* The fine tooth of the paper, sharp at any density. */}
+        <div
+          className="pointer-events-none absolute inset-0"
+          style={{
+            backgroundImage: PAPER_GRAIN,
+            backgroundSize: '240px 240px',
+            mixBlendMode: 'multiply',
+            opacity: 0.55,
+          }}
+          aria-hidden="true"
         />
 
         <CardFaceStage
