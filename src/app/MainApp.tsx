@@ -163,12 +163,14 @@ interface TransientOutgoingCard {
 
 /** Below this width the scene is a phone's: cards a little smaller. */
 const PHONE_WIDTH_PX = 640;
-// On a phone the stack stands at the left edge of the table and is as large
-// as the free space allows: this much cloth at its left, and this much kept at
-// its right for the lower layers of the stack and the rail of dots.
-const PHONE_SCENE_LEFT = 12;
-const PHONE_SCENE_RIGHT_RESERVE = 52;
-const PHONE_DOTS_OFFSET = 28;
+// On a phone the stack stands in the middle of the screen, a little to the
+// left of it (the rail of dots stands on its right) and is as large as the
+// room allows: this much of the screen's width the stack's centre is moved to
+// the left, and this much is kept free at the screen's right edge for the lower
+// layers of the stack and the dots.
+const PHONE_CENTER_SHIFT_RATIO = 0.018;
+const PHONE_RIGHT_RESERVE = 54;
+const PHONE_DOTS_OFFSET = 22;
 const NO_DECK_COUNTS: Readonly<Record<string, number>> = {};
 /** The stack stands this share of the screen's width left of the middle. */
 const STACK_SHIFT_RATIO = 0.03;
@@ -412,9 +414,15 @@ const MainApp: React.FC = () => {
   // it (never less than the gap) holds the "take back" line.
   const sceneBottomReserve =
     ARCHIVE_NAVIGATION_HEIGHT + CARD_BOTTOM_GAP + STACK_PEEK_BELOW;
+  // A phone: the stack's centre, and the widest card that leaves the reserve.
+  const phoneCenterX = viewportWidth * (0.5 - PHONE_CENTER_SHIFT_RATIO);
+  const phoneMaxWidth = Math.max(
+    0,
+    2 * (viewportWidth - PHONE_RIGHT_RESERVE - phoneCenterX),
+  );
   const sceneScale = getCardScale(
     isPhone
-      ? viewportWidth - PHONE_SCENE_LEFT - PHONE_SCENE_RIGHT_RESERVE
+      ? phoneMaxWidth
       : viewportWidth - sceneSideOverhang * 2,
     viewportHeight - sceneTopReserve - sceneBottomReserve,
     INITIAL_TASK_CARD_V2_CONFIG.width,
@@ -1985,7 +1993,13 @@ const MainApp: React.FC = () => {
           touchAction: 'none',
           paddingTop: sceneTopReserve,
           paddingBottom: sceneBottomReserve,
-          paddingLeft: isPhone ? PHONE_SCENE_LEFT : undefined,
+          paddingLeft: isPhone
+            ? Math.max(
+                4,
+                phoneCenterX -
+                  (INITIAL_TASK_CARD_V2_CONFIG.width * sceneScale) / 2,
+              )
+            : undefined,
         }}
         onPointerDown={handleScenePointerDown}
         onPointerMove={handleScenePointerMove}
