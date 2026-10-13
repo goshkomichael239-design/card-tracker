@@ -2,6 +2,11 @@ import React, { useEffect, useRef } from 'react';
 
 import cardboardTexture from '../../assets/cardboard.avif';
 import { getCardPalette, type VisualCard } from '../../app/cardTheme';
+import { getDeckBack } from '../../app/deckBacks';
+import { useFileStyle } from '../../app/fileStyle';
+import {
+  CARD_FILE_TAB_ROW_HEIGHT,
+} from './cardSwitcherConfig';
 import type { Deck } from '../../app/decks';
 import {
   CARD_FILE_MAX_WIDTH,
@@ -94,6 +99,29 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
   onCreateDeck,
 }) => {
   const metrics = getSwitcherMetrics(isPhone, viewportHeight);
+  const fileStyle = useFileStyle();
+  const activeBack = getDeckBack(
+    decks.find((deck) => deck.id === activeDeckId)?.backId,
+  );
+  const activeCard = cards.find((card) => card.id === activeCardId);
+  const activePalette = activeCard ? getCardPalette(activeCard) : null;
+  // The box the edges lie in: the deck's back (or, for a deck with plain
+  // paper, a warm cardboard), or dark leather for every deck.
+  const isBox = fileStyle === 'box' || fileStyle === 'leather';
+  const bodyColor =
+    (activeBack.paper?.backgroundColor as string | undefined) ?? '#cfc2a4';
+  const boxStyle: React.CSSProperties =
+    fileStyle === 'leather'
+      ? {
+          backgroundColor: '#2b2018',
+          backgroundImage:
+            'linear-gradient(180deg, rgba(255,255,255,0.08), rgba(0,0,0,0.18)), repeating-linear-gradient(45deg, rgba(255,255,255,0.025) 0 2px, transparent 2px 6px)',
+        }
+      : {
+          ...(activeBack.paper ?? {}),
+          backgroundColor: bodyColor,
+          boxShadow: undefined,
+        };
   const listRef = useRef<HTMLDivElement | null>(null);
   const edgesRef = useRef<HTMLDivElement | null>(null);
   const switcherRef = useRef<HTMLDivElement | null>(null);
@@ -302,7 +330,29 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
         width: isPhone ? '100%' : `min(${CARD_FILE_MAX_WIDTH}px, 100%)`,
       }}
     >
+      {isBox && (
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute"
+          style={{
+            left: 0,
+            right: 0,
+            top: CARD_FILE_TAB_ROW_HEIGHT - 1,
+            bottom: -7,
+            borderRadius: '0 12px 12px 12px',
+            border: '1.5px solid rgba(232,201,120,0.9)',
+            boxShadow:
+              'var(--shadow-1), inset 1px 1px 0 rgba(255,244,200,0.35)',
+            ...boxStyle,
+          }}
+        />
+      )}
+
       <CardFileTabs
+        fileStyle={fileStyle}
+        bodyColor={bodyColor}
+        activePaper={activePalette?.paper ?? '#F7F2E8'}
+        activeInk={activePalette?.ink ?? '#3F3932'}
         decks={decks}
         activeDeckId={activeDeckId}
         overdueCounts={overdueCounts}

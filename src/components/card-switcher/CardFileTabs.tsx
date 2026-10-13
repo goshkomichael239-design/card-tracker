@@ -1,6 +1,7 @@
 import React from 'react';
 
 import { getDeckBack } from '../../app/deckBacks';
+import type { FileStyle } from '../../app/fileStyle';
 import { OverdueBadge } from './OverdueBadge';
 import type { Deck } from '../../app/decks';
 import {
@@ -18,6 +19,13 @@ export interface CardFileTabsProps {
    * has for the query. Null: the tabs do not show hits.
    */
   hitCounts: Readonly<Record<string, number>> | null;
+  /** How the file is put together (see fileStyle.ts). */
+  fileStyle: FileStyle;
+  /** The colour of the box the edges lie in (the style "box"). */
+  bodyColor: string;
+  /** The paper and ink of the first card (the style "folder"). */
+  activePaper: string;
+  activeInk: string;
   /** How many cards of the deck on the table are overdue (0: no flag). */
   activeOverdueCount: number;
   /** The flag on the tab of the deck on the table was pressed. */
@@ -67,6 +75,10 @@ export const CardFileTabs: React.FC<CardFileTabsProps> = ({
   hitCounts,
   activeOverdueCount,
   onOverduePress,
+  fileStyle,
+  bodyColor,
+  activePaper,
+  activeInk,
   canCreate,
   onSelect,
   onEdit,
@@ -90,6 +102,17 @@ export const CardFileTabs: React.FC<CardFileTabsProps> = ({
           const isDimmed = hits !== null && !isActive && hits === 0;
           const showsNumberedFlag =
             isActive && activeOverdueCount > 0 && hits === null;
+          const isFlat = fileStyle === 'flat';
+          // The tab of the deck on the table can take the colour of the box
+          // it grows out of, or of the first card's paper.
+          const tabColor =
+            isActive && fileStyle === 'box'
+              ? bodyColor
+              : isActive && fileStyle === 'folder'
+                ? activePaper
+                : back.tab;
+          const tabInk =
+            isActive && fileStyle === 'folder' ? activeInk : back.tabInk;
 
           return (
             <div
@@ -114,18 +137,28 @@ export const CardFileTabs: React.FC<CardFileTabsProps> = ({
                 paddingRight: showsNumberedFlag ? 16 : undefined,
                 alignSelf: 'flex-end',
                 height: isActive ? ACTIVE_HEIGHT : QUIET_HEIGHT,
-                borderRadius: '9px 9px 0 0',
-                borderTop: GOLD_EDGE,
-                borderLeft: GOLD_EDGE,
-                borderRight: GOLD_EDGE,
-                backgroundColor: back.tab,
-                backgroundImage:
-                  'linear-gradient(180deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0) 55%, rgba(0,0,0,0.16) 100%)',
-                color: back.tabInk,
-                boxShadow: isActive
-                  ? 'var(--shadow-0), inset 1px 1px 0 rgba(255,255,255,0.5)'
-                  : 'var(--shadow-0), inset 1px 1px 0 rgba(255,255,255,0.35)',
-                filter: isActive ? 'none' : 'brightness(0.86) saturate(0.9)',
+                borderRadius: isFlat ? 0 : '9px 9px 0 0',
+                borderTop: isFlat ? 0 : GOLD_EDGE,
+                borderLeft: isFlat ? 0 : GOLD_EDGE,
+                borderRight: isFlat ? 0 : GOLD_EDGE,
+                backgroundColor: isFlat ? 'transparent' : tabColor,
+                backgroundImage: isFlat
+                  ? 'none'
+                  : 'linear-gradient(180deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0) 55%, rgba(0,0,0,0.16) 100%)',
+                color: isFlat
+                  ? isActive
+                    ? '#FFF6D6'
+                    : 'rgba(255,246,214,0.62)'
+                  : tabInk,
+                boxShadow: isFlat
+                  ? isActive
+                    ? 'inset 0 -2px 0 rgba(232,201,120,0.95)'
+                    : 'none'
+                  : isActive
+                    ? 'var(--shadow-0), inset 1px 1px 0 rgba(255,255,255,0.5)'
+                    : 'var(--shadow-0), inset 1px 1px 0 rgba(255,255,255,0.35)',
+                filter:
+                  isActive || isFlat ? 'none' : 'brightness(0.86) saturate(0.9)',
                 opacity: isDimmed ? 0.5 : 1,
                 transition:
                   'height 200ms cubic-bezier(0.2, 0.8, 0.2, 1), opacity 200ms ease-out, filter 200ms ease-out',
@@ -145,7 +178,7 @@ export const CardFileTabs: React.FC<CardFileTabsProps> = ({
                 {deck.name}
               </span>
 
-              {isActive && <EmbossedPencil ink={back.tabInk} />}
+              {isActive && <EmbossedPencil ink={isFlat ? '#FFF6D6' : tabInk} />}
 
               {hits !== null && hits > 0 && (
                 <span
@@ -247,11 +280,28 @@ export const CardFileTabs: React.FC<CardFileTabsProps> = ({
           marginLeft: 5,
           marginRight: 5,
           borderRadius: '2px 2px 4px 4px',
-          backgroundColor: activeBack.tab,
+          backgroundColor:
+            fileStyle === 'box'
+              ? 'transparent'
+              : fileStyle === 'folder'
+                ? activePaper
+                : fileStyle === 'flat'
+                  ? 'rgba(232,201,120,0.5)'
+                  : activeBack.tab,
           backgroundImage:
-            'linear-gradient(180deg, rgba(255,255,255,0.25) 0%, rgba(0,0,0,0.15) 100%)',
-          borderBottom: GOLD_EDGE,
-          boxShadow: '0 2px 4px rgba(0,0,0,0.3)',
+            fileStyle === 'box' ||
+            fileStyle === 'flat' ||
+            fileStyle === 'folder'
+              ? 'none'
+              : 'linear-gradient(180deg, rgba(255,255,255,0.25) 0%, rgba(0,0,0,0.15) 100%)',
+          borderBottom:
+            fileStyle === 'box' || fileStyle === 'flat' || fileStyle === 'folder'
+              ? 0
+              : GOLD_EDGE,
+          boxShadow:
+            fileStyle === 'box' || fileStyle === 'flat' || fileStyle === 'folder'
+              ? 'none'
+              : 'var(--shadow-0)',
           transition: 'background-color 240ms ease-out',
         }}
       />

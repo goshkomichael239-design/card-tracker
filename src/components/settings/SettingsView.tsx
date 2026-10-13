@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 
 import { SETTINGS, useSettings } from '../../app/settings';
 import { MotionSetting } from './MotionSetting';
+import { FileStyleSetting } from './FileStyleSetting';
 import { SearchHitsSetting } from './SearchHitsSetting';
 import { SwipeStyleSetting } from './SwipeStyleSetting';
 import { canVibrate } from '../../app/haptics';
@@ -67,6 +68,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           <MotionSetting style={lit(110)} />
           <SwipeStyleSetting style={lit(135)} />
           <SearchHitsSetting style={lit(150)} />
+          <FileStyleSetting style={lit(155)} />
 
           <ul>
             {SETTINGS.filter(
