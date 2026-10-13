@@ -55,11 +55,11 @@ export const getSwitcherMetrics = (
 ): SwitcherMetrics => {
   if (isPhone) {
     return {
-      rowHeight: 38,
-      overlap: 10,
-      rowStep: 28,
+      rowHeight: 34,
+      overlap: 9,
+      rowStep: 25,
       visibleRows: viewportHeight >= 760 ? 5 : 4,
-      fontSize: 15,
+      fontSize: 14,
     };
   }
 

@@ -48,6 +48,10 @@ interface CardSwitcherProps {
 // above; this much of the file's width is left free at each side, so the
 // shadows are not cut by the list's own edge.
 const EDGE_INSET = 5;
+// On a phone the file runs the whole width of the screen, on the cloth.
+const PHONE_EDGE_INSET = 3;
+// The chosen edge reaches this far over the edges above and below it.
+const CHOSEN_OVERLAP = 2;
 // The rounding of an edge, all four corners.
 const TILE_RADIUS = 10;
 
@@ -295,7 +299,7 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
       style={{
         // Sized by the container (not 100vw) so it can never overflow the
         // window, whatever the page zoom or scrollbar situation.
-        width: `min(${CARD_FILE_MAX_WIDTH}px, 100%)`,
+        width: isPhone ? '100%' : `min(${CARD_FILE_MAX_WIDTH}px, 100%)`,
       }}
     >
       <CardFileTabs
@@ -343,6 +347,10 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
               const isActive = card.id === activeCardId;
               const palette = getCardPalette(card);
               const isOverdue = Boolean(overdueIds?.has(card.id));
+              // The lettering stays where it is when the chosen edge grows.
+              const textTop =
+                metrics.overlap + (isActive ? CHOSEN_OVERLAP : 0);
+              const edgeInset = isPhone ? PHONE_EDGE_INSET : EDGE_INSET;
 
               // The edge is a tile of one step's height with rounded corners
               // all round. Above it lies a band (the overlap) that is cut
@@ -354,14 +362,12 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
                   className="relative shrink-0"
                   style={{
                     height: metrics.rowHeight,
-                    width: `calc(100% - ${EDGE_INSET * 2}px)`,
+                    width: `calc(100% - ${edgeInset * 2}px)`,
                     marginLeft: 'auto',
                     marginRight: 'auto',
                     marginTop: index === 0 ? 0 : -metrics.overlap,
                     // The chosen card lies in front of the rest.
                     zIndex: isActive ? rows.length + 1 : rows.length - index,
-                    // The chosen card stands a little higher than the rest.
-                    transform: isActive ? 'translateY(-2px)' : undefined,
                     scrollSnapAlign: 'start',
                     scrollMarginTop: -metrics.overlap,
                   }}
@@ -370,9 +376,10 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
                       and would take its shadow with it). */}
                   <span
                     aria-hidden="true"
-                    className="pointer-events-none absolute inset-x-0 bottom-0"
+                    className="pointer-events-none absolute inset-x-0"
                     style={{
-                      top: metrics.overlap,
+                      top: metrics.overlap - (isActive ? CHOSEN_OVERLAP : 0),
+                      bottom: isActive ? -CHOSEN_OVERLAP : 0,
                       borderRadius: TILE_RADIUS,
                       boxShadow: isActive
                         ? '0 4px 6px -1px rgba(20,17,14,0.46), 0 10px 14px -4px rgba(20,17,14,0.34)'
@@ -385,8 +392,12 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
                     data-card-id={card.id}
                     onClick={() => onSelectCard(card.id)}
                     aria-pressed={isActive}
-                    className="engraved absolute inset-0 flex items-start border-0 px-3 text-left"
+                    className="engraved absolute inset-x-0 flex items-start border-0 px-3 text-left"
                     style={{
+                      // The chosen edge is two pixels taller at both ends: it
+                      // lies over the edges next to it.
+                      top: isActive ? -CHOSEN_OVERLAP : 0,
+                      bottom: isActive ? -CHOSEN_OVERLAP : 0,
                       clipPath: `inset(${metrics.overlap}px 0 0 0 round ${TILE_RADIUS}px)`,
                       backgroundColor: palette.paper,
                       // From the top: light falling on the paper, a soft
@@ -413,7 +424,7 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
                         letterSpacing: '0.008em',
                         fontSize: metrics.fontSize,
                         // The cut-off band is above the name.
-                        paddingTop: metrics.overlap,
+                        paddingTop: textTop,
                         lineHeight: `${metrics.rowStep}px`,
                       }}
                     >
@@ -427,7 +438,7 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
                         className="shrink-0"
                         style={{
                           color: '#B8851F',
-                          paddingTop: metrics.overlap,
+                          paddingTop: textTop,
                           paddingLeft: 7,
                           fontSize: metrics.fontSize - 1,
                           lineHeight: `${metrics.rowStep}px`,
@@ -443,7 +454,7 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
                         className="shrink-0 whitespace-nowrap"
                         style={{
                           color: STAMP_RED_DARK,
-                          paddingTop: metrics.overlap,
+                          paddingTop: textTop,
                           paddingLeft: 8,
                           fontFamily: "'Lora', Georgia, serif",
                           fontWeight: 600,

@@ -11,6 +11,8 @@ interface DeckDotsProps {
   onSelectIndex: (index: number) => void;
   onNext: () => void;
   onPrevious: () => void;
+  /** How far the rail stands from the card's right edge (px). */
+  offsetX?: number;
 }
 
 /** Height of one dot's slot on the rail. */
@@ -51,6 +53,7 @@ export const DeckDots: React.FC<DeckDotsProps> = ({
   onSelectIndex,
   onNext,
   onPrevious,
+  offsetX = 58,
 }) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const gestureRef = useRef<DotsGesture | null>(null);
@@ -153,7 +156,7 @@ export const DeckDots: React.FC<DeckDotsProps> = ({
       aria-label="Карточки в стопке"
       className="absolute"
       style={{
-        left: 'calc(100% + 58px)',
+        left: `calc(100% + ${offsetX}px)`,
         top: '50%',
         width: 30,
         height,

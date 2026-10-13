@@ -163,12 +163,15 @@ interface TransientOutgoingCard {
 
 /** Below this width the scene is a phone's: cards a little smaller. */
 const PHONE_WIDTH_PX = 640;
-const PHONE_SCENE_FACTOR = 0.92;
+// On a phone the stack stands at the left edge of the table and is as large
+// as the free space allows: this much cloth at its left, and this much kept at
+// its right for the lower layers of the stack and the rail of dots.
+const PHONE_SCENE_LEFT = 12;
+const PHONE_SCENE_RIGHT_RESERVE = 52;
+const PHONE_DOTS_OFFSET = 28;
 const NO_DECK_COUNTS: Readonly<Record<string, number>> = {};
 /** The stack stands this share of the screen's width left of the middle. */
 const STACK_SHIFT_RATIO = 0.03;
-// On a phone the stack stands further left: the dots on its right must fit.
-const PHONE_STACK_SHIFT_RATIO = 0.05;
 /**
  * A finger dragging the card turns it once it has gone this far (px): slower
  * than over the dots, so the card can be turned through with some care.
@@ -409,13 +412,14 @@ const MainApp: React.FC = () => {
   // it (never less than the gap) holds the "take back" line.
   const sceneBottomReserve =
     ARCHIVE_NAVIGATION_HEIGHT + CARD_BOTTOM_GAP + STACK_PEEK_BELOW;
-  const sceneScale =
-    getCardScale(
-      viewportWidth - sceneSideOverhang * 2,
-      viewportHeight - sceneTopReserve - sceneBottomReserve,
-      INITIAL_TASK_CARD_V2_CONFIG.width,
-      INITIAL_TASK_CARD_V2_CONFIG.height,
-    ) * (isPhone ? PHONE_SCENE_FACTOR : 1);
+  const sceneScale = getCardScale(
+    isPhone
+      ? viewportWidth - PHONE_SCENE_LEFT - PHONE_SCENE_RIGHT_RESERVE
+      : viewportWidth - sceneSideOverhang * 2,
+    viewportHeight - sceneTopReserve - sceneBottomReserve,
+    INITIAL_TASK_CARD_V2_CONFIG.width,
+    INITIAL_TASK_CARD_V2_CONFIG.height,
+  );
   const createTransientOutgoing = useCallback(
     (card: VisualCard, kind: TransientOutgoingKind, turn?: DeckTurn) => {
       transientSequenceRef.current += 1;
@@ -1892,7 +1896,7 @@ const MainApp: React.FC = () => {
 
       <div className="absolute inset-0 z-20 h-full w-full">
         <div
-          className="absolute inset-x-3 z-30 flex flex-col items-center"
+          className={`absolute z-30 flex flex-col items-center ${isPhone ? 'inset-x-0' : 'inset-x-3'}`}
           style={{ top: SWITCHER_TOP }}
         >
           <CardSwitcher
@@ -1976,11 +1980,12 @@ const MainApp: React.FC = () => {
 
       <div
         ref={sceneRef}
-        className="relative z-10 flex h-full w-full items-start justify-center px-4"
+        className={`relative z-10 flex h-full w-full items-start ${isPhone ? 'justify-start' : 'justify-center px-4'}`}
         style={{
           touchAction: 'none',
           paddingTop: sceneTopReserve,
           paddingBottom: sceneBottomReserve,
+          paddingLeft: isPhone ? PHONE_SCENE_LEFT : undefined,
         }}
         onPointerDown={handleScenePointerDown}
         onPointerMove={handleScenePointerMove}
@@ -1994,7 +1999,9 @@ const MainApp: React.FC = () => {
             height: INITIAL_TASK_CARD_V2_CONFIG.height * sceneScale,
             // The stack stands a little left of the middle, leaving room for
             // the dots on its right.
-            transform: `translateX(${-viewportWidth * (isPhone ? PHONE_STACK_SHIFT_RATIO : STACK_SHIFT_RATIO)}px)`,
+            transform: isPhone
+              ? undefined
+              : `translateX(${-viewportWidth * STACK_SHIFT_RATIO}px)`,
           }}
         >
           <DeckDots
@@ -2004,6 +2011,7 @@ const MainApp: React.FC = () => {
             onSelectIndex={handleSelectCardIndex}
             onNext={handleNextCard}
             onPrevious={handlePreviousCard}
+            offsetX={isPhone ? PHONE_DOTS_OFFSET : undefined}
           />
 
 <div
