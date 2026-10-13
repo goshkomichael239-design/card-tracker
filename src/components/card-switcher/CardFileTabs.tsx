@@ -1,7 +1,7 @@
 import React from 'react';
 
 import { getDeckBack } from '../../app/deckBacks';
-import { OverdueFlag } from './OverdueFlag';
+import { OverdueBadge } from './OverdueBadge';
 import type { Deck } from '../../app/decks';
 import {
   CARD_FILE_DIVIDER_HEIGHT,
@@ -12,7 +12,7 @@ export interface CardFileTabsProps {
   decks: Deck[];
   activeDeckId: string;
   /** Decks (other than the one on the table) that have an overdue card. */
-  overdueDeckIds: ReadonlySet<string>;
+  overdueCounts: Readonly<Record<string, number>>;
   /**
    * While searching, with the hits shown on the tabs: how many cards each deck
    * has for the query. Null: the tabs do not show hits.
@@ -63,7 +63,7 @@ const EmbossedPencil: React.FC<{ ink: string }> = ({ ink }) => (
 export const CardFileTabs: React.FC<CardFileTabsProps> = ({
   decks,
   activeDeckId,
-  overdueDeckIds,
+  overdueCounts,
   hitCounts,
   activeOverdueCount,
   onOverduePress,
@@ -86,7 +86,7 @@ export const CardFileTabs: React.FC<CardFileTabsProps> = ({
           const back = getDeckBack(deck.backId);
           const isActive = deck.id === activeDeckId;
           const hits = hitCounts ? (hitCounts[deck.id] ?? 0) : null;
-          const hasOverdue = !isActive && overdueDeckIds.has(deck.id);
+          const otherOverdue = isActive ? 0 : (overdueCounts[deck.id] ?? 0);
           const isDimmed = hits !== null && !isActive && hits === 0;
           const showsNumberedFlag =
             isActive && activeOverdueCount > 0 && hits === null;
@@ -111,7 +111,7 @@ export const CardFileTabs: React.FC<CardFileTabsProps> = ({
               title={deck.name}
               className="relative flex min-w-0 flex-1 cursor-pointer items-center justify-center border-0 px-1.5 text-center"
               style={{
-                paddingRight: showsNumberedFlag ? 22 : undefined,
+                paddingRight: showsNumberedFlag ? 16 : undefined,
                 alignSelf: 'flex-end',
                 height: isActive ? ACTIVE_HEIGHT : QUIET_HEIGHT,
                 borderRadius: '9px 9px 0 0',
@@ -174,9 +174,9 @@ export const CardFileTabs: React.FC<CardFileTabsProps> = ({
 
             </button>
 
-              {/* The flag: a red bookmark standing out of the tab's top edge.
-                  On the deck on the table it carries the number and is a
-                  button (to the next overdue card); on the others it marks. */}
+              {/* The badge: a red capsule with the number in the tab's top
+                  right corner. On the deck on the table it is a button (to the
+                  next overdue card). */}
               {showsNumberedFlag && (
                 <button
                   type="button"
@@ -185,16 +185,16 @@ export const CardFileTabs: React.FC<CardFileTabsProps> = ({
                   aria-label={`Просрочено: ${activeOverdueCount}. К следующей просроченной`}
                   title={`Просрочено: ${activeOverdueCount}`}
                   className="absolute z-10 cursor-pointer border-0 bg-transparent p-0 active:translate-y-px"
-                  style={{ right: 6, top: -8, lineHeight: 0 }}
+                  style={{ right: -4, top: -8, lineHeight: 0 }}
                 >
-                  <OverdueFlag size="large" count={activeOverdueCount} />
+                  <OverdueBadge count={activeOverdueCount} />
                 </button>
               )}
-              {hasOverdue && hits === null && (
-                <OverdueFlag
-                  size="small"
+              {otherOverdue > 0 && hits === null && (
+                <OverdueBadge
+                  count={otherOverdue}
                   className="absolute"
-                  style={{ right: 5, top: -5 }}
+                  style={{ right: -4, top: -8 }}
                 />
               )}
             </div>

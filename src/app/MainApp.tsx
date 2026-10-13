@@ -164,7 +164,7 @@ interface TransientOutgoingCard {
 /** Below this width the scene is a phone's: cards a little smaller. */
 const PHONE_WIDTH_PX = 640;
 const PHONE_SCENE_FACTOR = 0.92;
-const NO_DECK_IDS: ReadonlySet<string> = new Set();
+const NO_DECK_COUNTS: Readonly<Record<string, number>> = {};
 /** The stack stands this share of the screen's width left of the middle. */
 const STACK_SHIFT_RATIO = 0.03;
 // On a phone the stack stands further left: the dots on its right must fit.
@@ -383,17 +383,19 @@ const MainApp: React.FC = () => {
     [cards, clockNow],
   );
 
-  // Decks that have something overdue (shown as a dot on their tabs).
-  const overdueDeckIds = useMemo(() => {
-    const ids = new Set<string>();
+  // How many cards of each deck are overdue (the badges on their tabs).
+  const overdueCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
 
     for (const card of allCards) {
       if (getDueBucket(card, clockNow) === 'overdue') {
-        ids.add(getCardDeckId(card, decks));
+        const deckId = getCardDeckId(card, decks);
+
+        counts[deckId] = (counts[deckId] ?? 0) + 1;
       }
     }
 
-    return ids;
+    return counts;
   }, [allCards, decks, clockNow]);
 
   const isPhone = viewportWidth < PHONE_WIDTH_PX;
@@ -1908,9 +1910,10 @@ const MainApp: React.FC = () => {
             }
             decks={decks}
             activeDeckId={activeDeckId}
-            overdueDeckIds={
-              appSettings.overdueCounter ? overdueDeckIds : NO_DECK_IDS
+            overdueCounts={
+              appSettings.overdueCounter ? overdueCounts : NO_DECK_COUNTS
             }
+            clockNow={clockNow}
             hitCounts={
               isSearching && searchHitsStyle === 'tabs' ? deckHitCounts : null
             }

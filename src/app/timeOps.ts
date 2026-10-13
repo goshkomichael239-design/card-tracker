@@ -163,3 +163,53 @@ export const getDueBucket = (
 
   return days <= SOON_DAYS ? 'soon' : null;
 };
+
+/**
+ * How long a card has been overdue, in a word or two for a narrow place:
+ * "сейчас", "5 мин", "3 ч", "вчера", "4 дн.", "3 нед.", "2 мес.". Null for a
+ * card that is not overdue.
+ */
+export const formatOverdueShort = (
+  card: VisualCard,
+  now: number = Date.now(),
+): string | null => {
+  const target = getCardTargetAt(card);
+
+  if (!target) {
+    return null;
+  }
+
+  const due = new Date(target).getTime();
+
+  if (!Number.isFinite(due) || due >= now) {
+    return null;
+  }
+
+  const days = Math.round((dayStart(now) - dayStart(due)) / (24 * HOUR));
+
+  if (days >= 60) {
+    return `${Math.floor(days / 30)} мес.`;
+  }
+
+  if (days >= 14) {
+    return `${Math.floor(days / 7)} нед.`;
+  }
+
+  if (days >= 2) {
+    return `${days} дн.`;
+  }
+
+  if (days === 1) {
+    return 'вчера';
+  }
+
+  const hours = Math.floor((now - due) / HOUR);
+
+  if (hours >= 1) {
+    return `${hours} ч`;
+  }
+
+  const minutes = Math.floor((now - due) / MINUTE);
+
+  return minutes >= 1 ? `${minutes} мин` : 'сейчас';
+};

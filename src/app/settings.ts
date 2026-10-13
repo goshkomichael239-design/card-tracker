@@ -45,7 +45,7 @@ export const SETTINGS: SettingDefinition[] = [
   {
     id: 'overdueCounter',
     label: 'Метки просроченного',
-    hint: 'Красные флажки на язычках колод, на строках и на карточке',
+    hint: 'Красные значки на язычках, красная дата в строках и на карточке',
     defaultValue: true,
   },
 ];

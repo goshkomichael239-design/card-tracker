@@ -11,7 +11,8 @@ import {
 import { CardFileTabs } from './CardFileTabs';
 import { useWheelNavigation } from '../../app/useWheelNavigation';
 import { haptic } from '../../app/haptics';
-import { OverdueFlag } from './OverdueFlag';
+import { formatOverdueShort } from '../../app/timeOps';
+import { STAMP_RED_DARK } from '../../app/stampRed';
 
 interface CardSwitcherProps {
   cards: VisualCard[];
@@ -31,7 +32,10 @@ interface CardSwitcherProps {
   // The deck tabs the file carries.
   decks: Deck[];
   activeDeckId: string;
-  overdueDeckIds: ReadonlySet<string>;
+  /** Overdue cards per deck (for the badges on the tabs). */
+  overdueCounts: Readonly<Record<string, number>>;
+  /** The time the list is drawn at (for how long a card is overdue). */
+  clockNow?: number;
   /** Hits per deck while searching with "on the tabs"; null otherwise. */
   hitCounts: Readonly<Record<string, number>> | null;
   canCreateDeck: boolean;
@@ -77,7 +81,8 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
   overdueIds,
   decks,
   activeDeckId,
-  overdueDeckIds,
+  overdueCounts,
+  clockNow,
   hitCounts,
   canCreateDeck,
   onSelectDeck,
@@ -296,7 +301,7 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
       <CardFileTabs
         decks={decks}
         activeDeckId={activeDeckId}
-        overdueDeckIds={overdueDeckIds}
+        overdueCounts={overdueCounts}
         hitCounts={hitCounts}
         activeOverdueCount={overdueIds?.size ?? 0}
         onOverduePress={goToNextOverdue}
@@ -415,15 +420,15 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
                       {getCardDisplayLabel(card)}
                     </span>
 
-                    {/* The star stands at the right end, so the names begin
-                        at the same place on every edge. */}
+                    {/* The right end: the star, then how long it has been overdue (red), so
+                        the dates stand in one column at the right edge. */}
                     {card.pinned && (
                       <span
                         className="shrink-0"
                         style={{
                           color: '#B8851F',
                           paddingTop: metrics.overlap,
-                          paddingRight: isOverdue ? 10 : 0,
+                          paddingLeft: 7,
                           fontSize: metrics.fontSize - 1,
                           lineHeight: `${metrics.rowStep}px`,
                         }}
@@ -433,19 +438,24 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
                         ★
                       </span>
                     )}
+                    {isOverdue && (
+                      <span
+                        className="shrink-0 whitespace-nowrap"
+                        style={{
+                          color: STAMP_RED_DARK,
+                          paddingTop: metrics.overlap,
+                          paddingLeft: 8,
+                          fontFamily: "'Lora', Georgia, serif",
+                          fontWeight: 600,
+                          fontSize: metrics.fontSize - 2,
+                          lineHeight: `${metrics.rowStep}px`,
+                        }}
+                      >
+                        {formatOverdueShort(card, clockNow)}
+                      </span>
+                    )}
                   </button>
 
-                  {/* Overdue: a red flag stands out of the edge's right end. */}
-                  {isOverdue && (
-                    <OverdueFlag
-                      size="small"
-                      className="absolute"
-                      style={{
-                        right: -3,
-                        top: metrics.overlap + (metrics.rowStep - 13) / 2,
-                      }}
-                    />
-                  )}
                 </div>
               );
             })}
