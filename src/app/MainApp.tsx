@@ -171,6 +171,9 @@ const PHONE_WIDTH_PX = 640;
 const PHONE_CENTER_SHIFT_RATIO = 0.018;
 const PHONE_RIGHT_RESERVE = 54;
 const PHONE_DOTS_OFFSET = 22;
+// The arrow and the words "Править / удалить" at the folded corner: switched
+// off for now (the code is all still here, set this to true to bring it back).
+const SHOW_CORNER_HINT = false;
 const NO_DECK_COUNTS: Readonly<Record<string, number>> = {};
 /** The stack stands this share of the screen's width left of the middle. */
 const STACK_SHIFT_RATIO = 0.03;
@@ -2128,6 +2131,7 @@ const MainApp: React.FC = () => {
                   onDelete={() => handleDeleteCard(activeCard.id)}
                   onTogglePin={() => handleTogglePin(activeCard.id)}
                   showCornerHint={
+                    SHOW_CORNER_HINT &&
                     appSettings.hints &&
                     !isCornerHintDismissed &&
                     // The arrow points at the first card that has no pin on it.
