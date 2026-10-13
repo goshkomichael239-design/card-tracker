@@ -1,9 +1,10 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 import cardboardTexture from '../../assets/cardboard.avif';
 import { getCardPalette, type VisualCard } from '../../app/cardTheme';
 import { getDeckBack } from '../../app/deckBacks';
 import { useFileStyle } from '../../app/fileStyle';
+import { buildSilhouettePath } from '../../app/fileSilhouette';
 import {
   CARD_FILE_TAB_ROW_HEIGHT,
 } from './cardSwitcherConfig';
@@ -107,7 +108,17 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
   const activePalette = activeCard ? getCardPalette(activeCard) : null;
   // The box the edges lie in: the deck's back (or, for a deck with plain
   // paper, a warm cardboard), or dark leather for every deck.
-  const isBox = fileStyle === 'box' || fileStyle === 'leather';
+  // The leather box is a plain body behind the edges; the "box" is one piece
+  // with the chosen tab (see fileSilhouette.ts).
+  const isBox = fileStyle === 'leather';
+  const isSilhouette = fileStyle === 'box';
+  const [tabRect, setTabRect] = useState<{ left: number; width: number } | null>(
+    null,
+  );
+  const [fileSize, setFileSize] = useState<{ width: number; height: number }>({
+    width: 0,
+    height: 0,
+  });
   const bodyColor =
     (activeBack.paper?.backgroundColor as string | undefined) ?? '#cfc2a4';
   const boxStyle: React.CSSProperties =
@@ -316,6 +327,28 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
     isEnabled: cards.length > 1,
   });
 
+  // The size of the whole file, for the silhouette of the box.
+  useEffect(() => {
+    const element = switcherRef.current;
+
+    if (!element || typeof ResizeObserver === 'undefined') {
+      return;
+    }
+
+    const measure = () =>
+      setFileSize({
+        width: element.offsetWidth,
+        height: element.offsetHeight,
+      });
+
+    measure();
+
+    const observer = new ResizeObserver(measure);
+
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
+
   const rows = Array.from({ length: copies }, (_, copy) =>
     cards.map((card) => ({ card, copy })),
   ).flat();
@@ -330,6 +363,22 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
         width: isPhone ? '100%' : `min(${CARD_FILE_MAX_WIDTH}px, 100%)`,
       }}
     >
+      {isSilhouette && tabRect && fileSize.width > 0 && (
+        <FileSilhouette
+          path={buildSilhouettePath({
+            width: fileSize.width,
+            bottom: fileSize.height + 7,
+            boxTop: CARD_FILE_TAB_ROW_HEIGHT - 1,
+            tabTop: 0,
+            tabLeft: tabRect.left,
+            tabRight: tabRect.left + tabRect.width,
+          })}
+          material={boxStyle}
+          width={fileSize.width}
+          height={fileSize.height + 7}
+        />
+      )}
+
       {isBox && (
         <div
           aria-hidden="true"
@@ -350,6 +399,7 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
 
       <CardFileTabs
         fileStyle={fileStyle}
+        onActiveTabRect={setTabRect}
         bodyColor={bodyColor}
         activePaper={activePalette?.paper ?? '#F7F2E8'}
         activeInk={activePalette?.ink ?? '#3F3932'}
@@ -527,3 +577,64 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
     </div>
   );
 };
+
+interface FileSilhouetteProps {
+  path: string;
+  material: React.CSSProperties;
+  width: number;
+  height: number;
+}
+
+/**
+ * The box of the card file with the chosen deck's tab, as one piece: the back's
+ * material cut to the outline, a lit upper edge and a thin gilt line round it,
+ * and its shadow following the outline.
+ */
+const FileSilhouette: React.FC<FileSilhouetteProps> = ({
+  path,
+  material,
+  width,
+  height,
+}) => (
+  <div
+    aria-hidden="true"
+    className="pointer-events-none absolute left-0 top-0"
+    style={{
+      width,
+      height,
+      zIndex: 1,
+      filter:
+        'drop-shadow(1px 2px 2px rgba(28,18,10,0.28)) drop-shadow(5px 10px 12px rgba(28,18,10,0.26))',
+    }}
+  >
+    <div
+      className="absolute inset-0"
+      style={{
+        ...material,
+        clipPath: `path('${path}')`,
+      }}
+    />
+    <svg
+      className="absolute inset-0 overflow-visible"
+      width={width}
+      height={height}
+      viewBox={`0 0 ${width} ${height}`}
+    >
+      <path
+        d={path}
+        fill="none"
+        stroke="rgba(232,200,112,0.95)"
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+      />
+      <path
+        d={path}
+        fill="none"
+        stroke="rgba(255,244,200,0.35)"
+        strokeWidth="1"
+        transform="translate(1.2 1.2)"
+        style={{ mixBlendMode: 'screen' }}
+      />
+    </svg>
+  </div>
+);

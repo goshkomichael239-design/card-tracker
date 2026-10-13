@@ -33,7 +33,7 @@ const isStyle = (value: unknown): value is FileStyle =>
 const read = (): FileStyle => {
   const stored = readValue<string>(FILE_STYLE_KEY);
 
-  return isStyle(stored) ? stored : 'current';
+  return isStyle(stored) ? stored : 'box';
 };
 
 let current: FileStyle | null = null;

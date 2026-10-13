@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useLayoutEffect, useRef } from 'react';
 
 import { getDeckBack } from '../../app/deckBacks';
 import type { FileStyle } from '../../app/fileStyle';
@@ -21,6 +21,8 @@ export interface CardFileTabsProps {
   hitCounts: Readonly<Record<string, number>> | null;
   /** How the file is put together (see fileStyle.ts). */
   fileStyle: FileStyle;
+  /** Where the tab of the deck on the table stands (for the style "box"). */
+  onActiveTabRect?: (rect: { left: number; width: number } | null) => void;
   /** The colour of the box the edges lie in (the style "box"). */
   bodyColor: string;
   /** The paper and ink of the first card (the style "folder"). */
@@ -76,6 +78,7 @@ export const CardFileTabs: React.FC<CardFileTabsProps> = ({
   activeOverdueCount,
   onOverduePress,
   fileStyle,
+  onActiveTabRect,
   bodyColor,
   activePaper,
   activeInk,
@@ -87,12 +90,64 @@ export const CardFileTabs: React.FC<CardFileTabsProps> = ({
   const activeBack = getDeckBack(
     decks.find((deck) => deck.id === activeDeckId)?.backId,
   );
+  const isBoxFile = fileStyle === 'box';
+  const rowRef = useRef<HTMLDivElement | null>(null);
+
+  // The silhouette of the box needs to know where the chosen tab stands.
+  useLayoutEffect(() => {
+    const row = rowRef.current;
+
+    if (!onActiveTabRect) {
+      return;
+    }
+
+    if (!row || !isBoxFile) {
+      onActiveTabRect(null);
+      return;
+    }
+
+    const report = () => {
+      const tab = row.querySelector<HTMLElement>('[data-active-tab="true"]');
+
+      onActiveTabRect(
+        tab ? { left: tab.offsetLeft, width: tab.offsetWidth } : null,
+      );
+    };
+
+    report();
+
+    if (typeof ResizeObserver === 'undefined') {
+      return;
+    }
+
+    const observer = new ResizeObserver(report);
+
+    observer.observe(row);
+    row.querySelectorAll('[data-active-tab]').forEach((tab) =>
+      observer.observe(tab),
+    );
+
+    return () => observer.disconnect();
+  }, [
+    onActiveTabRect,
+    isBoxFile,
+    activeDeckId,
+    decks,
+    activeOverdueCount,
+    hitCounts,
+  ]);
 
   return (
     <>
       <div
-        className="relative flex items-end gap-[3px] px-[5px]"
-        style={{ height: CARD_FILE_TAB_ROW_HEIGHT }}
+        ref={rowRef}
+        className="relative flex items-end gap-[3px]"
+        style={{
+          height: CARD_FILE_TAB_ROW_HEIGHT,
+          // In the box the first tab stands clear of the box's rounded corner.
+          paddingLeft: isBoxFile ? 14 : 5,
+          paddingRight: isBoxFile ? 14 : 5,
+        }}
       >
         {decks.map((deck) => {
           const back = getDeckBack(deck.backId);
@@ -117,12 +172,14 @@ export const CardFileTabs: React.FC<CardFileTabsProps> = ({
           return (
             <div
               key={deck.id}
+              data-active-tab={isActive ? 'true' : undefined}
               className="relative flex min-w-0"
               style={{
                 flex: isActive ? '0 1 auto' : '1 1 0',
                 maxWidth: isActive ? '62%' : 84,
                 minWidth: isActive ? 0 : 30,
-                zIndex: isActive ? 3 : 1,
+                // In the box the others stand behind its front edge.
+                zIndex: isActive ? 3 : isBoxFile ? 0 : 1,
               }}
             >
             <button
@@ -138,13 +195,21 @@ export const CardFileTabs: React.FC<CardFileTabsProps> = ({
                 alignSelf: 'flex-end',
                 height: isActive ? ACTIVE_HEIGHT : QUIET_HEIGHT,
                 borderRadius: isFlat ? 0 : '9px 9px 0 0',
-                borderTop: isFlat ? 0 : GOLD_EDGE,
-                borderLeft: isFlat ? 0 : GOLD_EDGE,
-                borderRight: isFlat ? 0 : GOLD_EDGE,
-                backgroundColor: isFlat ? 'transparent' : tabColor,
-                backgroundImage: isFlat
+                // The chosen tab of the box is part of its outline: it has no
+                // body of its own, the box's material shows through it.
+                borderTop: isFlat || (isBoxFile && isActive) ? 0 : GOLD_EDGE,
+                borderLeft: isFlat || (isBoxFile && isActive) ? 0 : GOLD_EDGE,
+                borderRight: isFlat || (isBoxFile && isActive) ? 0 : GOLD_EDGE,
+                backgroundColor:
+                  isFlat || (isBoxFile && isActive) ? 'transparent' : tabColor,
+                // The other tabs of the box keep their own colour at the top
+                // and take the box's colour towards the foot: they grow out of
+                // the same material.
+                backgroundImage: isFlat || (isBoxFile && isActive)
                   ? 'none'
-                  : 'linear-gradient(180deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0) 55%, rgba(0,0,0,0.16) 100%)',
+                  : isBoxFile
+                    ? `linear-gradient(180deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 30%, ${bodyColor} 96%)`
+                    : 'linear-gradient(180deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0) 55%, rgba(0,0,0,0.16) 100%)',
                 color: isFlat
                   ? isActive
                     ? '#FFF6D6'
@@ -154,11 +219,19 @@ export const CardFileTabs: React.FC<CardFileTabsProps> = ({
                   ? isActive
                     ? 'inset 0 -2px 0 rgba(232,201,120,0.95)'
                     : 'none'
+                  : isBoxFile
+                    ? isActive
+                      ? 'none'
+                      : 'inset 1px 1px 0 rgba(255,255,255,0.3)'
                   : isActive
                     ? 'var(--shadow-0), inset 1px 1px 0 rgba(255,255,255,0.5)'
                     : 'var(--shadow-0), inset 1px 1px 0 rgba(255,255,255,0.35)',
                 filter:
-                  isActive || isFlat ? 'none' : 'brightness(0.86) saturate(0.9)',
+                  isActive || isFlat
+                    ? 'none'
+                    : isBoxFile
+                      ? 'brightness(0.9) saturate(0.95)'
+                      : 'brightness(0.86) saturate(0.9)',
                 opacity: isDimmed ? 0.5 : 1,
                 transition:
                   'height 200ms cubic-bezier(0.2, 0.8, 0.2, 1), opacity 200ms ease-out, filter 200ms ease-out',
