@@ -44,7 +44,8 @@ for (const line of lines) {
     let text = item[2];
     const isCancelled = text.includes('~~');
     let note = '';
-    const split = text.split(/ — \*\*(?:сделано|отменено)\*\*:? ?/);
+    const isPostponed = !isDone && text.includes('**отложено**');
+    const split = text.split(/ — \*\*(?:сделано|отменено|отложено)\*\*:? ?/);
 
     if (split.length > 1) {
       text = split[0];
@@ -59,7 +60,13 @@ for (const line of lines) {
     }
 
     current.items.push({
-      status: isCancelled ? 'dropped' : isDone ? 'done' : 'todo',
+      status: isCancelled
+        ? 'dropped'
+        : isDone
+          ? 'done'
+          : isPostponed
+            ? 'postponed'
+            : 'todo',
       text,
       note,
     });
@@ -76,10 +83,16 @@ const all = sections.flatMap((section) => section.items);
 const done = all.filter((entry) => entry.status === 'done').length;
 const todo = all.filter((entry) => entry.status === 'todo').length;
 const dropped = all.filter((entry) => entry.status === 'dropped').length;
-const counted = done + todo;
+const postponed = all.filter((entry) => entry.status === 'postponed').length;
+const counted = done + todo + postponed;
 const percent = Math.round((done / counted) * 100);
 
-const STATE_LABEL = { done: 'сделано', dropped: 'отменено', todo: 'впереди' };
+const STATE_LABEL = {
+  done: 'сделано',
+  dropped: 'отменено',
+  postponed: 'отложено',
+  todo: 'впереди',
+};
 
 const sectionHtml = sections
   .map((section) => {
@@ -219,6 +232,8 @@ const html = `<title>Дорожная карта Card Tracker</title>
   .item--done .mark { background: var(--cloth); border-color: var(--cloth); }
   .item--done .mark::after { content: ''; width: 5px; height: 10px; border: solid #fff; border-width: 0 2px 2px 0; transform: translateY(-1px) rotate(45deg); }
   .item--dropped .mark { border-style: dashed; opacity: 0.6; }
+  .item--postponed .mark { border-style: dotted; }
+  .item--postponed .state { color: var(--gold); }
   .text { line-height: 1.4; overflow-wrap: anywhere; }
   .item--dropped .text { color: var(--ink-soft); }
   .note { margin-top: 4px; font-size: 14px; line-height: 1.4; color: var(--ink-soft); overflow-wrap: anywhere; }
@@ -252,7 +267,7 @@ const html = `<title>Дорожная карта Card Tracker</title>
   <div class="progress">
     <div class="progress__nums">
       <span class="progress__main">Сделано ${done} из ${counted}</span>
-      <span class="progress__side">${percent}% · впереди ${todo} · отменено ${dropped}</span>
+      <span class="progress__side">${percent}% · впереди ${todo} · отложено ${postponed} · отменено ${dropped}</span>
     </div>
     <div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="${counted}" aria-valuenow="${done}"><i></i></div>
   </div>
@@ -261,6 +276,7 @@ const html = `<title>Дорожная карта Card Tracker</title>
     <button type="button" class="chip" id="f-all" aria-pressed="true" data-filter="all">Всё</button>
     <button type="button" class="chip" id="f-done" aria-pressed="false" data-filter="done">Сделано</button>
     <button type="button" class="chip" id="f-todo" aria-pressed="false" data-filter="todo">Впереди</button>
+    <button type="button" class="chip" id="f-postponed" aria-pressed="false" data-filter="postponed">Отложено</button>
   </div>
 
   <div class="blocks">${sectionHtml}
@@ -283,7 +299,8 @@ const html = `<title>Дорожная карта Card Tracker</title>
         item.hidden = !(
           filter === 'all' ||
           (filter === 'done' && status === 'done') ||
-          (filter === 'todo' && status === 'todo')
+          (filter === 'todo' && status === 'todo') ||
+          (filter === 'postponed' && status === 'postponed')
         );
       });
       blocks.forEach(function (block) {
@@ -301,10 +318,10 @@ const html = `<title>Дорожная карта Card Tracker</title>
 
     var saved = 'all';
     try { saved = localStorage.getItem('roadmap-filter') || 'all'; } catch (e) {}
-    apply(saved === 'done' || saved === 'todo' ? saved : 'all');
+    apply(saved === 'done' || saved === 'todo' || saved === 'postponed' ? saved : 'all');
   })();
 </script>
 `;
 
 writeFileSync(new URL('../ROADMAP.html', import.meta.url), html);
-console.log(`ROADMAP.html: done ${done}, todo ${todo}, dropped ${dropped}, ${percent}%`);
+console.log(`ROADMAP.html: done ${done}, todo ${todo}, postponed ${postponed}, dropped ${dropped}, ${percent}%`);
