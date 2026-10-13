@@ -22,6 +22,7 @@ import {
 } from '../../app/dateTimeUtils';
 import { INITIAL_TASK_CARD_V2_CONFIG } from './taskCardV2Config';
 import { CouponButton } from './CouponButton';
+import { EmbossedArrow } from '../shared/EmbossedArrow';
 
 interface CardEditFaceProps {
   card: VisualCard;
@@ -81,7 +82,7 @@ const StepperRow: React.FC<StepperRowProps> = ({
       className={ARROW_BUTTON_CLASS}
       style={{ color: canPrevious ? 'rgba(63,57,50,0.78)' : 'rgba(63,57,50,0.2)' }}
     >
-      ‹
+      <EmbossedArrow direction="left" size={15} />
     </button>
     <div className="flex items-baseline justify-center gap-3 font-mono">
       <span
@@ -105,7 +106,7 @@ const StepperRow: React.FC<StepperRowProps> = ({
       className={ARROW_BUTTON_CLASS}
       style={{ color: canNext ? 'rgba(63,57,50,0.78)' : 'rgba(63,57,50,0.2)' }}
     >
-      ›
+      <EmbossedArrow direction="right" size={15} />
     </button>
   </div>
 );

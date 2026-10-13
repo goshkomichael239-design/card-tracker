@@ -106,6 +106,7 @@ import {
 import { TaskCard } from '../components/task-card/TaskCard';
 import { TransientTaskCardOverlay } from '../components/task-card/TransientTaskCardOverlay';
 import { INITIAL_TASK_CARD_V2_CONFIG } from '../components/task-card/taskCardV2Config';
+import { EmbossedArrow } from '../components/shared/EmbossedArrow';
 type TransientOutgoingKind =
   | 'switch'
   | 'completion'
@@ -2376,7 +2377,8 @@ const MainApp: React.FC = () => {
           transition: 'opacity 420ms ease-out',
         }}
       >
-        ← Убрать · Готово →
+        <EmbossedArrow direction="left" tone="lit" size="0.95em" /> Убрать ·
+        Готово <EmbossedArrow direction="right" tone="lit" size="0.95em" />
       </p>
 
       {/* The basket stands in the left end of the archive bar. */}

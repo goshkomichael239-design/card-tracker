@@ -3,6 +3,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import type { CardPalette, TaskListData, TaskListItem } from '../../app/cardTheme';
 import { getListCompletedCount } from '../../app/listUtils';
 import { TaskListContent } from './TaskListContent';
+import { EmbossedArrow } from '../shared/EmbossedArrow';
 
 interface CardListFaceProps {
   list: TaskListData;
@@ -197,7 +198,7 @@ export const CardListFace: React.FC<CardListFaceProps> = ({
           className="cursor-pointer border-0 bg-transparent px-0 font-mono text-[12px] font-bold uppercase tracking-[0.12em]"
           style={{ color: palette.accentDark }}
         >
-          ← К карточке
+          <EmbossedArrow direction="left" size="1.1em" /> К карточке
         </button>
 
         {pages.length > 1 && (
@@ -211,7 +212,7 @@ export const CardListFace: React.FC<CardListFaceProps> = ({
               className="pill-action disabled:cursor-default disabled:opacity-35"
               style={arrowStyle}
             >
-              ←
+              <EmbossedArrow direction="left" size={20} />
             </button>
             <span
               className="min-w-[42px] text-center font-mono text-[12.5px] font-bold tabular-nums"
@@ -229,7 +230,7 @@ export const CardListFace: React.FC<CardListFaceProps> = ({
               className="pill-action disabled:cursor-default disabled:opacity-35"
               style={arrowStyle}
             >
-              →
+              <EmbossedArrow direction="right" size={20} />
             </button>
           </div>
         )}

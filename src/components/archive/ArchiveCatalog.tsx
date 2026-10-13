@@ -13,6 +13,7 @@ import {
 import { getCardPalette, type VisualCard } from '../../app/cardTheme';
 import { getListCompletedCount, getListProgress } from '../../app/listUtils';
 import { getSeriesProgress } from '../../app/seriesUtils';
+import { EmbossedArrow } from '../shared/EmbossedArrow';
 
 interface ArchiveCatalogProps {
   /** The search box starts with this text. */
@@ -451,7 +452,7 @@ export const ArchiveCatalog: React.FC<ArchiveCatalogProps> = ({
               } as React.CSSProperties
             }
           >
-            ←
+            <EmbossedArrow direction="left" size={22} />
           </button>
           <span
             className="min-w-[140px] text-center font-mono text-[13px] font-bold uppercase tracking-[0.12em]"
@@ -483,7 +484,7 @@ export const ArchiveCatalog: React.FC<ArchiveCatalogProps> = ({
               } as React.CSSProperties
             }
           >
-            →
+            <EmbossedArrow direction="right" size={22} />
           </button>
         </nav>
       )}

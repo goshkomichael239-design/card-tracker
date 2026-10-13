@@ -8,6 +8,7 @@ import {
   MONTH_NAMES_RU,
   WEEKDAYS_RU,
 } from '../../app/dateTimeUtils';
+import { EmbossedArrow } from '../shared/EmbossedArrow';
 
 export interface DraftDateStepProps {
   palette: CardPalette;
@@ -145,7 +146,7 @@ export function DraftDateStep({
               style={{ color: palette.accentDark }}
               aria-label="Предыдущий год"
             >
-              ←
+              <EmbossedArrow direction="left" size={14} />
             </button>
             <span
               className="text-center font-mono text-[12.5px] font-bold tracking-[0.14em]"
@@ -161,7 +162,7 @@ export function DraftDateStep({
               style={{ color: palette.accentDark }}
               aria-label="Следующий год"
             >
-              →
+              <EmbossedArrow direction="right" size={14} />
             </motion.button>
           </div>
 
@@ -174,7 +175,7 @@ export function DraftDateStep({
               style={{ color: palette.accentDark }}
               aria-label="Предыдущий месяц"
             >
-              ←
+              <EmbossedArrow direction="left" size={14} />
             </button>
             <span
               className="text-center font-mono text-[11.5px] font-bold uppercase tracking-[0.13em]"
@@ -190,7 +191,7 @@ export function DraftDateStep({
               style={{ color: palette.accentDark }}
               aria-label="Следующий месяц"
             >
-              →
+              <EmbossedArrow direction="right" size={14} />
             </motion.button>
           </div>
 
