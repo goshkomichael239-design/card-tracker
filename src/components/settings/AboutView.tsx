@@ -4,7 +4,7 @@ import {
   APP_NAME,
   APP_VERSION,
   REPO_URL,
-  TON_ADDRESS,
+  DONATION_ADDRESSES,
 } from '../../app/about';
 import { t } from '../../app/i18n';
 
@@ -47,14 +47,14 @@ interface AboutViewProps {
  * with and how to support it. Lit onto the cloth, like the settings.
  */
 export const AboutView: React.FC<AboutViewProps> = ({ onBack }) => {
-  const [isCopied, setIsCopied] = useState(false);
+  const [copiedCoin, setCopiedCoin] = useState<string | null>(null);
 
-  const copyAddress = () => {
+  const copyAddress = (coin: string, address: string) => {
     void navigator.clipboard
-      ?.writeText(TON_ADDRESS)
+      ?.writeText(address)
       .then(() => {
-        setIsCopied(true);
-        window.setTimeout(() => setIsCopied(false), 1800);
+        setCopiedCoin(coin);
+        window.setTimeout(() => setCopiedCoin(null), 1800);
       })
       .catch(() => undefined);
   };
@@ -131,21 +131,28 @@ export const AboutView: React.FC<AboutViewProps> = ({ onBack }) => {
           'Приложение бесплатное для всех. В будущем я не отказываюсь от монетизации: новых функций или других режимов, например трекера привычек.',
         )}
       </Paragraph>
-      {TON_ADDRESS && (
+      {DONATION_ADDRESSES.length > 0 && (
         <div className="lit-in mb-3" style={lit(490)}>
-          <p style={BODY}>{t('Если хотите поддержать автора, донат в USDT (сеть TON, только USDT):')}</p>
-          <button
-            type="button"
-            onClick={copyAddress}
-            onTouchStart={() => undefined}
-            className="lit-text mt-1 block w-full cursor-pointer break-all border-0 bg-transparent p-0 text-left text-[13px]"
-            aria-label={t('Скопировать адрес')}
-          >
-            {TON_ADDRESS}
-          </button>
-          <p className="lit-hint mt-1 text-[12px]">
-            {isCopied ? t('Скопировано') : t('Нажмите, чтобы скопировать')}
+          <p style={BODY}>
+            {t('Если хотите поддержать автора, донат в сети TON (отправляйте только ту монету, что указана):')}
           </p>
+          {DONATION_ADDRESSES.map(({ coin, address }) => (
+            <div key={coin} className="mt-2">
+              <p className="lit-hint text-[12px] font-bold">{coin}</p>
+              <button
+                type="button"
+                onClick={() => copyAddress(coin, address)}
+                onTouchStart={() => undefined}
+                className="lit-text block w-full cursor-pointer break-all border-0 bg-transparent p-0 text-left text-[13px]"
+                aria-label={t('Скопировать адрес')}
+              >
+                {address}
+              </button>
+              <p className="lit-hint text-[12px]">
+                {copiedCoin === coin ? t('Скопировано') : t('Нажмите, чтобы скопировать')}
+              </p>
+            </div>
+          ))}
         </div>
       )}
 

@@ -587,8 +587,8 @@ export const EN: Record<string, string> = {
   'Поддержать': 'Support',
   'Приложение бесплатное для всех. В будущем я не отказываюсь от монетизации: новых функций или других режимов, например трекера привычек.':
     'The app is free for everyone. In the future I do not rule out monetization: new features or other modes, for example a habit tracker.',
-  'Если хотите поддержать автора, донат в USDT (сеть TON, только USDT):':
-    'If you want to support the author, a donation in USDT (TON network, USDT only):',
+  'Если хотите поддержать автора, донат в сети TON (отправляйте только ту монету, что указана):':
+    'If you want to support the author, a donation in the TON network (send only the coin that is listed):',
   'Скопировать адрес': 'Copy the address',
   'Скопировано': 'Copied',
   'Нажмите, чтобы скопировать': 'Press to copy',

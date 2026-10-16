@@ -86,7 +86,7 @@ What is done, postponed, cancelled and ahead: [ROADMAP.md](ROADMAP.md).
 
 ## Support
 
-The app is free for everyone. If you want to support the author, donations are accepted in USDT on the TON network, USDT only (address: `UQCubsh1Af5AKdZnENzZVszC37M7vXb_Eo0Pqy1EI1hT3evi`, also on the *About* screen of the app). In the future I do not rule out monetization: new features or other modes, for example a habit tracker.
+The app is free for everyone. If you want to support the author, donations are accepted in the TON network, and only in the coin listed: GRAM `UQCd2PUDEvWKAbVLrcaE1VDU69wuxGy2WdM_f5jOZ0EhdjJK` or USDT `UQCubsh1Af5AKdZnENzZVszC37M7vXb_Eo0Pqy1EI1hT3evi` (also on the *About* screen of the app). In the future I do not rule out monetization: new features or other modes, for example a habit tracker.
 
 ## Privacy
 

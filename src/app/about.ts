@@ -8,9 +8,8 @@ export const APP_VERSION: string =
 
 export const REPO_URL = 'https://github.com/goshkomichael239-design/card-tracker';
 
-/**
- * Where a donation can be sent (the TON network). While it is empty the
- * "support" block of the About screen does not show an address.
- */
-export const TON_ADDRESS =
-  'UQCubsh1Af5AKdZnENzZVszC37M7vXb_Eo0Pqy1EI1hT3evi';
+/** Where a donation can be sent: one address per coin, all in the TON network. */
+export const DONATION_ADDRESSES: { coin: string; address: string }[] = [
+  { coin: 'GRAM', address: 'UQCd2PUDEvWKAbVLrcaE1VDU69wuxGy2WdM_f5jOZ0EhdjJK' },
+  { coin: 'USDT', address: 'UQCubsh1Af5AKdZnENzZVszC37M7vXb_Eo0Pqy1EI1hT3evi' },
+];
