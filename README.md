@@ -45,6 +45,25 @@ Capacitor (оболочка Android). Все картинки-предметы �
 `src/assets`; шрифты Lora и Playfair Display (SIL OFL), звуки с лицензиями
 перечислены в `src/assets/sounds/SOURCES.md`.
 
+## Проверка
+
+```
+npm run lint       # правила кода
+npm test           # тесты логики: даты, повторы, быстрая запись, купон, копии, словарь
+npm run build      # типы и сборка
+```
+
+Те же три шага GitHub гоняет на каждый коммит (`.github/workflows/ci.yml`).
+
+## Благодарности
+
+- Шрифты: Lora и Playfair Display, SIL Open Font License 1.1
+  (тексты лицензий в `src/assets/fonts`).
+- Звуки: Kenney, Luckius, OwlishMedia, Iochi Glaucus (CC0) и сделанные здесь;
+  что откуда, в `src/assets/sounds/SOURCES.md`.
+- Картинки корзины, штыря и скрепки нарисованы автором с помощью
+  нейросетевых инструментов и доработаны.
+
 ## Состояние
 
 Версия 0.1.0, идёт доработка. Что сделано, что отложено и что впереди:

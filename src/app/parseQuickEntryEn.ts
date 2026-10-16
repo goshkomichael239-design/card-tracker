@@ -253,6 +253,11 @@ export const parseQuickEntryEn = (raw: string, now: Date): QuickEntry | null => 
     }
   }
 
+  // The past is not a task: a day that has gone is not guessed at.
+  if (fence('yesterday|last\\s+(?:night|week|month)').exec(low)) {
+    return null;
+  }
+
   // --- a task with a time ---
   const today = startOfDay(now);
   let recurrence: RecurrenceRule | undefined;
