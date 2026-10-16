@@ -24,3 +24,7 @@ dist-ssr
 *.sw?
 
 design-source/
+
+# The Android project and the built APK (made by tools/build-apk.bat)
+android/
+*.apk

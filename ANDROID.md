@@ -35,24 +35,41 @@ npm run preview -- --host 127.0.0.1 --port 4174
 Установка на телефон: открыть адрес в Chrome → «Установить приложение». Для
 установки и автономной работы нужен HTTPS; у GitHub Pages он есть.
 
-## APK без хостинга (Capacitor)
+## APK без хостинга (Capacitor): одним файлом
 
-Нужны Node, Android Studio и JDK. Один раз:
+Один раз поставить (вручную):
+
+1. **Node.js LTS** — https://nodejs.org (всё по умолчанию, папка `C:Program Files
+odejs`).
+2. **Android Studio** — https://developer.android.com/studio . Папку можно оставить
+   по умолчанию (`C:Program FilesAndroidAndroid Studio`) или поставить на другой
+   диск (например `D:AndroidAndroid Studio`). При первом запуске мастер скачает
+   Android SDK (Standard): его папку можно выбрать, например `D:AndroidSdk`.
+   JDK ставить отдельно не нужно, он идёт внутри Android Studio.
+
+Дальше двойной клик по `toolsuild-apk.bat`: он найдёт Node, SDK и JDK, поставит
+Capacitor, соберёт приложение, создаст проект Android и соберёт APK. Готовый файл:
+`Card-Tracker.apk` в папке проекта. Первый запуск долгий (скачивается Gradle и
+части SDK), следующие быстрые.
+
+На телефоне: перенести APK (кабель, Telegram, диск), открыть, разрешить установку
+из этого источника. Это отладочная сборка: для себя этого достаточно.
+
+Вручную то же самое делается так (если нужно):
 
 ```
-npm i @capacitor/core @capacitor/cli @capacitor/android
-npx cap init "Card Tracker" ru.example.cardtracker --web-dir=dist
+npm i @capacitor/core @capacitor/android
+npm i -D @capacitor/cli
 npm run build
 npx cap add android
-npx cap sync
-npx cap open android      # соберётся в Android Studio: Build → Build APK
+npx cap sync android
+cd android && gradlew.bat assembleDebug
 ```
-
-Дальше после каждой правки: `npm run build && npx cap sync`.
 
 Приложение внутри оболочки работает из локальных файлов, поэтому сервер не
 нужен. Вибрация (`navigator.vibrate`) в WebView работает, звуки включаются после
 первого касания.
 
-Что стоит сделать при упаковке: заменить иконку на свою в `android/app/src/main/res`,
-выбрать id пакета и версию, решить про «статус-бар» (цвет под сукно).
+Что стоит сделать после первой сборки: заменить иконку на свою в
+`android/app/src/main/res`, выбрать id пакета (сейчас `app.cardtracker`) и версию,
+решить про «статус-бар» (цвет под сукно), добавить локальные уведомления.
