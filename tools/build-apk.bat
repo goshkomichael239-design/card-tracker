@@ -45,22 +45,22 @@ if not defined SDK (
 )
 echo Android SDK: %SDK%
 
-rem ---- JDK: the one that comes with Android Studio, or JAVA_HOME ------------------
+rem ---- JDK: Gradle for Android wants JDK 21 (Android Studio's own JDK is 25: too new) ----
 set "JDK="
-for %%S in ("D:\Android Studio\jbr" "%ProgramFiles%\Android\Android Studio\jbr" "D:\Android\Android Studio\jbr" "D:\Android\Studio\jbr" "E:\Android\Android Studio\jbr" "%LOCALAPPDATA%\Programs\Android Studio\jbr") do (
-  if not defined JDK if exist "%%~S\bin\java.exe" set "JDK=%%~S"
+for /d %%D in ("%ProgramFiles%\Eclipse Adoptium\jdk-21*" "%ProgramFiles%\Java\jdk-21*" "%ProgramFiles%\Microsoft\jdk-21*" "%ProgramFiles%\Zulu\zulu-21*" "D:\Eclipse Adoptium\jdk-21*" "D:\Java\jdk-21*") do (
+  if not defined JDK if exist "%%~D\bin\java.exe" set "JDK=%%~D"
 )
-if not defined JDK if defined JAVA_HOME if exist "%JAVA_HOME%\bin\java.exe" set "JDK=%JAVA_HOME%"
 if not defined JDK (
-  echo [!] No JDK found. It comes with Android Studio ^(folder jbr^); if Android Studio
-  echo     is in an unusual folder, install JDK 21 and set JAVA_HOME to it.
+  echo [!] JDK 21 was not found. Install "Temurin 21 JDK" ^(x64, .msi^) from
+  echo     https://adoptium.net/temurin/releases/?version=21 with the default folder,
+  echo     then run this file again.
+  echo     ^(Android Studio's own JDK 25 may not work: Gradle does not know it yet.^)
   goto :fail
 )
 set "JAVA_HOME=%JDK%"
 set "PATH=%JDK%\bin;%PATH%"
 echo JDK: %JDK%
 echo.
-
 rem ---- Packages -----------------------------------------------------------------
 echo [1/6] Installing packages...
 call npm install
