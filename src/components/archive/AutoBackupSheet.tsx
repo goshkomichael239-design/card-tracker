@@ -7,6 +7,7 @@ import {
   loadSnapshotPayload,
 } from '../../app/storage/autoBackup';
 import type { SnapshotMeta } from '../../app/storage/idb';
+import { t } from '../../app/i18n';
 
 interface AutoBackupSheetProps {
   /** Receives the backup text of the chosen copy. */
@@ -15,9 +16,9 @@ interface AutoBackupSheetProps {
 }
 
 const REASON_LABEL: Record<SnapshotMeta['reason'], string> = {
-  start: 'при запуске',
-  auto: 'по ходу работы',
-  'before-import': 'перед загрузкой копии',
+  start: t('при запуске'),
+  auto: t('по ходу работы'),
+  'before-import': t('перед загрузкой копии'),
 };
 
 /**
@@ -72,7 +73,7 @@ export const AutoBackupSheet: React.FC<AutoBackupSheetProps> = ({
       style={{ backgroundColor: 'rgba(48,38,26,0.32)' }}
       role="dialog"
       aria-modal="true"
-      aria-label="Автоматические копии"
+      aria-label={t('Автоматические копии')}
       onClick={(event) => {
         if (event.target === event.currentTarget) {
           onClose();
@@ -95,22 +96,16 @@ export const AutoBackupSheet: React.FC<AutoBackupSheetProps> = ({
             <h3
               className="font-mono text-[14px] font-bold uppercase tracking-[0.14em]"
               style={{ color: '#5a4520' }}
-            >
-              Автокопии
-            </h3>
+            >{t('Автокопии')}</h3>
             <p
               className="mt-1 text-[13px] leading-[1.35]"
               style={{ color: 'rgba(63,57,50,0.75)' }}
-            >
-              Приложение само хранит копии: последние часы подробно и по одной
-              на день за две недели. Из копии вернутся только те карточки,
-              которых сейчас нет.
-            </p>
+            >{t('Приложение само хранит копии: последние часы подробно и по одной на день за две недели. Из копии вернутся только те карточки, которых сейчас нет.')}</p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            aria-label="Закрыть"
+            aria-label={t('Закрыть')}
             className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full border bg-transparent text-[22px] font-light leading-none"
             style={{ color: '#4a3c2c', borderColor: 'rgba(74,60,44,0.3)' }}
           >
@@ -123,14 +118,9 @@ export const AutoBackupSheet: React.FC<AutoBackupSheetProps> = ({
           style={{ overscrollBehavior: 'contain' }}
         >
           {snapshots === null ? (
-            <p className="text-[14px]" style={{ color: 'rgba(63,57,50,0.6)' }}>
-              Загрузка…
-            </p>
+            <p className="text-[14px]" style={{ color: 'rgba(63,57,50,0.6)' }}>{t('Загрузка…')}</p>
           ) : snapshots.length === 0 ? (
-            <p className="text-[14px]" style={{ color: 'rgba(63,57,50,0.6)' }}>
-              Копий пока нет: первая появится, как только в приложении что-то
-              будет.
-            </p>
+            <p className="text-[14px]" style={{ color: 'rgba(63,57,50,0.6)' }}>{t('Копий пока нет: первая появится, как только в приложении что-то будет.')}</p>
           ) : (
             <ul>
               {snapshots.map((snapshot) => (
@@ -152,15 +142,9 @@ export const AutoBackupSheet: React.FC<AutoBackupSheetProps> = ({
                     <p
                       className="font-mono text-[11.5px] uppercase tracking-[0.08em]"
                       style={{ color: 'rgba(63,57,50,0.6)' }}
-                    >
-                      {REASON_LABEL[snapshot.reason]} · на столе{' '}
-                      {snapshot.active} · в архиве {snapshot.archived} · в
-                      корзине {snapshot.trash}
-                    </p>
+                    >{t('{v} · на столе {active} · в архиве {archived} · в корзине {trash}', { v: REASON_LABEL[snapshot.reason], active: snapshot.active, archived: snapshot.archived, trash: snapshot.trash })}</p>
                     {failedId === snapshot.id && (
-                      <p className="text-[12px]" style={{ color: '#7a2519' }}>
-                        Не удалось прочитать эту копию
-                      </p>
+                      <p className="text-[12px]" style={{ color: '#7a2519' }}>{t('Не удалось прочитать эту копию')}</p>
                     )}
                   </div>
                   <button
@@ -172,9 +156,7 @@ export const AutoBackupSheet: React.FC<AutoBackupSheetProps> = ({
                       color: '#5a4520',
                       backgroundColor: 'rgba(222,196,140,0.5)',
                     }}
-                  >
-                    Достать
-                  </button>
+                  >{t('Достать')}</button>
                 </li>
               ))}
             </ul>

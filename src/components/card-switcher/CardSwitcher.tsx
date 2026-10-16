@@ -19,6 +19,7 @@ import { useWheelNavigation } from '../../app/useWheelNavigation';
 import { haptic } from '../../app/haptics';
 import { formatOverdueShort } from '../../app/timeOps';
 import { STAMP_RED_DARK } from '../../app/stampRed';
+import { t } from '../../app/i18n';
 
 interface CardSwitcherProps {
   cards: VisualCard[];
@@ -544,7 +545,7 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
                           lineHeight: `${metrics.rowStep}px`,
                         }}
                         role="img"
-                        aria-label="Закреплена"
+                        aria-label={t('Закреплена')}
                       >
                         ★
                       </span>

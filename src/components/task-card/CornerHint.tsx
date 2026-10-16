@@ -1,6 +1,7 @@
 import React from 'react';
 
 import type { CardPalette } from '../../app/cardTheme';
+import { t } from '../../app/i18n';
 
 interface CornerHintProps {
   palette: CardPalette;
@@ -28,7 +29,7 @@ export const CornerHint: React.FC<CornerHintProps> = ({
       type="button"
       onClick={onDismiss}
       onTouchStart={() => undefined}
-      aria-label="Закрыть подсказку"
+      aria-label={t('Закрыть подсказку')}
       className="pointer-events-auto flex h-[22px] w-[22px] cursor-pointer items-center justify-center rounded-full border-0 font-mono text-[12px] leading-none"
       style={{
         color: palette.accentDark,
@@ -41,9 +42,7 @@ export const CornerHint: React.FC<CornerHintProps> = ({
     <span
       className="whitespace-nowrap text-[12.5px] font-semibold tracking-[0.01em]"
       style={{ color: palette.accentDark }}
-    >
-      Править / удалить
-    </span>
+    >{t('Править / удалить')}</span>
 
     <svg
       className="shrink-0"

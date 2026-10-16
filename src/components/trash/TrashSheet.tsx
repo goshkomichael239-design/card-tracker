@@ -10,6 +10,7 @@ import {
   type TrashedCard,
 } from '../../app/trash';
 import { INITIAL_TASK_CARD_V2_CONFIG } from '../task-card/taskCardV2Config';
+import { t } from '../../app/i18n';
 
 interface TrashSheetProps {
   items: TrashedCard[];
@@ -26,10 +27,10 @@ const PAPER = '#F7F2E8';
 
 const kindLabel = (item: TrashedCard): string =>
   item.card.kind === 'series'
-    ? 'Серия'
+    ? t('Серия')
     : item.card.kind === 'list'
-      ? 'Список'
-      : 'Одна задача';
+      ? t('Список')
+      : t('Одна задача');
 
 /** A small crumpled sheet in the card's own paper colour. */
 const CrumpledThumb: React.FC<{ paper: string }> = ({ paper }) => (
@@ -96,7 +97,7 @@ export const TrashSheet: React.FC<TrashSheetProps> = ({
       <section
         role="dialog"
         aria-modal="true"
-        aria-label="Корзина"
+        aria-label={t('Корзина')}
         className="engraved relative mx-auto flex h-full w-full max-w-[560px] flex-col overflow-hidden border"
         style={{
           borderRadius: config.borderRadius,
@@ -116,26 +117,20 @@ export const TrashSheet: React.FC<TrashSheetProps> = ({
             onClick={onClose}
             className="min-h-[40px] cursor-pointer border-0 bg-transparent px-0 font-mono text-[12.5px] font-semibold uppercase tracking-[0.12em]"
             style={{ color: '#6B4A3A' }}
-          >
-            ← Назад
-          </button>
+          >{t('← Назад')}</button>
 
           <div className="min-w-0 text-center">
             <p
               className="font-mono text-[12.5px] font-bold uppercase tracking-[0.16em]"
               style={{ color: '#6B4A3A' }}
-            >
-              Корзина
-            </p>
-            <p className="mt-1 font-mono text-[12.5px] text-[#6B6258]">
-              Хранится {TRASH_RETENTION_DAYS} дней
-            </p>
+            >{t('Корзина')}</p>
+            <p className="mt-1 font-mono text-[12.5px] text-[#6B6258]">{t('Хранится {TRASH_RETENTION_DAYS} дней', { TRASH_RETENTION_DAYS })}</p>
           </div>
 
           <button
             type="button"
             onClick={onClose}
-            aria-label="Закрыть корзину"
+            aria-label={t('Закрыть корзину')}
             className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border bg-transparent text-[25px] font-light leading-none"
             style={{
               color: '#6B4A3A',
@@ -149,13 +144,8 @@ export const TrashSheet: React.FC<TrashSheetProps> = ({
 
         {items.length === 0 ? (
           <div className="flex min-h-0 flex-1 flex-col items-center justify-center text-center">
-            <p className="text-[18px] font-semibold" style={{ color: 'rgba(40,35,29,0.62)' }}>
-              Корзина пуста
-            </p>
-            <p className="mt-2 max-w-[260px] text-[13.5px] leading-[1.4]" style={{ color: '#776E63' }}>
-              Выброшенные карточки лежат здесь {TRASH_RETENTION_DAYS} дней,
-              их можно вернуть на стол.
-            </p>
+            <p className="text-[18px] font-semibold" style={{ color: 'rgba(40,35,29,0.62)' }}>{t('Корзина пуста')}</p>
+            <p className="mt-2 max-w-[260px] text-[13.5px] leading-[1.4]" style={{ color: '#776E63' }}>{t('Выброшенные карточки лежат здесь {TRASH_RETENTION_DAYS} дней, их можно вернуть на стол.', { TRASH_RETENTION_DAYS })}</p>
           </div>
         ) : (
           <ul
@@ -182,10 +172,7 @@ export const TrashSheet: React.FC<TrashSheetProps> = ({
                     >
                       {item.card.title}
                     </p>
-                    <p className="mt-0.5 text-[12.5px] leading-[1.35]" style={{ color: '#776E63' }}>
-                      {kindLabel(item)} · {formatTrashedAgo(item, now)} · ещё{' '}
-                      {getTrashDaysLeft(item, now)} дн.
-                    </p>
+                    <p className="mt-0.5 text-[12.5px] leading-[1.35]" style={{ color: '#776E63' }}>{t('{v} · {v2} · ещё {v3} дн.', { v: kindLabel(item), v2: formatTrashedAgo(item, now), v3: getTrashDaysLeft(item, now) })}</p>
                   </div>
 
                   <div className="flex shrink-0 flex-col items-end gap-1.5 sm:flex-row sm:items-center sm:gap-2">
@@ -203,9 +190,7 @@ export const TrashSheet: React.FC<TrashSheetProps> = ({
                           ['--pill-glow' as string]: palette.glow,
                         } as React.CSSProperties
                       }
-                    >
-                      Вернуть
-                    </button>
+                    >{t('Вернуть')}</button>
                     <button
                       type="button"
                       onClick={() =>
@@ -214,7 +199,7 @@ export const TrashSheet: React.FC<TrashSheetProps> = ({
                       className="min-h-[30px] cursor-pointer border-0 bg-transparent px-1 font-mono text-[11.5px] font-bold uppercase tracking-[0.1em]"
                       style={{ color: isArmed ? STAMP_RED_DARK : 'rgba(40,35,29,0.5)' }}
                     >
-                      {isArmed ? 'Точно?' : 'Удалить'}
+                      {isArmed ? t('Точно?') : t('Удалить')}
                     </button>
                   </div>
                 </li>
@@ -228,16 +213,14 @@ export const TrashSheet: React.FC<TrashSheetProps> = ({
             className="mt-4 flex shrink-0 items-center justify-between gap-3 border-t pt-4"
             style={{ borderColor: 'rgba(69,57,44,0.12)' }}
           >
-            <p className="text-[12.5px]" style={{ color: '#776E63' }}>
-              Карточек: {items.length}
-            </p>
+            <p className="text-[12.5px]" style={{ color: '#776E63' }}>{t('Карточек: {length}', { length: items.length })}</p>
             <button
               type="button"
               onClick={() => confirmDelete('empty', onEmpty)}
               className="min-h-[36px] cursor-pointer border-0 bg-transparent px-1 font-mono text-[12.5px] font-bold uppercase tracking-[0.1em]"
               style={{ color: confirmId === 'empty' ? STAMP_RED_DARK : 'rgba(40,35,29,0.6)' }}
             >
-              {confirmId === 'empty' ? 'Точно очистить?' : 'Очистить корзину'}
+              {confirmId === 'empty' ? t('Точно очистить?') : t('Очистить корзину')}
             </button>
           </footer>
         )}

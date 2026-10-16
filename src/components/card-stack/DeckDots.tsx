@@ -3,6 +3,7 @@ import React, { useRef } from 'react';
 import type { VisualCard } from '../../app/cardTheme';
 import { STAMP_RED_GLOW } from '../../app/stampRed';
 import { useWheelNavigation } from '../../app/useWheelNavigation';
+import { t } from '../../app/i18n';
 
 interface DeckDotsProps {
   cards: VisualCard[];
@@ -153,7 +154,7 @@ export const DeckDots: React.FC<DeckDotsProps> = ({
     <div
       ref={containerRef}
       role="group"
-      aria-label="Карточки в стопке"
+      aria-label={t('Карточки в стопке')}
       className="absolute"
       style={{
         left: `calc(100% + ${offsetX}px)`,
@@ -188,7 +189,7 @@ export const DeckDots: React.FC<DeckDotsProps> = ({
           <span
             key={card.id}
             data-dot-index={index}
-            aria-label={'Карточка ' + (index + 1) + ' из ' + cards.length}
+            aria-label={t('Карточка ') + (index + 1) + t(' из ') + cards.length}
             aria-current={isActive ? 'true' : undefined}
             className="absolute left-0 flex items-center justify-center"
             style={{

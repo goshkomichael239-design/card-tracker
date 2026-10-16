@@ -8,6 +8,7 @@ import type { VisualCard } from '../../app/cardTheme';
 import { ArchiveCardViewer } from './ArchiveCardViewer';
 import { ArchiveCatalog } from './ArchiveCatalog';
 import { BackupControls } from './BackupControls';
+import { t } from '../../app/i18n';
 
 interface ArchiveViewProps {
   isOpen: boolean;
@@ -60,27 +61,20 @@ const ArchiveContents: React.FC<Omit<ArchiveViewProps, 'isOpen'>> = ({
       <h2
         className="mt-[2.5vh] shrink-0 font-mono text-[clamp(24px,4vw,40px)] font-bold uppercase tracking-[0.2em]"
         style={TITLE_STYLE}
-      >
-        Журнал карточек
-      </h2>
+      >{t('Журнал карточек')}</h2>
 
       {/* Summary pressed into the marble, under the title. */}
       <p
         className="mt-1 shrink-0 font-mono text-[12px] font-bold uppercase tracking-[0.12em]"
         style={{ ...TITLE_STYLE, color: 'rgba(120,96,52,0.75)' }}
-      >
-        За неделю {summary.week} · В {summary.monthName} {summary.month} · Всего{' '}
-        {summary.total}
-      </p>
+      >{t('За неделю {week} · В {monthName} {month} · Всего {total}', { week: summary.week, monthName: summary.monthName, month: summary.month, total: summary.total })}</p>
 
       {/* The run of active days, only once it is a run (two days or more). */}
       {summary.streak >= 2 && (
         <p
           className="mt-0.5 shrink-0 font-mono text-[12px] font-bold uppercase tracking-[0.12em]"
           style={{ ...TITLE_STYLE, color: 'rgba(150,104,40,0.85)' }}
-        >
-          {summary.streak} {pluralDays(summary.streak)} подряд
-        </p>
+        >{t('{streak} {v} подряд', { streak: summary.streak, v: pluralDays(summary.streak) })}</p>
       )}
 
       <ArchiveCatalog

@@ -1,8 +1,8 @@
 {
   "name": "Card Tracker",
   "short_name": "Card Tracker",
-  "description": "Задачи как бумажные карточки на сукне: стопка, купоны, архив.",
-  "lang": "ru",
+  "description": "Tasks as paper cards on a felt table: a stack, coupons, an archive.",
+  "lang": "en",
   "dir": "ltr",
   "start_url": "./",
   "scope": "./",

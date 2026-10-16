@@ -14,6 +14,7 @@ import { getCardPalette, type VisualCard } from '../../app/cardTheme';
 import { getListCompletedCount, getListProgress } from '../../app/listUtils';
 import { getSeriesProgress } from '../../app/seriesUtils';
 import { EmbossedArrow } from '../shared/EmbossedArrow';
+import { t } from '../../app/i18n';
 
 interface ArchiveCatalogProps {
   /** The search box starts with this text. */
@@ -23,16 +24,16 @@ interface ArchiveCatalogProps {
 }
 
 const KIND_FILTERS: Array<{ id: ArchiveKindFilter; label: string }> = [
-  { id: 'all', label: 'Все' },
-  { id: 'single', label: 'Задачи' },
-  { id: 'series', label: 'Серии' },
-  { id: 'list', label: 'Списки' },
+  { id: 'all', label: t('Все') },
+  { id: 'single', label: t('Задачи') },
+  { id: 'series', label: t('Серии') },
+  { id: 'list', label: t('Списки') },
 ];
 
 const KRAFT = '#D2BE97';
 
 const kindLabel = (card: VisualCard): string =>
-  card.kind === 'series' ? 'Серия' : card.kind === 'list' ? 'Список' : 'Задача';
+  card.kind === 'series' ? t('Серия') : card.kind === 'list' ? t('Список') : t('Задача');
 
 // Room under the box that is not for cards: the pager, and the page's own
 // bottom padding (the archive scroll area keeps 110px free for the nav bar).
@@ -287,8 +288,8 @@ export const ArchiveCatalog: React.FC<ArchiveCatalogProps> = ({
               setQuery(event.target.value);
               setPage(0);
             }}
-            placeholder="Найти карточку"
-            aria-label="Поиск по архиву"
+            placeholder={t('Найти карточку')}
+            aria-label={t('Поиск по архиву')}
             className="h-[40px] min-w-0 flex-1 border-0 bg-transparent p-0 text-[16px] outline-none placeholder:text-black/35"
             style={{ color: '#28231D', fontFamily: 'inherit' }}
           />
@@ -299,7 +300,7 @@ export const ArchiveCatalog: React.FC<ArchiveCatalogProps> = ({
                 setQuery('');
                 setPage(0);
               }}
-              aria-label="Очистить поиск"
+              aria-label={t('Очистить поиск')}
               className="h-8 w-8 cursor-pointer border-0 bg-transparent text-[16px]"
               style={{ color: 'rgba(63,57,50,0.6)' }}
             >
@@ -308,7 +309,7 @@ export const ArchiveCatalog: React.FC<ArchiveCatalogProps> = ({
           )}
         </label>
 
-        <div className="flex flex-wrap gap-2 sm:shrink-0 sm:flex-nowrap" role="tablist" aria-label="Тип карточек">
+        <div className="flex flex-wrap gap-2 sm:shrink-0 sm:flex-nowrap" role="tablist" aria-label={t('Тип карточек')}>
           {KIND_FILTERS.map((filter) => {
             const isActive = kind === filter.id;
 
@@ -344,7 +345,7 @@ export const ArchiveCatalog: React.FC<ArchiveCatalogProps> = ({
 
       {/* Month index: tabs that jump to their divider */}
       {months.length > 1 && (
-        <div className="mt-3 flex gap-1.5 overflow-x-auto pb-1" aria-label="Месяцы">
+        <div className="mt-3 flex gap-1.5 overflow-x-auto pb-1" aria-label={t('Месяцы')}>
           {months.map((month) => (
             <button
               key={month.key}
@@ -374,12 +375,12 @@ export const ArchiveCatalog: React.FC<ArchiveCatalogProps> = ({
         {months.length === 0 ? (
           <div className="engraved flex min-h-[180px] flex-col items-center justify-center px-6 text-center">
             <p className="text-[17px] font-semibold" style={{ color: 'rgba(40,35,29,0.66)' }}>
-              {isFiltered ? 'Ничего не нашлось' : 'Здесь пока пусто'}
+              {isFiltered ? t('Ничего не нашлось') : t('Здесь пока пусто')}
             </p>
             <p className="mt-2 max-w-[300px] text-[13.5px] leading-[1.4]" style={{ color: 'rgba(63,57,50,0.7)' }}>
               {isFiltered
-                ? 'Попробуйте другое слово или другой тип.'
-                : 'Оторвите купон на карточке — и она встанет сюда, в картотеку.'}
+                ? t('Попробуйте другое слово или другой тип.')
+                : t('Оторвите купон на карточке — и она встанет сюда, в картотеку.')}
             </p>
           </div>
         ) : (
@@ -430,14 +431,14 @@ export const ArchiveCatalog: React.FC<ArchiveCatalogProps> = ({
       {pageCount > 1 && (
         <nav
           className="engraved mt-3 flex items-center justify-center gap-3"
-          aria-label="Страницы архива"
+          aria-label={t('Страницы архива')}
         >
           <button
             type="button"
             onClick={() => turnTo(currentPage - 1)}
             onTouchStart={() => undefined}
             disabled={currentPage === 0}
-            aria-label="Предыдущая страница"
+            aria-label={t('Предыдущая страница')}
             className="pill-action disabled:cursor-default disabled:opacity-40"
             style={
               {
@@ -459,7 +460,7 @@ export const ArchiveCatalog: React.FC<ArchiveCatalogProps> = ({
             style={{ color: 'rgba(70,52,28,0.75)' }}
             aria-live="polite"
           >
-            Лист {currentPage + 1} из {pageCount}
+            {t('Лист')} {currentPage + 1} {t('из')} {pageCount}
             <span className="block text-[10.5px] font-semibold opacity-70">
               {totalCards} {pluralCards(totalCards)}
             </span>
@@ -469,7 +470,7 @@ export const ArchiveCatalog: React.FC<ArchiveCatalogProps> = ({
             onClick={() => turnTo(currentPage + 1)}
             onTouchStart={() => undefined}
             disabled={currentPage >= pageCount - 1}
-            aria-label="Следующая страница"
+            aria-label={t('Следующая страница')}
             className="pill-action disabled:cursor-default disabled:opacity-40"
             style={
               {

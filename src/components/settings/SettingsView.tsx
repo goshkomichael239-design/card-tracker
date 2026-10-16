@@ -3,11 +3,13 @@ import React, { useEffect } from 'react';
 import { SETTINGS, useSettings } from '../../app/settings';
 import { MotionSetting } from './MotionSetting';
 import { FileStyleSetting } from './FileStyleSetting';
+import { LanguageSetting } from './LanguageSetting';
 import { SearchHitsSetting } from './SearchHitsSetting';
 import { SwipeStyleSetting } from './SwipeStyleSetting';
 import { canVibrate } from '../../app/haptics';
 import { isNotificationsAvailable } from '../../app/notifications';
 import { playSound } from '../../app/sounds';
+import { t } from '../../app/i18n';
 
 interface SettingsViewProps {
   isOpen: boolean;
@@ -54,7 +56,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       }}
       role="dialog"
       aria-modal="true"
-      aria-label="Настройки"
+      aria-label={t('Настройки')}
       aria-hidden={!isOpen}
     >
       {isOpen && (
@@ -62,10 +64,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           <h2
             className="lit-in lit-text mb-7 text-center font-mono text-[15px] font-bold uppercase tracking-[0.3em]"
             style={lit(60)}
-          >
-            Настройки
-          </h2>
+          >{t('Настройки')}</h2>
 
+          <LanguageSetting style={lit(100)} />
           <MotionSetting style={lit(110)} />
           <SwipeStyleSetting style={lit(135)} />
           <SearchHitsSetting style={lit(150)} />
@@ -123,9 +124,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             onTouchStart={() => undefined}
             className="lit-in lit-text lit-done mx-auto mt-6 block font-mono text-[13px] font-bold uppercase tracking-[0.24em]"
             style={lit(160 + SETTINGS.length * 90 + 60)}
-          >
-            Готово
-          </button>
+          >{t('Готово')}</button>
         </div>
       )}
     </div>

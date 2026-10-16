@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 
 import { TableSurface } from '../table/TableSurface';
 import whiteMarbleTexture from '../../assets/white-marble.webp';
+import { t } from '../../app/i18n';
 
 interface ArchiveNavigationProps {
   isArchiveOpen: boolean;
@@ -31,7 +32,7 @@ export const ArchiveNavigation: React.FC<ArchiveNavigationProps> = ({
         height: ARCHIVE_NAVIGATION_HEIGHT,
       }}
       onClick={onToggle}
-      aria-label={isArchiveOpen ? 'Вернуться на главный экран' : 'Открыть архив'}
+      aria-label={isArchiveOpen ? t('Вернуться на главный экран') : t('Открыть архив')}
     >
       <motion.div
         aria-hidden="true"
@@ -96,10 +97,10 @@ export const ArchiveNavigation: React.FC<ArchiveNavigationProps> = ({
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -8 }}
           transition={{ duration: 0.42 }}
-          data-text={isArchiveOpen ? 'Главный экран' : 'Архив'}
+          data-text={isArchiveOpen ? t('Главный экран') : t('Архив')}
           className={`foil-text foil-text--sweep${isArchiveOpen ? ' foil-text--on-dark' : ''} relative z-10 leading-none ${isArchiveOpen ? 'text-[20px]' : 'text-[27px]'}`}
         >
-          {isArchiveOpen ? 'Главный экран' : 'Архив'}
+          {isArchiveOpen ? t('Главный экран') : t('Архив')}
         </motion.span>
       </AnimatePresence>
     </button>

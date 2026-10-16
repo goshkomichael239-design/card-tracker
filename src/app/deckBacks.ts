@@ -1,4 +1,5 @@
 import type { CSSProperties } from 'react';
+import { t } from './i18n';
 
 /**
  * The backs ("рубашки") a deck can have. A back is seen on the lower layers
@@ -26,13 +27,13 @@ const diagonal = (tint: string) =>
 export const DECK_BACKS: DeckBack[] = [
   {
     id: 'plain',
-    name: 'Бумага',
+    name: t('Бумага'),
     tab: '#E9E1CE',
     tabInk: '#4D4130',
   },
   {
     id: 'emerald',
-    name: 'Изумруд',
+    name: t('Изумруд'),
     tab: '#2A7A4F',
     tabInk: '#FFF6D6',
     paper: {
@@ -43,7 +44,7 @@ export const DECK_BACKS: DeckBack[] = [
   },
   {
     id: 'burgundy',
-    name: 'Бордо',
+    name: t('Бордо'),
     tab: '#8E2F3F',
     tabInk: '#F8E7D0',
     paper: {
@@ -54,7 +55,7 @@ export const DECK_BACKS: DeckBack[] = [
   },
   {
     id: 'navy',
-    name: 'Ночь',
+    name: t('Ночь'),
     tab: '#2D4A7C',
     tabInk: '#EAF0FA',
     paper: {
@@ -65,7 +66,7 @@ export const DECK_BACKS: DeckBack[] = [
   },
   {
     id: 'kraft',
-    name: 'Крафт',
+    name: t('Крафт'),
     tab: '#B98F5B',
     tabInk: '#3A2A14',
     paper: {
@@ -76,7 +77,7 @@ export const DECK_BACKS: DeckBack[] = [
   },
   {
     id: 'graphite',
-    name: 'Графит',
+    name: t('Графит'),
     tab: '#4B4F55',
     tabInk: '#F1F1EE',
     paper: {

@@ -2,6 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './App.css'
 import { initStorage } from './app/storage/kv'
+import { getLanguage } from './app/i18n'
 import { initMotion } from './app/motion'
 import { initSwipeStyle } from './app/swipeStyle'
 
@@ -35,6 +36,9 @@ const boot = async () => {
   } catch {
     // Start anyway: the app keeps working from memory.
   }
+
+  // The page's language, for readers of the screen and for hyphenation.
+  document.documentElement.lang = getLanguage()
 
   // The chosen amount of motion is in force before the first frame.
   initMotion()

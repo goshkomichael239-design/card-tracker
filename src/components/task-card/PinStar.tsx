@@ -2,6 +2,7 @@ import React from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 
 import clipImage from '../../assets/clip.png';
+import { t } from '../../app/i18n';
 
 interface PinStarProps {
   pinned: boolean;
@@ -181,11 +182,11 @@ export const PinStar: React.FC<PinStarProps> = ({
         type="button"
         onClick={onToggle}
         disabled={disabled}
-        aria-label={pinned ? 'Открепить карточку' : 'Закрепить карточку'}
+        aria-label={pinned ? t('Открепить карточку') : t('Закрепить карточку')}
         title={
           pinned
-            ? 'Закреплена. Нажмите, чтобы открепить'
-            : 'Закрепить: карточка всегда сверху'
+            ? t('Закреплена. Нажмите, чтобы открепить')
+            : t('Закрепить: карточка всегда сверху')
         }
         className="pointer-events-auto absolute cursor-pointer rounded-full border-0 bg-transparent p-0 outline-none disabled:cursor-default"
         style={{

@@ -8,6 +8,7 @@ import {
 import { DateTimeEditor } from './CardEditFace';
 import { CouponButton } from './CouponButton';
 import { INITIAL_TASK_CARD_V2_CONFIG } from './taskCardV2Config';
+import { t } from '../../app/i18n';
 
 interface CardPostponeFaceProps {
   title: string;
@@ -46,9 +47,7 @@ export const CardPostponeFace: React.FC<CardPostponeFaceProps> = ({
         <span
           className="rounded-full px-3 py-1.5 font-mono text-[11.5px] font-bold uppercase tracking-[0.12em]"
           style={{ color: palette.accentDark, backgroundColor: `${palette.accent}1d` }}
-        >
-          Отложить
-        </span>
+        >{t('Отложить')}</span>
       </div>
 
       <p
@@ -67,7 +66,7 @@ export const CardPostponeFace: React.FC<CardPostponeFaceProps> = ({
         <>
           <DateTimeEditor
             value={custom}
-            label="Отложить до"
+            label={t('Отложить до')}
             palette={palette}
             onChange={setCustom}
           />
@@ -80,14 +79,14 @@ export const CardPostponeFace: React.FC<CardPostponeFaceProps> = ({
             }}
           >
             <CouponButton
-              label="Назад"
+              label={t('Назад')}
               color="rgba(40,35,29,0.7)"
               paperTint={palette.paper}
               height={config.couponHeight}
               onClick={() => setCustom(null)}
             />
             <CouponButton
-              label="Отложить"
+              label={t('Отложить')}
               color={palette.accentDark}
               paperTint={palette.paper}
               height={config.couponHeight}
@@ -120,7 +119,7 @@ export const CardPostponeFace: React.FC<CardPostponeFaceProps> = ({
             className="etched-action etched-action--slim draw-in"
             style={{ ...drawDelay(150 + presets.length * 45), ...glowStyle }}
           >
-            <span className="etched-action__text">Другая дата</span>
+            <span className="etched-action__text">{t('Другая дата')}</span>
             <span className="etched-action__hint">›</span>
           </button>
           <button
@@ -128,9 +127,7 @@ export const CardPostponeFace: React.FC<CardPostponeFaceProps> = ({
             onClick={onBack}
             className="draw-in mt-1 self-start border-0 bg-transparent px-1 py-2 font-mono text-[11.5px] font-bold uppercase tracking-[0.12em]"
             style={{ ...drawDelay(200 + presets.length * 45), color: 'rgba(40,35,29,0.5)' }}
-          >
-            ‹ Назад
-          </button>
+          >{t('‹ Назад')}</button>
         </div>
       )}
     </div>

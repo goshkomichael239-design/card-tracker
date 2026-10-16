@@ -19,6 +19,7 @@ import {
   COUPON_BOX_WIDTH,
   getCouponEdge,
 } from './couponGeometry';
+import { t } from '../../app/i18n';
 
 interface DetachedCompletionCouponProps {
   /** `landed` is true when the coupon ended up speared on the spike. */
@@ -71,7 +72,7 @@ export const DetachedCompletionCoupon = forwardRef<
     seed: '',
     paper: '#F7F2E8',
     glow: '#FFD9C2',
-    label: 'Завершить',
+    label: t('Завершить'),
   });
 
   useEffect(() => {
@@ -96,7 +97,7 @@ export const DetachedCompletionCoupon = forwardRef<
           paper: coupon.palette.paper,
           glow: coupon.palette.glow,
           progress: coupon.progress,
-          label: coupon.label ?? 'Завершить',
+          label: coupon.label ?? t('Завершить'),
         }),
       );
 

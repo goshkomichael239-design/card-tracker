@@ -108,6 +108,7 @@ import { TaskCard } from '../components/task-card/TaskCard';
 import { TransientTaskCardOverlay } from '../components/task-card/TransientTaskCardOverlay';
 import { INITIAL_TASK_CARD_V2_CONFIG } from '../components/task-card/taskCardV2Config';
 import { EmbossedArrow } from '../components/shared/EmbossedArrow';
+import { t } from './i18n';
 type TransientOutgoingKind =
   | 'switch'
   | 'completion'
@@ -1264,7 +1265,7 @@ const MainApp: React.FC = () => {
     );
 
     showUndo(
-      cardToComplete.kind === 'series' ? 'Серия завершена' : 'Выполнено',
+      cardToComplete.kind === 'series' ? t('Серия завершена') : t('Выполнено'),
       {
         kind: 'complete',
         before: cardBefore ?? cardToComplete,
@@ -1316,7 +1317,7 @@ const MainApp: React.FC = () => {
       width: couponBounds.width,
       height: couponBounds.height,
       palette: getCardPalette(completedCard),
-      label: completedCard.kind === 'series' ? 'Засчитать +1' : undefined,
+      label: completedCard.kind === 'series' ? t('Засчитать +1') : undefined,
       // The fill the on-card coupon was showing when it was pressed: a series
       // shows the share counted before this press, a list its checked share.
       progress: completedCard.series
@@ -1471,7 +1472,7 @@ const MainApp: React.FC = () => {
       { card: cardToDelete, trashedAt: new Date().toISOString(), index },
       ...previous.filter((item) => item.card.id !== cardId),
     ]);
-    showUndo('Карточка в корзине', { kind: 'trash', cardId });
+    showUndo(t('Карточка в корзине'), { kind: 'trash', cardId });
   };
 
   function showUndo(message: string, action: UndoAction) {
@@ -1676,7 +1677,7 @@ const MainApp: React.FC = () => {
       ...previous.filter((item) => item.card.id !== cardId),
     ]);
     setTrashBumpKey((previous) => previous + 1);
-    showUndo('Карточка в корзине', { kind: 'trash-archived', card: archived });
+    showUndo(t('Карточка в корзине'), { kind: 'trash-archived', card: archived });
   };
 
   // Puts a card off: it gets its stamp and new time, slips to the back of the
@@ -1717,7 +1718,7 @@ const MainApp: React.FC = () => {
     }
 
     setActiveCardId(nextActiveId);
-    showUndo(`Отложено: ${formatPostponeMoment(until)}`, {
+    showUndo(t('Отложено: {v}', { v: formatPostponeMoment(until) }), {
       kind: 'postpone',
       before,
       index,
@@ -1762,7 +1763,7 @@ const MainApp: React.FC = () => {
     const backup = parseBackup(text);
 
     if (!backup) {
-      return { ok: false, message: 'Файл не похож на копию Card Tracker' };
+      return { ok: false, message: t('Файл не похож на копию Card Tracker') };
     }
 
     // Whatever the import does, the state just before it is kept.
@@ -1967,8 +1968,8 @@ const MainApp: React.FC = () => {
                 {navCards.length === 0 && (
                   <p className="lit-text text-[18px] font-semibold">
                     {otherDeckHits.length > 0
-                      ? 'В этой колоде не найдено'
-                      : 'Ничего не найдено'}
+                      ? t('В этой колоде не найдено')
+                      : t('Ничего не найдено')}
                   </p>
                 )}
                 {searchHitsStyle === 'buttons' &&
@@ -1981,9 +1982,7 @@ const MainApp: React.FC = () => {
                     }
                     onTouchStart={() => undefined}
                     className="embossed-line embossed-action"
-                  >
-                    Найдено в «{hit.deck.name}» · {hit.matches.length}
-                  </button>
+                  >{t('Найдено в «{name}» · {length}', { name: hit.deck.name, length: hit.matches.length })}</button>
                 ))}
                 {navCards.length === 0 &&
                   otherDeckHits.length === 0 &&
@@ -1993,9 +1992,7 @@ const MainApp: React.FC = () => {
                       onClick={handleSearchInArchive}
                       onTouchStart={() => undefined}
                       className="embossed-line embossed-action"
-                    >
-                      Искать в архиве · {archiveMatchCount}
-                    </button>
+                    >{t('Искать в архиве · {archiveMatchCount}', { archiveMatchCount })}</button>
                   )}
               </div>
             )}
@@ -2274,7 +2271,7 @@ const MainApp: React.FC = () => {
                   onFocus={() => setIsGhostHovered(true)}
                   onBlur={() => setIsGhostHovered(false)}
                   className="absolute inset-0 cursor-pointer border-0 bg-transparent p-0"
-                  aria-label="Добавить карту"
+                  aria-label={t('Добавить карту')}
                 >
                   <motion.span
                     animate={{
@@ -2312,9 +2309,7 @@ const MainApp: React.FC = () => {
                           1px 1px 1px rgba(255,255,255,0.4)
                         `,
                       }}
-                    >
-                      Добавить карту
-                    </span>
+                    >{t('Добавить карту')}</span>
                   </motion.span>
                 </button>
               </motion.div>
@@ -2388,8 +2383,7 @@ const MainApp: React.FC = () => {
           transition: 'opacity 420ms ease-out',
         }}
       >
-        <EmbossedArrow direction="left" tone="lit" size="0.95em" /> Убрать ·
-        Готово <EmbossedArrow direction="right" tone="lit" size="0.95em" />
+        <EmbossedArrow direction="left" tone="lit" size="0.95em" /> {t('Убрать · Готово')} <EmbossedArrow direction="right" tone="lit" size="0.95em" />
       </p>
 
       {/* The basket stands in the left end of the archive bar. */}

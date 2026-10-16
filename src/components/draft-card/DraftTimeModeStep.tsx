@@ -1,6 +1,7 @@
 import React from 'react';
 
 import type { CardPalette, TimeMode } from '../../app/cardTheme';
+import { t } from '../../app/i18n';
 
 export interface DraftTimeModeStepProps {
   timeMode: TimeMode | null;
@@ -37,29 +38,29 @@ export function DraftTimeModeStep({
   }> = [
     {
       id: 'none',
-      title: 'Без времени',
-      hint: 'просто дело',
+      title: t('Без времени'),
+      hint: t('просто дело'),
       selected: timeMode === 'none',
       onPick: () => onSelectTimeMode('none'),
     },
     {
       id: 'deadline',
-      title: 'Выполнить до',
-      hint: 'срок',
+      title: t('Выполнить до'),
+      hint: t('срок'),
       selected: timeMode === 'deadline',
       onPick: () => onSelectTimeMode('deadline'),
     },
     {
       id: 'reminder',
-      title: 'Напоминание',
-      hint: 'в нужный час',
+      title: t('Напоминание'),
+      hint: t('в нужный час'),
       selected: timeMode === 'reminder' && !isRepeating,
       onPick: () => onSelectTimeMode('reminder'),
     },
     {
       id: 'repeat',
-      title: 'Регулярно',
-      hint: 'по расписанию',
+      title: t('Регулярно'),
+      hint: t('по расписанию'),
       selected: isRepeating,
       onPick: onSelectRepeat,
     },
@@ -75,9 +76,7 @@ export function DraftTimeModeStep({
           color: 'rgba(40,35,29,0.62)',
           letterSpacing: '-0.015em',
         }}
-      >
-        Когда?
-      </p>
+      >{t('Когда?')}</p>
 
       <div className="mt-4 flex flex-col gap-2.5">
         {options.map((option, index) => (

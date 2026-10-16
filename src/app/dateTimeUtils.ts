@@ -1,28 +1,31 @@
+import { getLocale, t } from './i18n';
 export const padNumber = (value: number): string => {
   return String(value).padStart(2, '0');
 };
 
-const SHORT_DATE_FORMATTER = new Intl.DateTimeFormat('ru-RU', {
-  day: '2-digit',
-  month: 'short',
-});
+const shortDateFormatter = () =>
+  new Intl.DateTimeFormat(getLocale(), {
+    day: '2-digit',
+    month: 'short',
+  });
 
-const HUMAN_DATE_FORMATTER = new Intl.DateTimeFormat('ru-RU', {
-  day: 'numeric',
-  month: 'long',
-  year: 'numeric',
-  hour: '2-digit',
-  minute: '2-digit',
-});
+const humanDateFormatter = () =>
+  new Intl.DateTimeFormat(getLocale(), {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
 
 export const formatShortDate = (value: string): string => {
-  return SHORT_DATE_FORMATTER.format(new Date(value))
+  return shortDateFormatter().format(new Date(value))
     .replace('.', '')
     .toUpperCase();
 };
 
 export const formatHumanDate = (value: string): string => {
-  return HUMAN_DATE_FORMATTER.format(new Date(value));
+  return humanDateFormatter().format(new Date(value));
 };
 
 export const formatCompletedDate = (value: string): string => {
@@ -43,11 +46,11 @@ export const formatCompletedDate = (value: string): string => {
 
 export const formatRemainingTime = (milliseconds: number): string => {
   if (!Number.isFinite(milliseconds)) {
-    return 'Дата не указана';
+    return t('Дата не указана');
   }
 
   if (milliseconds <= 0) {
-    return 'Срок наступил';
+    return t('Срок наступил');
   }
 
   const totalSeconds = Math.floor(milliseconds / 1000);
@@ -57,14 +60,14 @@ export const formatRemainingTime = (milliseconds: number): string => {
   const seconds = totalSeconds % 60;
 
   if (days > 0) {
-    return `${days} д ${hours} ч ${minutes} мин`;
+    return t('{days} д {hours} ч {minutes} мин', { days, hours, minutes });
   }
 
   if (hours > 0) {
-    return `${hours} ч ${minutes} мин ${seconds} с`;
+    return t('{hours} ч {minutes} мин {seconds} с', { hours, minutes, seconds });
   }
 
-  return `${minutes} мин ${seconds} с`;
+  return t('{minutes} мин {seconds} с', { minutes, seconds });
 };
 
 export const formatOverdueTime = (milliseconds: number): string => {
@@ -74,34 +77,34 @@ export const formatOverdueTime = (milliseconds: number): string => {
   const minutes = totalMinutes % 60;
 
   if (days > 0) {
-    return `${days} д ${hours} ч`;
+    return t('{days} д {hours} ч', { days, hours });
   }
 
   if (hours > 0) {
-    return `${hours} ч ${minutes} мин`;
+    return t('{hours} ч {minutes} мин', { hours, minutes });
   }
 
-  return `${Math.max(1, minutes)} мин`;
+  return t('{minutes} мин', { minutes: Math.max(1, minutes) });
 };
 
 const FIVE_MINUTES_MS = 5 * 60 * 1000;
 
 export const MONTH_NAMES_RU = [
-  'Январь',
-  'Февраль',
-  'Март',
-  'Апрель',
-  'Май',
-  'Июнь',
-  'Июль',
-  'Август',
-  'Сентябрь',
-  'Октябрь',
-  'Ноябрь',
-  'Декабрь',
+  t('Январь'),
+  t('Февраль'),
+  t('Март'),
+  t('Апрель'),
+  t('Май'),
+  t('Июнь'),
+  t('Июль'),
+  t('Август'),
+  t('Сентябрь'),
+  t('Октябрь'),
+  t('Ноябрь'),
+  t('Декабрь'),
 ];
 
-export const WEEKDAYS_RU = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+export const WEEKDAYS_RU = [t('Пн'), t('Вт'), t('Ср'), t('Чт'), t('Пт'), t('Сб'), t('Вс')];
 
 export const startOfLocalDay = (value: Date): Date => {
   return new Date(value.getFullYear(), value.getMonth(), value.getDate());
@@ -146,22 +149,22 @@ export const formatDraftDate = (value: Date): string => {
 
 export const getDraftDateLabel = (value: Date, today: Date): string => {
   if (isSameLocalDay(value, today)) {
-    return 'Сегодня';
+    return t('Сегодня');
   }
 
   if (isSameLocalDay(value, addLocalDays(today, 1))) {
-    return 'Завтра';
+    return t('Завтра');
   }
 
   if (isSameLocalDay(value, addLocalDays(today, 2))) {
-    return 'Послезавтра';
+    return t('Послезавтра');
   }
 
   if (isSameLocalDay(value, getNextMonday(today))) {
-    return 'В понедельник';
+    return t('В понедельник');
   }
 
-  return 'Выбрано';
+  return t('Выбрано');
 };
 
 export const createLocalDateTimeValue = (

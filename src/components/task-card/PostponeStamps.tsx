@@ -3,6 +3,7 @@ import React from 'react';
 import type { Postponement } from '../../app/cardTheme';
 import { STAMP_RED_DARK } from '../../app/stampRed';
 import { formatStampDay } from '../../app/timeOps';
+import { t } from '../../app/i18n';
 
 interface PostponeStampsProps {
   postponements: Postponement[];
@@ -28,7 +29,7 @@ export const PostponeStamps: React.FC<PostponeStampsProps> = ({
     <div
       className="pointer-events-none absolute right-0"
       style={{ bottom: 92, width: 150, height: 70 }}
-      aria-label={`Отложено ${count} раз`}
+      aria-label={t('Отложено {count} раз', { count })}
     >
       <div
         className="absolute bottom-0 right-0 flex flex-col items-center justify-center rounded-[6px] px-3 py-1.5"
@@ -43,12 +44,8 @@ export const PostponeStamps: React.FC<PostponeStampsProps> = ({
           textShadow: 'none',
         }}
       >
-        <span className="font-mono text-[12px] font-bold uppercase leading-none tracking-[0.2em]">
-          Отложено
-        </span>
-        <span className="mt-1 font-mono text-[11px] font-bold uppercase leading-none tracking-[0.08em]">
-          до {formatStampDay(latest.until)}
-        </span>
+        <span className="font-mono text-[12px] font-bold uppercase leading-none tracking-[0.2em]">{t('Отложено')}</span>
+        <span className="mt-1 font-mono text-[11px] font-bold uppercase leading-none tracking-[0.08em]">{t('до {v}', { v: formatStampDay(latest.until) })}</span>
         {count > 1 && (
           <span
             className="absolute -right-2 -top-2.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1 font-mono text-[10.5px] font-bold leading-none"

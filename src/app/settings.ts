@@ -2,6 +2,7 @@ import { useSyncExternalStore } from 'react';
 
 import { isHapticsEnabled, setHapticsEnabled } from './haptics';
 import { readValue, writeValue } from './storage/kv';
+import { t } from './i18n';
 
 export type SettingId =
   | 'haptics'
@@ -21,38 +22,38 @@ export interface SettingDefinition {
 export const SETTINGS: SettingDefinition[] = [
   {
     id: 'haptics',
-    label: 'Вибрация',
-    hint: 'Лёгкий отклик при листании, закреплении и отрыве купона',
+    label: t('Вибрация'),
+    hint: t('Лёгкий отклик при листании, закреплении и отрыве купона'),
     defaultValue: true,
   },
   {
     id: 'sounds',
-    label: 'Звуки',
-    hint: 'Шорох карточек, треск перфорации, штамп',
+    label: t('Звуки'),
+    hint: t('Шорох карточек, треск перфорации, штамп'),
     defaultValue: true,
   },
   {
     id: 'reminders',
-    label: 'Уведомления',
-    hint: 'Телефон напомнит о сроках и напоминаниях, даже когда приложение закрыто',
+    label: t('Уведомления'),
+    hint: t('Телефон напомнит о сроках и напоминаниях, даже когда приложение закрыто'),
     defaultValue: true,
   },
   {
     id: 'hints',
-    label: 'Подсказки',
-    hint: 'Стрелка у загнутого уголка и подсказка про свайп',
+    label: t('Подсказки'),
+    hint: t('Стрелка у загнутого уголка и подсказка про свайп'),
     defaultValue: true,
   },
   {
     id: 'lamp',
-    label: 'Свет лампы',
-    hint: 'Светлое пятно на сукне, как под настольной лампой',
+    label: t('Свет лампы'),
+    hint: t('Светлое пятно на сукне, как под настольной лампой'),
     defaultValue: true,
   },
   {
     id: 'overdueCounter',
-    label: 'Метки просроченного',
-    hint: 'Красные значки на язычках, красная дата в строках и на карточке',
+    label: t('Метки просроченного'),
+    hint: t('Красные значки на язычках, красная дата в строках и на карточке'),
     defaultValue: true,
   },
 ];

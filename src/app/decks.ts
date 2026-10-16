@@ -1,6 +1,7 @@
 import { createId } from './cardOps';
 import type { VisualCard } from './cardTheme';
 import { readValue, writeValue } from './storage/kv';
+import { t } from './i18n';
 
 /**
  * Decks. There is always the base one ("По умолчанию"), which is not made and
@@ -20,7 +21,7 @@ export interface DecksState {
 }
 
 export const DEFAULT_DECK_ID = 'default';
-export const DEFAULT_DECK_NAME = 'По умолчанию';
+export const DEFAULT_DECK_NAME = t('По умолчанию');
 export const MAX_DECKS = 5;
 export const MAX_DECK_NAME_LENGTH = 16;
 
@@ -55,7 +56,7 @@ export const normalizeDecks = (value: unknown): Deck[] => {
     .filter((deck) => deck.id !== DEFAULT_DECK_ID)
     .map((deck) => ({
       ...deck,
-      name: deck.name.trim().slice(0, MAX_DECK_NAME_LENGTH) || 'Колода',
+      name: deck.name.trim().slice(0, MAX_DECK_NAME_LENGTH) || t('Колода'),
     }));
 
   return [baseDeck(saved?.backId), ...others].slice(0, MAX_DECKS);
@@ -82,7 +83,7 @@ export const saveDecksState = (state: DecksState): void =>
 
 export const createDeck = (name: string, backId: string): Deck => ({
   id: createId(),
-  name: name.trim().slice(0, MAX_DECK_NAME_LENGTH) || 'Колода',
+  name: name.trim().slice(0, MAX_DECK_NAME_LENGTH) || t('Колода'),
   backId,
 });
 

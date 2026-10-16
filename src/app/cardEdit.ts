@@ -1,4 +1,5 @@
 import type { TaskListItem, VisualCard } from './cardTheme';
+import { t } from './i18n';
 
 export type DateTimePart = 'day' | 'month' | 'hour' | 'minute';
 
@@ -90,4 +91,4 @@ export const cleanListItems = (items: TaskListItem[]): TaskListItem[] =>
     .filter((item) => item.text.length > 0);
 
 export const getListTitle = (items: TaskListItem[]): string =>
-  items[0]?.text.trim() || 'Список';
+  items[0]?.text.trim() || t('Список');

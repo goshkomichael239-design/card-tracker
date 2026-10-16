@@ -4,6 +4,7 @@ import {
   formatOverdueTime,
   formatRemainingTime,
 } from '../../app/dateTimeUtils';
+import { t } from '../../app/i18n';
 
 interface CountdownPanelProps {
   targetAt: string;
@@ -69,11 +70,11 @@ export const CountdownPanel: React.FC<CountdownPanelProps> = ({
   const tone = isPast ? PALETTES.none : palette;
 
   const label = completedAt
-    ? 'Выполнено'
+    ? t('Выполнено')
     : isPast
       ? mode === 'deadline'
-        ? `Просрочено · ${formatOverdueTime(-remaining)}`
-        : `Пора · ${formatOverdueTime(-remaining)} назад`
+        ? t('Просрочено · {v}', { v: formatOverdueTime(-remaining) })
+        : t('Пора · {v} назад', { v: formatOverdueTime(-remaining) })
       : formatRemainingTime(remaining);
 
   return (
@@ -81,14 +82,14 @@ export const CountdownPanel: React.FC<CountdownPanelProps> = ({
       className="relative flex min-h-[42px] items-center rounded-[10px] border px-4 py-2.5"
       aria-label={
         completedAt
-          ? 'Задача завершена'
+          ? t('Задача завершена')
           : isPast
             ? mode === 'deadline'
-              ? 'Срок вышел'
-              : 'Время напоминания наступило'
+              ? t('Срок вышел')
+              : t('Время напоминания наступило')
             : mode === 'deadline'
-              ? 'Осталось для выполнения'
-              : 'Осталось до напоминания'
+              ? t('Осталось для выполнения')
+              : t('Осталось до напоминания')
       }
       style={{
         color: tone.accentDark,

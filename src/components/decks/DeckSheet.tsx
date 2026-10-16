@@ -9,6 +9,7 @@ import {
   type Deck,
 } from '../../app/decks';
 import { INITIAL_TASK_CARD_V2_CONFIG } from '../task-card/taskCardV2Config';
+import { t } from '../../app/i18n';
 
 interface DeckSheetProps {
   /** The deck being changed, or null for a new one. */
@@ -76,7 +77,7 @@ export const DeckSheet: React.FC<DeckSheetProps> = ({
       <form
         role="dialog"
         aria-modal="true"
-        aria-label={deck ? 'Колода' : 'Новая колода'}
+        aria-label={deck ? t('Колода') : t('Новая колода')}
         onSubmit={(event) => {
           event.preventDefault();
 
@@ -100,12 +101,12 @@ export const DeckSheet: React.FC<DeckSheetProps> = ({
       >
         <header className="flex items-start justify-between gap-3">
           <p className="font-mono text-[12.5px] font-bold uppercase tracking-[0.16em]">
-            {deck ? 'Колода' : 'Новая колода'}
+            {deck ? t('Колода') : t('Новая колода')}
           </p>
           <button
             type="button"
             onClick={onClose}
-            aria-label="Закрыть"
+            aria-label={t('Закрыть')}
             className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border bg-transparent text-[22px] leading-none"
             style={{ color: INK, borderColor: 'rgba(77,65,48,0.3)' }}
           >
@@ -114,15 +115,13 @@ export const DeckSheet: React.FC<DeckSheetProps> = ({
         </header>
 
         <label className="mt-4 block">
-          <span className="font-mono text-[11px] font-bold uppercase tracking-[0.12em] opacity-70">
-            Название
-          </span>
+          <span className="font-mono text-[11px] font-bold uppercase tracking-[0.12em] opacity-70">{t('Название')}</span>
           <input
             value={isBase ? deck.name : name}
             onChange={(event) => setName(event.target.value)}
             disabled={isBase}
             maxLength={MAX_DECK_NAME_LENGTH}
-            placeholder="Например: Работа"
+            placeholder={t('Например: Работа')}
             autoFocus={!deck}
             className="mt-1.5 w-full rounded-[8px] border bg-transparent px-3 py-2.5 text-[17px] font-semibold outline-none disabled:opacity-60"
             style={{
@@ -133,13 +132,11 @@ export const DeckSheet: React.FC<DeckSheetProps> = ({
           />
         </label>
 
-        <p className="mt-4 font-mono text-[11px] font-bold uppercase tracking-[0.12em] opacity-70">
-          Рубашка
-        </p>
+        <p className="mt-4 font-mono text-[11px] font-bold uppercase tracking-[0.12em] opacity-70">{t('Рубашка')}</p>
         <div
           className="mt-2 grid grid-cols-3 gap-3"
           role="radiogroup"
-          aria-label="Рубашка"
+          aria-label={t('Рубашка')}
         >
           {DECK_BACKS.map((back) => {
             const isOn = backId === back.id;
@@ -192,9 +189,9 @@ export const DeckSheet: React.FC<DeckSheetProps> = ({
             >
               {isConfirmingDelete
                 ? cardCount > 0
-                  ? `Точно? ${cardCount} карт. уйдут в «По умолчанию»`
-                  : 'Точно удалить?'
-                : 'Удалить колоду'}
+                  ? t('Точно? {cardCount} карт. уйдут в «По умолчанию»', { cardCount })
+                  : t('Точно удалить?')
+                : t('Удалить колоду')}
             </button>
           ) : (
             <span />
@@ -211,7 +208,7 @@ export const DeckSheet: React.FC<DeckSheetProps> = ({
               boxShadow: '0 3px 0 rgba(83,61,43,0.3)',
             }}
           >
-            {deck ? 'Готово' : 'Создать'}
+            {deck ? t('Готово') : t('Создать')}
           </button>
         </div>
       </form>

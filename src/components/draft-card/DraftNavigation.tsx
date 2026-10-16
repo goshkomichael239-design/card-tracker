@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import cardboardTexture from '../../assets/cardboard.avif';
 import type { DraftStep } from '../../app/cardTheme';
 import { EmbossedArrow } from '../shared/EmbossedArrow';
+import { t } from '../../app/i18n';
 
 export interface DraftNavigationProps {
   draftStep: DraftStep;
@@ -40,7 +41,7 @@ export function DraftNavigation({
   disabled,
   nextLabel = (
     <>
-      Дальше <EmbossedArrow direction="right" size="1.1em" />
+      {t('Дальше')} <EmbossedArrow direction="right" size="1.1em" />
     </>
   ),
   onBack,
@@ -59,7 +60,7 @@ export function DraftNavigation({
             className="min-h-[46px] w-full whitespace-nowrap rounded-[11px] border-0 px-2 py-3 font-mono text-[11.5px] font-semibold uppercase tracking-[0.13em] disabled:opacity-40"
             style={buttonStyle}
           >
-            <EmbossedArrow direction="left" size="1.1em" /> Назад
+            <EmbossedArrow direction="left" size="1.1em" /> {t('Назад')}
           </motion.button>
         )}
       </div>

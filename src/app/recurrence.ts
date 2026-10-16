@@ -1,7 +1,8 @@
 import type { RecurrenceRule, VisualCard } from './cardTheme';
+import { getLanguage, getLocale, t } from './i18n';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
-const WEEKDAY_SHORT = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+const WEEKDAY_SHORT = [t('Пн'), t('Вт'), t('Ср'), t('Чт'), t('Пт'), t('Сб'), t('Вс')];
 const MAX_LOOKAHEAD_DAYS = 400;
 
 const startOfDay = (date: Date): Date =>
@@ -127,9 +128,9 @@ export const isOccurrenceAvailable = (
 export const describeRecurrence = (rule: RecurrenceRule): string => {
   switch (rule.kind) {
     case 'daily':
-      return 'Каждый день';
+      return t('Каждый день');
     case 'weekdays':
-      return 'По будням';
+      return t('По будням');
     case 'weekly':
       return [...(rule.weekdays ?? [])]
         .sort((a, b) => a - b)
@@ -139,7 +140,11 @@ export const describeRecurrence = (rule: RecurrenceRule): string => {
       const n = rule.intervalDays ?? 1;
 
       if (n === 1) {
-        return 'Каждый день';
+        return t('Каждый день');
+      }
+
+      if (getLanguage() === 'en') {
+        return `Every ${n} days`;
       }
 
       const mod10 = n % 10;
@@ -164,10 +169,10 @@ export const describeNextSheet = (
   const date = new Date(iso);
 
   if (wholeDaysBetween(now, date) === 1) {
-    return 'Завтра';
+    return t('Завтра');
   }
 
-  const day = new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'short' })
+  const day = new Intl.DateTimeFormat(getLocale(), { day: 'numeric', month: 'short' })
     .format(date)
     .replace('.', '');
 

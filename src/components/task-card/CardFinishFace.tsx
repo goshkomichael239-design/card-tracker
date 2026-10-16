@@ -1,6 +1,7 @@
 import React from 'react';
 
 import type { CardPalette } from '../../app/cardTheme';
+import { t } from '../../app/i18n';
 
 interface CardFinishFaceProps {
   title: string;
@@ -42,9 +43,7 @@ export const CardFinishFace: React.FC<CardFinishFaceProps> = ({
             color: palette.accentDark,
             backgroundColor: `${palette.accent}1d`,
           }}
-        >
-          Серия
-        </span>
+        >{t('Серия')}</span>
       </div>
 
       <p
@@ -65,9 +64,7 @@ export const CardFinishFace: React.FC<CardFinishFaceProps> = ({
         <p
           className="draw-in font-mono text-[11.5px] font-bold uppercase tracking-[0.12em]"
           style={{ ...drawDelay(160), color: '#6B6258' }}
-        >
-          Выполнено только
-        </p>
+        >{t('Выполнено только')}</p>
 
         <p
           className="draw-in mt-1 font-semibold leading-none"
@@ -83,9 +80,7 @@ export const CardFinishFace: React.FC<CardFinishFaceProps> = ({
           <span
             className="mx-2 text-[24px] font-medium"
             style={{ color: 'rgba(40,35,29,0.5)', letterSpacing: 0 }}
-          >
-            из
-          </span>
+          >{t('из')}</span>
           {target}
         </p>
 
@@ -99,7 +94,7 @@ export const CardFinishFace: React.FC<CardFinishFaceProps> = ({
               'inset 0 2px 4px rgba(40,28,16,0.26), inset 0 -1px 0 rgba(255,255,255,0.75)',
           }}
           role="img"
-          aria-label={`Выполнено ${done} из ${target}`}
+          aria-label={t('Выполнено {done} из {target}', { done, target })}
         >
           <div
             className="h-full origin-left rounded-full"
@@ -114,9 +109,7 @@ export const CardFinishFace: React.FC<CardFinishFaceProps> = ({
         <p
           className="draw-in mt-5 text-[18px] font-medium leading-[1.3]"
           style={{ ...drawDelay(300), color: 'rgba(40,35,29,0.8)' }}
-        >
-          Всё равно завершить серию?
-        </p>
+        >{t('Всё равно завершить серию?')}</p>
 
         <div className="mt-4 flex flex-col gap-2.5">
           <button
@@ -126,7 +119,7 @@ export const CardFinishFace: React.FC<CardFinishFaceProps> = ({
             className="etched-action etched-action--compact draw-in"
             style={{ ...drawDelay(350), ...glowStyle }}
           >
-            <span className="etched-action__text">Завершить</span>
+            <span className="etched-action__text">{t('Завершить')}</span>
           </button>
           <button
             type="button"
@@ -135,7 +128,7 @@ export const CardFinishFace: React.FC<CardFinishFaceProps> = ({
             className="etched-action etched-action--compact draw-in"
             style={{ ...drawDelay(420), ...glowStyle }}
           >
-            <span className="etched-action__text">Вернуться</span>
+            <span className="etched-action__text">{t('Вернуться')}</span>
           </button>
         </div>
       </div>

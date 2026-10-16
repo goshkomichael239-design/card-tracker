@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { t } from '../app/i18n';
 
 interface UndoTicketProps {
   message: string;
@@ -49,7 +50,7 @@ export const UndoTicket: React.FC<UndoTicketProps> = ({
           <span aria-hidden="true" className="mr-1.5 text-[15px]">
             ↶
           </span>
-          Вернуть
+          {t('Вернуть')}
         </button>
 
         <span

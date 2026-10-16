@@ -2,6 +2,7 @@ import type { VisualCard } from './cardTheme';
 import { isStoredVisualCard, sanitizeStoredCard } from './cardValidation';
 import { quarantine } from './persistence';
 import { readValue, writeValue } from './storage/kv';
+import { t } from './i18n';
 
 /** A card thrown into the bin: it keeps its place in the deck for a restore. */
 export interface TrashedCard {
@@ -97,12 +98,12 @@ export const formatTrashedAgo = (
   );
 
   if (days <= 0) {
-    return 'сегодня';
+    return t('сегодня');
   }
 
   if (days === 1) {
-    return 'вчера';
+    return t('вчера');
   }
 
-  return `${days} дн. назад`;
+  return t('{days} дн. назад', { days });
 };

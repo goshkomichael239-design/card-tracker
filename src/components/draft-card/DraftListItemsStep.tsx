@@ -1,6 +1,7 @@
 import type { KeyboardEvent } from 'react';
 
 import type { CardPalette, TaskListItem } from '../../app/cardTheme';
+import { t } from '../../app/i18n';
 
 interface DraftListItemsStepProps {
   items: TaskListItem[];
@@ -33,9 +34,7 @@ export function DraftListItemsStep({
       <p
         className="font-mono text-[12.5px] font-bold uppercase tracking-[0.16em]"
         style={{ color: palette.accentDark }}
-      >
-        Список
-      </p>
+      >{t('Список')}</p>
 
       <div
         className="mt-5 flex min-h-[48px] items-center gap-3 border-b pb-2"
@@ -51,7 +50,7 @@ export function DraftListItemsStep({
           onChange={(event) => onInputChange(event.target.value)}
           onKeyDown={handleKeyDown}
           disabled={disabled}
-          placeholder="Добавить пункт…"
+          placeholder={t('Добавить пункт…')}
           className="min-w-0 flex-1 border-0 bg-transparent p-0 text-[19px] leading-[1.35] outline-none placeholder:text-black/28"
           style={{ color: palette.ink }}
         />
@@ -59,7 +58,7 @@ export function DraftListItemsStep({
           type="button"
           onClick={onAdd}
           disabled={disabled || !input.trim()}
-          aria-label="Добавить пункт"
+          aria-label={t('Добавить пункт')}
           className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border bg-transparent text-[24px] font-light leading-none transition-opacity disabled:opacity-25"
           style={{
             color: palette.accentDark,
@@ -96,7 +95,7 @@ export function DraftListItemsStep({
               type="button"
               onClick={() => onRemove(item.id)}
               disabled={disabled}
-              aria-label={`Удалить ${item.text}`}
+              aria-label={t('Удалить {text}', { text: item.text })}
               className="flex h-9 w-9 shrink-0 items-center justify-center border-0 bg-transparent text-[20px] text-black/30 opacity-50 transition-opacity hover:opacity-80 focus-visible:opacity-80 disabled:opacity-20 sm:opacity-25 sm:group-hover:opacity-70"
             >
               ×

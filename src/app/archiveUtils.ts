@@ -1,5 +1,6 @@
 import type { CardKind, VisualCard } from './cardTheme';
 import { MONTH_NAMES_RU } from './dateTimeUtils';
+import { getLanguage, getLocale, t } from './i18n';
 
 export type ArchiveKindFilter = 'all' | CardKind;
 
@@ -14,18 +15,18 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 
 /** "в октябре", "в мае" … */
 const MONTHS_PREPOSITIONAL = [
-  'январе',
-  'феврале',
-  'марте',
-  'апреле',
-  'мае',
-  'июне',
-  'июле',
-  'августе',
-  'сентябре',
-  'октябре',
-  'ноябре',
-  'декабре',
+  t('январе'),
+  t('феврале'),
+  t('марте'),
+  t('апреле'),
+  t('мае'),
+  t('июне'),
+  t('июле'),
+  t('августе'),
+  t('сентябре'),
+  t('октябре'),
+  t('ноябре'),
+  t('декабре'),
 ];
 
 const completedTime = (card: VisualCard): number =>
@@ -273,6 +274,10 @@ export const pluralDays = (count: number): string => {
   const mod10 = count % 10;
   const mod100 = count % 100;
 
+  if (getLanguage() === 'en') {
+    return count === 1 ? 'day' : 'days';
+  }
+
   if (mod10 === 1 && mod100 !== 11) {
     return 'день';
   }
@@ -288,7 +293,7 @@ export const pluralDays = (count: number): string => {
 export const formatArchiveMoment = (iso: string): string => {
   const date = new Date(iso);
   const day = formatArchiveDay(iso);
-  const time = new Intl.DateTimeFormat('ru-RU', {
+  const time = new Intl.DateTimeFormat(getLocale(), {
     hour: '2-digit',
     minute: '2-digit',
   }).format(date);
@@ -325,7 +330,7 @@ export const formatArchiveDay = (iso?: string): string => {
     return '';
   }
 
-  return new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'short' })
+  return new Intl.DateTimeFormat(getLocale(), { day: 'numeric', month: 'short' })
     .format(new Date(iso))
     .replace('.', '');
 };
@@ -333,6 +338,10 @@ export const formatArchiveDay = (iso?: string): string => {
 export const pluralCards = (count: number): string => {
   const mod10 = count % 10;
   const mod100 = count % 100;
+
+  if (getLanguage() === 'en') {
+    return count === 1 ? 'card' : 'cards';
+  }
 
   if (mod10 === 1 && mod100 !== 11) {
     return 'карточка';

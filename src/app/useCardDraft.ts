@@ -34,6 +34,7 @@ import {
 import { getDeckState } from './deckStore';
 import { parseQuickEntry, type QuickEntry } from './parseQuickEntry';
 import { firstOccurrence, isRecurrenceComplete } from './recurrence';
+import { t } from './i18n';
 
 /** The colour scheme of the last card in the deck (the new one sits next to it). */
 const pickLastColorId = (): string | undefined => {
@@ -134,15 +135,15 @@ export function useCardDraft({
   );
   const datePresets = [
     {
-      label: 'Завтра',
+      label: t('Завтра'),
       date: addLocalDays(currentDraftDay, 1),
     },
     {
-      label: 'Послезавтра',
+      label: t('Послезавтра'),
       date: addLocalDays(currentDraftDay, 2),
     },
     {
-      label: 'В понедельник',
+      label: t('В понедельник'),
       date: getNextMonday(currentDraftDay),
     },
   ];
@@ -345,7 +346,7 @@ export function useCardDraft({
     const isValidSeriesTarget =
       Number.isInteger(seriesTargetCount) && seriesTargetCount >= 1;
     const isList = selectedKind === 'list';
-    const listTitle = draftListItems[0]?.text.trim() || 'Список';
+    const listTitle = draftListItems[0]?.text.trim() || t('Список');
     const isReadyToCreate =
       creationState === 'editing' &&
       ((selectedKind === 'series' &&

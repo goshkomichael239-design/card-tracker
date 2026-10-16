@@ -1,4 +1,5 @@
 import type { VisualCard } from './cardTheme';
+import { getLocale, t } from './i18n';
 
 const MINUTE = 60_000;
 const HOUR = 60 * MINUTE;
@@ -70,17 +71,17 @@ export const getPostponePresets = (now: Date = new Date()): PostponePreset[] => 
   const evening = atTime(now, 0, 19);
   const daysToMonday = ((8 - now.getDay()) % 7) || 7;
   const presets: PostponePreset[] = [
-    { id: 'hour', label: 'Через час', until: inAnHour },
+    { id: 'hour', label: t('Через час'), until: inAnHour },
   ];
 
   if (evening.getTime() - now.getTime() > 2 * HOUR) {
-    presets.push({ id: 'evening', label: 'Вечером', until: evening });
+    presets.push({ id: 'evening', label: t('Вечером'), until: evening });
   }
 
   presets.push(
-    { id: 'tomorrow', label: 'Завтра утром', until: atTime(now, 1, 9) },
-    { id: 'monday', label: 'В понедельник', until: atTime(now, daysToMonday, 9) },
-    { id: 'week', label: 'Через неделю', until: atTime(now, 7, 9) },
+    { id: 'tomorrow', label: t('Завтра утром'), until: atTime(now, 1, 9) },
+    { id: 'monday', label: t('В понедельник'), until: atTime(now, daysToMonday, 9) },
+    { id: 'week', label: t('Через неделю'), until: atTime(now, 7, 9) },
   );
 
   return presets;
@@ -91,20 +92,20 @@ export const formatPostponeMoment = (date: Date, now: Date = new Date()): string
   const startOfDay = (value: Date) =>
     new Date(value.getFullYear(), value.getMonth(), value.getDate()).getTime();
   const dayDiff = Math.round((startOfDay(date) - startOfDay(now)) / (24 * HOUR));
-  const time = new Intl.DateTimeFormat('ru-RU', {
+  const time = new Intl.DateTimeFormat(getLocale(), {
     hour: '2-digit',
     minute: '2-digit',
   }).format(date);
 
   if (dayDiff === 0) {
-    return `сегодня, ${time}`;
+    return t('сегодня, {time}', { time });
   }
 
   if (dayDiff === 1) {
-    return `завтра, ${time}`;
+    return t('завтра, {time}', { time });
   }
 
-  const day = new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'short' })
+  const day = new Intl.DateTimeFormat(getLocale(), { day: 'numeric', month: 'short' })
     .format(date)
     .replace('.', '');
 
@@ -113,7 +114,7 @@ export const formatPostponeMoment = (date: Date, now: Date = new Date()): string
 
 /** "11 окт" for a stamp. */
 export const formatStampDay = (iso: string): string =>
-  new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'short' })
+  new Intl.DateTimeFormat(getLocale(), { day: 'numeric', month: 'short' })
     .format(new Date(iso))
     .replace('.', '');
 
@@ -188,28 +189,28 @@ export const formatOverdueShort = (
   const days = Math.round((dayStart(now) - dayStart(due)) / (24 * HOUR));
 
   if (days >= 60) {
-    return `${Math.floor(days / 30)} мес.`;
+    return t('{months} мес.', { months: Math.floor(days / 30) });
   }
 
   if (days >= 14) {
-    return `${Math.floor(days / 7)} нед.`;
+    return t('{weeks} нед.', { weeks: Math.floor(days / 7) });
   }
 
   if (days >= 2) {
-    return `${days} дн.`;
+    return t('{days} дн.', { days });
   }
 
   if (days === 1) {
-    return 'вчера';
+    return t('вчера');
   }
 
   const hours = Math.floor((now - due) / HOUR);
 
   if (hours >= 1) {
-    return `${hours} ч`;
+    return t('{hours} ч', { hours });
   }
 
   const minutes = Math.floor((now - due) / MINUTE);
 
-  return minutes >= 1 ? `${minutes} мин` : 'сейчас';
+  return minutes >= 1 ? t('{minutes} мин', { minutes }) : t('сейчас');
 };

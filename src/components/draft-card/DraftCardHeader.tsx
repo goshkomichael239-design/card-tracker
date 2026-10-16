@@ -1,6 +1,7 @@
 import React from 'react';
 
 import type { CardKind, CardPalette } from '../../app/cardTheme';
+import { t } from '../../app/i18n';
 
 interface DraftCardHeaderProps {
   palette: CardPalette;
@@ -8,9 +9,9 @@ interface DraftCardHeaderProps {
 }
 
 const KIND_LABEL: Record<CardKind, string> = {
-  single: 'Одна задача',
-  series: 'Серия',
-  list: 'Список',
+  single: t('Одна задача'),
+  series: t('Серия'),
+  list: t('Список'),
 };
 
 /**
@@ -29,7 +30,7 @@ export const DraftCardHeader: React.FC<DraftCardHeaderProps> = ({
         backgroundColor: `${palette.accent}1d`,
       }}
     >
-      {selectedKind ? KIND_LABEL[selectedKind] : 'Новая карта'}
+      {selectedKind ? KIND_LABEL[selectedKind] : t('Новая карта')}
     </span>
   </div>
 );

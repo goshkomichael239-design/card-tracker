@@ -1,4 +1,5 @@
 import type { CardPalette } from '../../app/cardTheme';
+import { t } from '../../app/i18n';
 
 interface DraftSeriesTargetStepProps {
   value: string;
@@ -15,9 +16,7 @@ export function DraftSeriesTargetStep({
 }: DraftSeriesTargetStepProps) {
   return (
     <div className="pt-1">
-      <p className="font-mono text-[12.5px] font-bold uppercase tracking-[0.14em] text-black/55">
-        Сколько одинаковых действий?
-      </p>
+      <p className="font-mono text-[12.5px] font-bold uppercase tracking-[0.14em] text-black/55">{t('Сколько одинаковых действий?')}</p>
       <input
         type="number"
         inputMode="numeric"
@@ -32,11 +31,9 @@ export function DraftSeriesTargetStep({
           color: palette.ink,
           borderColor: 'rgba(77,58,43,0.2)',
         }}
-        aria-label="Количество действий"
+        aria-label={t('Количество действий')}
       />
-      <p className="mt-4 font-mono text-[11.5px] leading-relaxed tracking-[0.08em] text-black/40">
-        Укажите целое число не меньше одного.
-      </p>
+      <p className="mt-4 font-mono text-[11.5px] leading-relaxed tracking-[0.08em] text-black/40">{t('Укажите целое число не меньше одного.')}</p>
     </div>
   );
 }

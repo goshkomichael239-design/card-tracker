@@ -3,6 +3,7 @@ import type { RefObject } from 'react';
 
 import type { CardKind, CardPalette } from '../../app/cardTheme';
 import type { QuickEntry } from '../../app/parseQuickEntry';
+import { t } from '../../app/i18n';
 
 export interface DraftKindStepProps {
   selectedKind: CardKind | null;
@@ -24,18 +25,18 @@ export interface DraftKindStepProps {
 }
 
 const OPTIONS: Array<{ kind: CardKind; title: string; hint: string }> = [
-  { kind: 'single', title: 'Одна задача', hint: 'название и срок' },
-  { kind: 'series', title: 'Серия', hint: 'название и цель' },
-  { kind: 'list', title: 'Список', hint: 'пункты по одному' },
+  { kind: 'single', title: t('Одна задача'), hint: t('название и срок') },
+  { kind: 'series', title: t('Серия'), hint: t('название и цель') },
+  { kind: 'list', title: t('Список'), hint: t('пункты по одному') },
 ];
 
 const drawDelay = (ms: number): React.CSSProperties =>
   ({ ['--draw-delay' as string]: `${ms}ms` }) as React.CSSProperties;
 
 const KIND_WORD: Record<QuickEntry['kind'], string> = {
-  single: 'Задача',
-  series: 'Серия',
-  list: 'Список',
+  single: t('Задача'),
+  series: t('Серия'),
+  list: t('Список'),
 };
 
 /**
@@ -72,9 +73,7 @@ export function DraftKindStep({
           color: 'rgba(40,35,29,0.62)',
           letterSpacing: '-0.015em',
         }}
-      >
-        Что создаём?
-      </p>
+      >{t('Что создаём?')}</p>
 
       <textarea
         ref={titleInputRef}
@@ -89,9 +88,9 @@ export function DraftKindStep({
             onEnter();
           }
         }}
-        placeholder="Например: завтра в 9 позвонить маме"
+        placeholder={t('Например: завтра в 9 позвонить маме')}
         enterKeyHint="done"
-        aria-label="Что нужно сделать"
+        aria-label={t('Что нужно сделать')}
         className="draw-in mt-3 min-h-[78px] w-full shrink-0 resize-none rounded-[6px] border-0 bg-transparent px-1 py-2 text-[1.2rem] font-semibold leading-[1.4] outline-none placeholder:text-black/25 disabled:opacity-50"
         style={{
           ...drawDelay(110),
@@ -117,9 +116,7 @@ export function DraftKindStep({
             <p
               className="font-mono text-[10.5px] font-bold uppercase tracking-[0.14em]"
               style={{ color: palette.accentDark }}
-            >
-              Я понял так · {KIND_WORD[quickEntry.kind]}
-            </p>
+            >{t('Я понял так · {v}', { v: KIND_WORD[quickEntry.kind] })}</p>
             <p
               className="mt-1.5 text-[15.5px] font-semibold leading-[1.3]"
               style={{ color: palette.ink }}
@@ -136,7 +133,7 @@ export function DraftKindStep({
             className="etched-action etched-action--slim etched-action--roomy draw-in"
             style={{ ...drawDelay(120), ...glowStyle }}
           >
-            <span className="etched-action__text">Да, создать</span>
+            <span className="etched-action__text">{t('Да, создать')}</span>
             <span className="etched-action__hint">Enter</span>
           </button>
 
@@ -147,9 +144,7 @@ export function DraftKindStep({
             disabled={disabled}
             className="draw-in cursor-pointer self-start border-0 bg-transparent px-1 py-1 font-mono text-[11.5px] font-bold uppercase tracking-[0.12em]"
             style={{ ...drawDelay(180), color: palette.accentDark }}
-          >
-            Нет, выберу сам
-          </button>
+          >{t('Нет, выберу сам')}</button>
         </div>
       ) : (
         <div className="mt-3 flex flex-col gap-2.5">
@@ -157,9 +152,7 @@ export function DraftKindStep({
             <p
               className="draw-in font-mono text-[10.5px] font-bold uppercase tracking-[0.14em]"
               style={{ ...drawDelay(40), color: palette.accentDark }}
-            >
-              Это будет…
-            </p>
+            >{t('Это будет…')}</p>
           )}
           {OPTIONS.map((option, index) => (
             <button

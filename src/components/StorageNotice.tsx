@@ -4,6 +4,7 @@ import {
   getStorageStatus,
   subscribeStorageStatus,
 } from '../app/storage/kv';
+import { t } from '../app/i18n';
 
 /**
  * A quiet strip across the top when saving cannot be trusted: another tab
@@ -31,10 +32,10 @@ export const StorageNotice: React.FC = () => {
       }}
     >
       {status.isUnavailable ? (
-        <span>Хранилище не отвечает — изменения не сохранятся</span>
+        <span>{t('Хранилище не отвечает — изменения не сохранятся')}</span>
       ) : status.isStale ? (
         <>
-          <span>Данные изменены в другой вкладке</span>
+          <span>{t('Данные изменены в другой вкладке')}</span>
           <button
             type="button"
             onClick={() => window.location.reload()}
@@ -47,12 +48,10 @@ export const StorageNotice: React.FC = () => {
                 ['--pill-glow' as string]: '#FFC2A6',
               } as React.CSSProperties
             }
-          >
-            Обновить
-          </button>
+          >{t('Обновить')}</button>
         </>
       ) : (
-        <span>Не удаётся сохранить — сделайте копию в архиве</span>
+        <span>{t('Не удаётся сохранить — сделайте копию в архиве')}</span>
       )}
     </div>
   );

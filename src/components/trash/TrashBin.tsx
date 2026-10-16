@@ -4,6 +4,7 @@ import bin0 from '../../assets/bin-new-0.png';
 import bin1 from '../../assets/bin-new-1.png';
 import bin2 from '../../assets/bin-new-2.png';
 import bin3 from '../../assets/bin-new-3.png';
+import { t } from '../../app/i18n';
 
 interface TrashBinProps {
   count: number;
@@ -55,8 +56,8 @@ export const TrashBin: React.FC<TrashBinProps> = ({
       type="button"
       onClick={onOpen}
       onTouchStart={() => undefined}
-      aria-label={count > 0 ? `Корзина: ${count}` : 'Корзина пуста'}
-      title="Корзина"
+      aria-label={count > 0 ? t('Корзина: {count}', { count }) : t('Корзина пуста')}
+      title={t('Корзина')}
       className="absolute z-[35] cursor-pointer border-0 bg-transparent p-0"
       style={style}
     >

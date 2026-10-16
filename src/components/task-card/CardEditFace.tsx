@@ -23,6 +23,7 @@ import {
 import { INITIAL_TASK_CARD_V2_CONFIG } from './taskCardV2Config';
 import { CouponButton } from './CouponButton';
 import { EmbossedArrow } from '../shared/EmbossedArrow';
+import { t } from '../../app/i18n';
 
 interface CardEditFaceProps {
   card: VisualCard;
@@ -78,7 +79,7 @@ const StepperRow: React.FC<StepperRowProps> = ({
       type="button"
       onClick={onPrevious}
       disabled={!canPrevious}
-      aria-label={`${label}: меньше`}
+      aria-label={t('{label}: меньше', { label })}
       className={ARROW_BUTTON_CLASS}
       style={{ color: canPrevious ? 'rgba(63,57,50,0.78)' : 'rgba(63,57,50,0.2)' }}
     >
@@ -102,7 +103,7 @@ const StepperRow: React.FC<StepperRowProps> = ({
       type="button"
       onClick={onNext}
       disabled={!canNext}
-      aria-label={`${label}: больше`}
+      aria-label={t('{label}: больше', { label })}
       className={ARROW_BUTTON_CLASS}
       style={{ color: canNext ? 'rgba(63,57,50,0.78)' : 'rgba(63,57,50,0.2)' }}
     >
@@ -123,9 +124,7 @@ const TitleField: React.FC<TitleFieldProps> = ({
   onChange,
 }) => (
   <div className="draw-in shrink-0" style={drawDelay(150)}>
-    <p className={FIELD_LABEL_CLASS} style={{ color: palette.accentDark }}>
-      Название
-    </p>
+    <p className={FIELD_LABEL_CLASS} style={{ color: palette.accentDark }}>{t('Название')}</p>
     <textarea
       value={value}
       rows={1}
@@ -137,7 +136,7 @@ const TitleField: React.FC<TitleFieldProps> = ({
           event.currentTarget.blur();
         }
       }}
-      aria-label="Название карточки"
+      aria-label={t('Название карточки')}
       className="mt-1 block w-full resize-none border-0 bg-transparent p-0 font-semibold leading-[1.12] outline-none"
       style={
         {
@@ -155,10 +154,10 @@ const TitleField: React.FC<TitleFieldProps> = ({
 );
 
 const DATE_ROWS: Array<{ part: DateTimePart; label: string }> = [
-  { part: 'day', label: 'День' },
-  { part: 'month', label: 'Месяц' },
-  { part: 'hour', label: 'Часы' },
-  { part: 'minute', label: 'Минуты' },
+  { part: 'day', label: t('День') },
+  { part: 'month', label: t('Месяц') },
+  { part: 'hour', label: t('Часы') },
+  { part: 'minute', label: t('Минуты') },
 ];
 
 const formatPart = (value: Date, part: DateTimePart): string => {
@@ -247,18 +246,14 @@ const ListEditor: React.FC<ListEditorProps> = ({
       className="draw-in flex min-h-0 flex-1 flex-col"
       style={drawDelay(150)}
     >
-      <p className={FIELD_LABEL_CLASS} style={{ color: palette.accentDark }}>
-        Пункты списка
-      </p>
+      <p className={FIELD_LABEL_CLASS} style={{ color: palette.accentDark }}>{t('Пункты списка')}</p>
       <div
         ref={scrollRef}
         className="mt-1.5 min-h-0 flex-1 overflow-y-auto rounded-[12px] border"
         style={{ ...TRAY_STYLE, overscrollBehavior: 'contain' }}
       >
         {items.length === 0 && (
-          <p className="px-4 py-3 text-[16px]" style={{ color: 'rgba(40,35,29,0.45)' }}>
-            Добавьте хотя бы один пункт
-          </p>
+          <p className="px-4 py-3 text-[16px]" style={{ color: 'rgba(40,35,29,0.45)' }}>{t('Добавьте хотя бы один пункт')}</p>
         )}
         {items.map((item) => (
           <div
@@ -278,7 +273,7 @@ const ListEditor: React.FC<ListEditorProps> = ({
                   ),
                 )
               }
-              aria-label="Текст пункта"
+              aria-label={t('Текст пункта')}
               className="h-[40px] min-w-0 flex-1 border-0 bg-transparent p-0 text-[18px] outline-none"
               style={{
                 color: item.completedAt ? 'rgba(40,35,29,0.5)' : '#28231D',
@@ -291,7 +286,7 @@ const ListEditor: React.FC<ListEditorProps> = ({
               onClick={() =>
                 onChange(items.filter((current) => current.id !== item.id))
               }
-              aria-label="Убрать пункт"
+              aria-label={t('Убрать пункт')}
               className="h-[40px] w-[40px] shrink-0 cursor-pointer border-0 bg-transparent font-mono text-[17px]"
               style={{ color: 'rgba(40,35,29,0.5)' }}
             >
@@ -304,7 +299,7 @@ const ListEditor: React.FC<ListEditorProps> = ({
         <input
           value={draft}
           maxLength={120}
-          placeholder="Новый пункт"
+          placeholder={t('Новый пункт')}
           onChange={(event) => setDraft(event.target.value)}
           onKeyDown={(event) => {
             if (event.key === 'Enter') {
@@ -312,7 +307,7 @@ const ListEditor: React.FC<ListEditorProps> = ({
               addItem();
             }
           }}
-          aria-label="Новый пункт"
+          aria-label={t('Новый пункт')}
           className="h-[38px] min-w-0 flex-1 border-0 bg-transparent p-0 text-[18px] outline-none"
           style={{
             borderBottom: '1px dashed rgba(69,57,44,0.42)',
@@ -326,9 +321,7 @@ const ListEditor: React.FC<ListEditorProps> = ({
           disabled={!draft.trim()}
           className="h-[38px] shrink-0 cursor-pointer border-0 bg-transparent px-1 font-mono text-[12.5px] font-bold uppercase tracking-[0.12em] disabled:cursor-default disabled:opacity-40"
           style={{ color: palette.accentDark }}
-        >
-          Добавить
-        </button>
+        >{t('Добавить')}</button>
       </div>
     </div>
   );
@@ -350,15 +343,13 @@ const TargetCountEditor: React.FC<TargetCountEditorProps> = ({
   onChange,
 }) => (
   <div className="draw-in mt-4 shrink-0" style={drawDelay(250)}>
-    <p className={FIELD_LABEL_CLASS} style={{ color: palette.accentDark }}>
-      Цель серии
-    </p>
+    <p className={FIELD_LABEL_CLASS} style={{ color: palette.accentDark }}>{t('Цель серии')}</p>
     <div
       className="mt-1.5 overflow-hidden rounded-[12px] border"
       style={TRAY_STYLE}
     >
       <StepperRow
-        label="Раз"
+        label={t('Раз')}
         value={String(value)}
         canPrevious={value > minimum}
         canNext={value < 999}
@@ -371,9 +362,7 @@ const TargetCountEditor: React.FC<TargetCountEditorProps> = ({
       <p
         className="mt-2 font-mono text-[11.5px] uppercase tracking-[0.12em]"
         style={{ color: 'rgba(0,0,0,0.38)' }}
-      >
-        Уже засчитано · {completed}
-      </p>
+      >{t('Уже засчитано · {completed}', { completed })}</p>
     )}
   </div>
 );
@@ -463,9 +452,7 @@ export const CardEditFace: React.FC<CardEditFaceProps> = ({
             color: palette.accentDark,
             backgroundColor: `${palette.accent}1d`,
           }}
-        >
-          Правка
-        </span>
+        >{t('Правка')}</span>
       </div>
 
       <div
@@ -492,7 +479,7 @@ export const CardEditFace: React.FC<CardEditFaceProps> = ({
               targetAt && (
                 <DateTimeEditor
                   value={targetAt}
-                  label={card.timeMode === 'deadline' ? 'Срок' : 'Напоминание'}
+                  label={card.timeMode === 'deadline' ? t('Срок') : t('Напоминание')}
                   palette={palette}
                   onChange={setTargetAt}
                 />
@@ -505,9 +492,7 @@ export const CardEditFace: React.FC<CardEditFaceProps> = ({
         <p
           className="mt-auto pt-3 text-[11px] uppercase tracking-[0.12em]"
           style={{ color: 'rgba(40,35,29,0.4)' }}
-        >
-          Создана · {formatHumanDate(card.createdAt)}
-        </p>
+        >{t('Создана · {v}', { v: formatHumanDate(card.createdAt) })}</p>
       </div>
 
       <div
@@ -519,14 +504,14 @@ export const CardEditFace: React.FC<CardEditFaceProps> = ({
         }}
       >
         <CouponButton
-          label="Отмена"
+          label={t('Отмена')}
           color="rgba(40,35,29,0.7)"
           paperTint={paperTint}
           height={config.couponHeight}
           onClick={onCancel}
         />
         <CouponButton
-          label="Сохранить"
+          label={t('Сохранить')}
           color={palette.accentDark}
           paperTint={paperTint}
           height={config.couponHeight}

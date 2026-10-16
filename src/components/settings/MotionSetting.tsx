@@ -6,17 +6,18 @@ import {
   useMotionLevel,
   type MotionLevel,
 } from '../../app/motion';
+import { t } from '../../app/i18n';
 
 const LABELS: Record<MotionLevel, string> = {
-  full: 'Все',
-  calm: 'Спокойно',
-  off: 'Выкл',
+  full: t('Все'),
+  calm: t('Спокойно'),
+  off: t('Выкл'),
 };
 
 const HINTS: Record<MotionLevel, string> = {
-  full: 'Отрыв купона, смена карточек, штампы и блики — как задумано',
-  calm: 'Короче и тише: без бликов, подпрыгиваний и «дыхания»',
-  off: 'Всё происходит сразу, без секунды зрелища — для тех, кто спешит',
+  full: t('Отрыв купона, смена карточек, штампы и блики — как задумано'),
+  calm: t('Короче и тише: без бликов, подпрыгиваний и «дыхания»'),
+  off: t('Всё происходит сразу, без секунды зрелища — для тех, кто спешит'),
 };
 
 /**
@@ -32,11 +33,9 @@ export const MotionSetting: React.FC<{ style?: React.CSSProperties }> = ({
     <div className="lit-in lit-row" style={style}>
       <p
         className={`lit-text${level === 'off' ? ' lit-text--dim' : ''} text-[19px] font-semibold leading-[1.2]`}
-      >
-        Анимации
-      </p>
+      >{t('Анимации')}</p>
 
-      <div className="lit-seg mt-2" role="radiogroup" aria-label="Анимации">
+      <div className="lit-seg mt-2" role="radiogroup" aria-label={t('Анимации')}>
         {MOTION_LEVELS.map((option) => (
           <button
             key={option}

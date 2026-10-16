@@ -33,6 +33,7 @@ import { DraftTitleStep } from './DraftTitleStep';
 import { DraftRepeatStep } from './DraftRepeatStep';
 import type { RecurrenceRule } from '../../app/cardTheme';
 import type { QuickEntry } from '../../app/parseQuickEntry';
+import { t } from '../../app/i18n';
 
 export interface DraftCardProps {
   creationCycle: number;
@@ -278,7 +279,7 @@ export function DraftCard(props: DraftCardProps) {
               nextLabel={
                 props.draftStep === 'list-items' &&
                 props.selectedKind === 'list'
-                  ? 'Создать'
+                  ? t('Создать')
                   : undefined
               }
               onBack={props.onBack}
@@ -298,8 +299,8 @@ export function DraftCard(props: DraftCardProps) {
           type="button"
           onClick={props.onCancel}
           disabled={disabled}
-          aria-label="Отменить создание"
-          title="Отменить создание"
+          aria-label={t('Отменить создание')}
+          title={t('Отменить создание')}
           className="absolute inset-0 cursor-pointer border-0 bg-transparent p-0 outline-none disabled:cursor-default disabled:opacity-40"
         >
           <FoldedFlap lifted={false} paperTint={props.palette.paper} />

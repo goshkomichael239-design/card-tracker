@@ -1,4 +1,5 @@
 import type { SeriesData } from './cardTheme';
+import { t } from './i18n';
 
 export const getSeriesCompletedCount = (series: SeriesData): number =>
   Math.min(series.entries.length, series.targetCount);
@@ -13,12 +14,12 @@ export const formatSeriesDuration = (durationMs: number): string => {
   const seconds = totalSeconds % 60;
 
   if (hours > 0) {
-    return `${hours} ч ${minutes} мин`;
+    return t('{hours} ч {minutes} мин', { hours, minutes });
   }
 
   if (minutes > 0) {
-    return `${minutes} мин ${seconds} сек`;
+    return t('{minutes} мин {seconds} сек', { minutes, seconds });
   }
 
-  return `${seconds} сек`;
+  return t('{seconds} сек', { seconds });
 };

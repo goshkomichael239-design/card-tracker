@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 
 import type { CardPalette } from '../../app/cardTheme';
+import { t } from '../../app/i18n';
 
 interface CardActionsFaceProps {
   title: string;
@@ -100,7 +101,7 @@ export const CardActionsFace: React.FC<CardActionsFaceProps> = ({
           className={slotClass}
           style={{ ...drawDelay(200), ...glowStyle }}
         >
-          <span className="etched-action__text">Редактировать</span>
+          <span className="etched-action__text">{t('Редактировать')}</span>
         </button>
 
         {onPostpone && (
@@ -111,7 +112,7 @@ export const CardActionsFace: React.FC<CardActionsFaceProps> = ({
             className={slotClass}
             style={{ ...drawDelay(245), ...glowStyle }}
           >
-            <span className="etched-action__text">Отложить</span>
+            <span className="etched-action__text">{t('Отложить')}</span>
           </button>
         )}
 
@@ -123,7 +124,7 @@ export const CardActionsFace: React.FC<CardActionsFaceProps> = ({
             className={slotClass}
             style={{ ...drawDelay(245), ...glowStyle }}
           >
-            <span className="etched-action__text">Завершить серию</span>
+            <span className="etched-action__text">{t('Завершить серию')}</span>
           </button>
         )}
 
@@ -146,7 +147,7 @@ export const CardActionsFace: React.FC<CardActionsFaceProps> = ({
           }}
         >
           <span className="etched-action__text">
-            {isConfirming ? 'Точно удалить?' : 'Удалить'}
+            {isConfirming ? t('Точно удалить?') : t('Удалить')}
           </span>
         </button>
       </div>
@@ -154,9 +155,7 @@ export const CardActionsFace: React.FC<CardActionsFaceProps> = ({
       <p
         className="draw-in absolute bottom-0 left-0 right-0 font-mono text-[10.5px] uppercase tracking-[0.15em]"
         style={{ ...drawDelay(380), color: 'rgba(0,0,0,0.32)' }}
-      >
-        Уголок вернёт карточку обратно
-      </p>
+      >{t('Уголок вернёт карточку обратно')}</p>
     </div>
   );
 };

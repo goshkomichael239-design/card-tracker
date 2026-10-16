@@ -47,6 +47,7 @@ import { playSound } from '../../app/sounds';
 import { CountdownPanel } from './CountdownPanel';
 import { INITIAL_TASK_CARD_V2_CONFIG } from './taskCardV2Config';
 import { TaskListContent } from './TaskListContent';
+import { getLocale, t } from '../../app/i18n';
 
 interface TaskCardProps {
   card: VisualCard;
@@ -169,10 +170,10 @@ export const TaskCard: React.FC<TaskCardProps> = ({
   // A repeating sheet can only be torn off on its day (or later, if missed).
   const isSheetAvailable = isOccurrenceAvailable(card);
   const timeLabel = recurrence
-    ? 'Следующий раз'
+    ? t('Следующий раз')
     : card.timeMode === 'deadline'
-      ? 'Срок'
-      : 'Напоминание';
+      ? t('Срок')
+      : t('Напоминание');
   const series = card.kind === 'series' ? card.series : undefined;
   const lastSeriesEntry = series?.entries.at(-1);
   const list = card.kind === 'list' ? card.list : undefined;
@@ -245,12 +246,12 @@ export const TaskCard: React.FC<TaskCardProps> = ({
     };
   }, [card.id, card.completedAt, isStatic, hasList, listReady]);
   const kindLabel = series
-    ? 'Серия'
+    ? t('Серия')
     : list
-      ? 'Список'
+      ? t('Список')
       : recurrence
         ? describeRecurrence(recurrence)
-        : 'Одна задача';
+        : t('Одна задача');
   const seriesAction = (couponBounds: DOMRect) => {
     onRecordSeriesStep?.(couponBounds);
   };
@@ -303,7 +304,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                 boxShadow: '0 1px 2px rgba(40,12,8,0.4)',
               }}
               role="img"
-              aria-label="Просрочено"
+              aria-label={t('Просрочено')}
             />
           )}
           {kindLabel}
@@ -354,20 +355,14 @@ export const TaskCard: React.FC<TaskCardProps> = ({
             borderColor: 'rgba(69,57,44,0.13)',
           }}
         >
-          <p className="font-mono text-[11.5px] uppercase tracking-[0.12em] text-[#6B6258]">
-            Выполнено
-          </p>
+          <p className="font-mono text-[11.5px] uppercase tracking-[0.12em] text-[#6B6258]">{t('Выполнено')}</p>
           <p className="mt-1 font-mono text-[27px] font-semibold tracking-[-0.04em] text-[#28231D]">
             {series.entries.length} / {series.targetCount}
           </p>
           {lastSeriesEntry ? (
-            <p className="mt-2 font-mono text-[12.5px] leading-snug text-[#776E63]">
-              Последняя · {new Date(lastSeriesEntry.completedAt).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })} · за {formatSeriesDuration(lastSeriesEntry.durationMs)}
-            </p>
+            <p className="mt-2 font-mono text-[12.5px] leading-snug text-[#776E63]">{t('Последняя · {toLocaleTimeString} · за {v}', { toLocaleTimeString: new Date(lastSeriesEntry.completedAt).toLocaleTimeString(getLocale(), { hour: '2-digit', minute: '2-digit' }), v: formatSeriesDuration(lastSeriesEntry.durationMs) })}</p>
           ) : (
-            <p className="mt-2 font-mono text-[12.5px] text-[#776E63]">
-              Начато · {new Date(series.startedAt).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
-            </p>
+            <p className="mt-2 font-mono text-[12.5px] text-[#776E63]">{t('Начато · {toLocaleTimeString}', { toLocaleTimeString: new Date(series.startedAt).toLocaleTimeString(getLocale(), { hour: '2-digit', minute: '2-digit' }) })}</p>
           )}
         </div>
       ) : targetAt ? (
@@ -401,9 +396,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
             marginTop: config.infoGap,
             borderColor: 'rgba(69,57,44,0.13)',
           }}
-        >
-          Без срока
-        </p>
+        >{t('Без срока')}</p>
       )}
 
       {card.postponements && !card.completedAt && (
@@ -422,7 +415,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
             completedAt={card.completedAt}
             palette={palette}
             onComplete={series && !card.completedAt ? seriesAction : onComplete}
-            actionLabel={series ? 'Засчитать +1' : list && !card.completedAt && !listReady ? `${listCompletedCount} / ${list.items.length}` : recurrence && !isSheetAvailable && card.reminderAt ? describeNextSheet(card.reminderAt) : undefined}
+            actionLabel={series ? t('Засчитать +1') : list && !card.completedAt && !listReady ? `${listCompletedCount} / ${list.items.length}` : recurrence && !isSheetAvailable && card.reminderAt ? describeNextSheet(card.reminderAt) : undefined}
             series={series}
             progress={list ? getListProgress(list) : undefined}
             isReady={list && !card.completedAt ? listReady : isSheetAvailable}
@@ -613,22 +606,22 @@ export const TaskCard: React.FC<TaskCardProps> = ({
 
             {/* Style "stamp". */}
             <div className="swipe-stamp swipe-stamp--complete">
-              <span>Готово</span>
+              <span>{t('Готово')}</span>
             </div>
             <div className="swipe-stamp swipe-stamp--delete">
-              <span>Убрать</span>
+              <span>{t('Убрать')}</span>
             </div>
 
             {/* Style "coupon". */}
             <div className="swipe-coupon swipe-coupon--complete">
               <i className="swipe-coupon__fill" />
               <MeasuredPerforation seed="swipe-complete" hole={3.2} pitch={7} radius={8} />
-              <span>✓ Готово</span>
+              <span>{t('✓ Готово')}</span>
             </div>
             <div className="swipe-coupon swipe-coupon--delete">
               <i className="swipe-coupon__fill" />
               <MeasuredPerforation seed="swipe-delete" hole={3.2} pitch={7} radius={8} />
-              <span>Убрать</span>
+              <span>{t('Убрать')}</span>
             </div>
           </div>
         )}
@@ -666,8 +659,8 @@ export const TaskCard: React.FC<TaskCardProps> = ({
             aria-expanded={face !== 'view'}
             aria-label={
               face === 'view'
-                ? 'Действия с карточкой'
-                : 'Вернуть карточку'
+                ? t('Действия с карточкой')
+                : t('Вернуть карточку')
             }
             // The flap is a drawn object, so the browser's rectangular focus
             // ring would look wrong around it; keyboard focus lifts the flap.

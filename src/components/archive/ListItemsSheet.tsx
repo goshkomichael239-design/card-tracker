@@ -5,6 +5,7 @@ import { formatArchiveMoment } from '../../app/archiveUtils';
 import { getCardPalette, type VisualCard } from '../../app/cardTheme';
 import { getListCompletedCount } from '../../app/listUtils';
 import { INITIAL_TASK_CARD_V2_CONFIG } from '../task-card/taskCardV2Config';
+import { t } from '../../app/i18n';
 
 interface ListItemsSheetProps {
   card: VisualCard;
@@ -38,23 +39,19 @@ export const ListItemsSheet: React.FC<ListItemsSheetProps> = ({ card }) => {
         borderColor: 'rgba(91,76,59,0.16)',
         boxShadow: `${config.shadowX}px ${config.shadowY}px ${config.shadowBlur}px rgba(20,17,14,${config.shadowOpacity}), inset 0 1px 0 rgba(255,255,255,0.88)`,
       }}
-      aria-label={`Все пункты списка «${card.title}»`}
+      aria-label={t('Все пункты списка «{title}»', { title: card.title })}
     >
       <span
         className="self-start rounded-full px-3 py-1.5 font-mono text-[11.5px] font-bold uppercase tracking-[0.12em]"
         style={{ color: palette.accentDark, backgroundColor: `${palette.accent}1d` }}
-      >
-        Весь список
-      </span>
+      >{t('Весь список')}</span>
 
       <p
         className="mt-3 shrink-0 border-b pb-3 text-[13.5px] leading-[1.4]"
         style={{ color: '#6B6258', borderColor: 'rgba(69,57,44,0.13)' }}
       >
-        Отмечено{' '}
-        <strong style={{ color: palette.accentDark }}>
-          {getListCompletedCount(list)} из {list.items.length}
-        </strong>
+        {t('Отмечено')}{' '}
+        <strong style={{ color: palette.accentDark }}>{t('{v} из {length}', { v: getListCompletedCount(list), length: list.items.length })}</strong>
       </p>
 
       <ol

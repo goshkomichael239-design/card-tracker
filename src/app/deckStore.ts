@@ -24,6 +24,7 @@ import {
   saveDecksState,
   type Deck,
 } from './decks';
+import { t } from './i18n';
 
 /**
  * The data layer: the cards on the table, the archive and the bin.
@@ -61,7 +62,7 @@ const createFirstRunCards = (): VisualCard[] => {
     return [
       {
         id: createId(),
-        title: 'Моя первая карточка',
+        title: t('Моя первая карточка'),
         kind: 'single',
         timeMode: 'none',
         createdAt: new Date().toISOString(),
@@ -71,15 +72,15 @@ const createFirstRunCards = (): VisualCard[] => {
 
   const now = Date.now();
   const seeds: Array<{ title: string; timeMode: TimeMode }> = [
-    { title: 'Хлеб', timeMode: 'none' },
-    { title: 'Абсолютное безумие', timeMode: 'none' },
-    { title: 'Мама мыла раму', timeMode: 'deadline' },
-    { title: 'Рыба в воде', timeMode: 'reminder' },
-    { title: 'Кленовый сироп', timeMode: 'deadline' },
-    { title: 'Продумать движение новой карточки', timeMode: 'reminder' },
+    { title: t('Хлеб'), timeMode: 'none' },
+    { title: t('Абсолютное безумие'), timeMode: 'none' },
+    { title: t('Мама мыла раму'), timeMode: 'deadline' },
+    { title: t('Рыба в воде'), timeMode: 'reminder' },
+    { title: t('Кленовый сироп'), timeMode: 'deadline' },
+    { title: t('Продумать движение новой карточки'), timeMode: 'reminder' },
     {
       title:
-        'Очень длинное название карточки для проверки обрезания текста в переключателе',
+        t('Очень длинное название карточки для проверки обрезания текста в переключателе'),
       timeMode: 'none',
     },
   ];

@@ -1,6 +1,7 @@
 import type { RefObject } from 'react';
 
 import type { CardPalette } from '../../app/cardTheme';
+import { t } from '../../app/i18n';
 
 export interface DraftTitleStepProps {
   titleInputRef: RefObject<HTMLTextAreaElement | null>;
@@ -25,7 +26,7 @@ export function DraftTitleStep({
       disabled={disabled}
       rows={2}
       maxLength={100}
-      placeholder="Что нужно сделать?"
+      placeholder={t('Что нужно сделать?')}
       className="mt-1 min-h-[138px] w-full resize-none rounded-[6px] border-0 bg-transparent px-1 py-4 text-[1.36rem] font-semibold leading-[1.42] outline-none placeholder:text-black/25 disabled:opacity-50"
       style={{
         color: palette.ink,

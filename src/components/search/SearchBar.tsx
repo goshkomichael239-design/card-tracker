@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { t } from '../../app/i18n';
 
 interface SearchBarProps {
   isOpen: boolean;
@@ -168,8 +169,8 @@ export const SearchBar: React.FC<SearchBarProps> = ({
           onSelect={updateCaret}
           onFocus={updateCaret}
           onBlur={updateCaret}
-          placeholder="Найти карточку…"
-          aria-label="Поиск по карточкам"
+          placeholder={t('Найти карточку…')}
+          aria-label={t('Поиск по карточкам')}
           className={`search-input${caret.visible ? ' search-input--own-caret' : ''}`}
         />
 
@@ -195,7 +196,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
           onClick={onClose}
           onTouchStart={() => undefined}
           tabIndex={isOpen ? 0 : -1}
-          aria-label="Закрыть поиск"
+          aria-label={t('Закрыть поиск')}
           className="search-cross"
         >
           <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
@@ -214,7 +215,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
         type="button"
         onClick={handleToggle}
         onTouchStart={() => undefined}
-        aria-label={isOpen ? 'Закрыть поиск' : 'Поиск по карточкам'}
+        aria-label={isOpen ? t('Закрыть поиск') : t('Поиск по карточкам')}
         aria-expanded={isOpen}
         className={`settings-gear search-lupa${isOpen ? ' settings-gear--lit' : ''}`}
       >

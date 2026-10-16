@@ -3,6 +3,7 @@ import React, { useRef, useState } from 'react';
 import cardboardTexture from '../../assets/cardboard.avif';
 import type { BackupImportResult } from '../../app/backupUtils';
 import { AutoBackupSheet } from './AutoBackupSheet';
+import { t } from '../../app/i18n';
 
 interface BackupControlsProps {
   onExport: () => void;
@@ -27,8 +28,8 @@ const describeResult = (result: BackupImportResult): string => {
   const added = result.addedActive + result.addedArchive + result.addedTrash;
 
   return added === 0
-    ? 'Все карточки из копии уже здесь'
-    : `Добавлено карточек: ${added}`;
+    ? t('Все карточки из копии уже здесь')
+    : t('Добавлено карточек: {added}', { added });
 };
 
 export const BackupControls: React.FC<BackupControlsProps> = ({
@@ -52,7 +53,7 @@ export const BackupControls: React.FC<BackupControlsProps> = ({
     try {
       setStatus(describeResult(onImport(await file.text())));
     } catch {
-      setStatus('Не удалось прочитать файл');
+      setStatus(t('Не удалось прочитать файл'));
     }
   };
 
@@ -63,29 +64,23 @@ export const BackupControls: React.FC<BackupControlsProps> = ({
           type="button"
           onClick={() => {
             onExport();
-            setStatus('Копия сохранена в загрузки');
+            setStatus(t('Копия сохранена в загрузки'));
           }}
           className="cursor-pointer rounded-[10px] border px-4 py-2 font-mono text-[12.5px] font-bold uppercase tracking-[0.12em]"
           style={BUTTON_STYLE}
-        >
-          Сохранить копию
-        </button>
+        >{t('Сохранить копию')}</button>
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}
           className="cursor-pointer rounded-[10px] border px-4 py-2 font-mono text-[12.5px] font-bold uppercase tracking-[0.12em]"
           style={BUTTON_STYLE}
-        >
-          Загрузить копию
-        </button>
+        >{t('Загрузить копию')}</button>
         <button
           type="button"
           onClick={() => setIsAutoOpen(true)}
           className="cursor-pointer rounded-[10px] border px-4 py-2 font-mono text-[12.5px] font-bold uppercase tracking-[0.12em]"
           style={BUTTON_STYLE}
-        >
-          Автокопии
-        </button>
+        >{t('Автокопии')}</button>
         <input
           ref={fileInputRef}
           type="file"

@@ -2,6 +2,7 @@ import React, { lazy, Suspense, useState } from 'react';
 
 import MainApp from './app/MainApp';
 import { SHOW_DEV_TOOLS } from './app/devTools';
+import { t } from './app/i18n';
 
 type AppMode = 'application' | 'sandboxes';
 
@@ -24,22 +25,22 @@ const SANDBOXES: Array<{
   ? [
       {
         id: 'main',
-        label: 'Карточка',
+        label: t('Карточка'),
         component: lazy(() => import('./components/sandboxes/SandboxMain')),
       },
       {
         id: 'archive',
-        label: 'Архив',
+        label: t('Архив'),
         component: lazy(() => import('./components/sandboxes/SandboxArchive')),
       },
       {
         id: 'stack',
-        label: 'Стопка',
+        label: t('Стопка'),
         component: lazy(() => import('./components/sandboxes/SandboxStack')),
       },
       {
         id: 'completion-coupon',
-        label: 'Перфорация',
+        label: t('Перфорация'),
         component: lazy(
           () => import('./components/sandboxes/SandboxCompletionCoupon'),
         ),
@@ -94,9 +95,7 @@ const App: React.FC = () => {
               font-mono text-xs text-white/80
               transition hover:bg-white/10
             "
-          >
-            ← Приложение
-          </button>
+          >{t('← Приложение')}</button>
 
           <div className="mx-1 h-5 w-px shrink-0 bg-white/10" />
 
@@ -161,9 +160,7 @@ const App: React.FC = () => {
             hover:bg-black/70
             hover:text-white/80
           "
-        >
-          Лаборатория
-        </button>
+        >{t('Лаборатория')}</button>
       )}
     </div>
   );

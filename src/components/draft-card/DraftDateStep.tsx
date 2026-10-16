@@ -9,6 +9,7 @@ import {
   WEEKDAYS_RU,
 } from '../../app/dateTimeUtils';
 import { EmbossedArrow } from '../shared/EmbossedArrow';
+import { t } from '../../app/i18n';
 
 export interface DraftDateStepProps {
   palette: CardPalette;
@@ -51,9 +52,7 @@ export function DraftDateStep({
           color: 'rgba(30,28,26,0.72)',
           textShadow: '0 1px 0 rgba(255,255,255,0.28)',
         }}
-      >
-        Дата
-      </span>
+      >{t('Дата')}</span>
 
       <div
         className="mt-3 rounded-[10px] px-3 py-2.5 text-center"
@@ -124,9 +123,7 @@ export function DraftDateStep({
               boxShadow:
                 '0 2px 0 rgba(83,61,43,0.28), 0 4px 6px rgba(0,0,0,0.1), inset 1px 1px 1px rgba(255,255,255,0.22)',
             }}
-          >
-            Вручную
-          </motion.button>
+          >{t('Вручную')}</motion.button>
         </div>
       ) : (
         <div
@@ -144,7 +141,7 @@ export function DraftDateStep({
               disabled={!canGoToPreviousYear}
               className="h-[28px] rounded-[8px] border-0 bg-transparent font-mono text-[16px] disabled:opacity-0"
               style={{ color: palette.accentDark }}
-              aria-label="Предыдущий год"
+              aria-label={t('Предыдущий год')}
             >
               <EmbossedArrow direction="left" size={14} />
             </button>
@@ -160,7 +157,7 @@ export function DraftDateStep({
               whileTap={{ y: 1, transition: { duration: 0.15 } }}
               className="h-[28px] rounded-[8px] border-0 bg-transparent font-mono text-[16px]"
               style={{ color: palette.accentDark }}
-              aria-label="Следующий год"
+              aria-label={t('Следующий год')}
             >
               <EmbossedArrow direction="right" size={14} />
             </motion.button>
@@ -173,7 +170,7 @@ export function DraftDateStep({
               disabled={!canGoToPreviousMonth}
               className="h-[28px] rounded-[8px] border-0 bg-transparent font-mono text-[16px] disabled:opacity-0"
               style={{ color: palette.accentDark }}
-              aria-label="Предыдущий месяц"
+              aria-label={t('Предыдущий месяц')}
             >
               <EmbossedArrow direction="left" size={14} />
             </button>
@@ -189,7 +186,7 @@ export function DraftDateStep({
               whileTap={{ y: 1, transition: { duration: 0.15 } }}
               className="h-[28px] rounded-[8px] border-0 bg-transparent font-mono text-[16px]"
               style={{ color: palette.accentDark }}
-              aria-label="Следующий месяц"
+              aria-label={t('Следующий месяц')}
             >
               <EmbossedArrow direction="right" size={14} />
             </motion.button>

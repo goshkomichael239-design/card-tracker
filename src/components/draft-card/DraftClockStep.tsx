@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 
 import cardboardTexture from '../../assets/cardboard.avif';
 import type { CardPalette } from '../../app/cardTheme';
+import { t } from '../../app/i18n';
 
 export interface DraftClockStepProps {
   palette: CardPalette;
@@ -26,12 +27,12 @@ export function DraftClockStep({
 }: DraftClockStepProps) {
   const controls = [
     {
-      label: 'Часы',
+      label: t('Часы'),
       onIncrease: () => onAdjustHour(1),
       onDecrease: () => onAdjustHour(-1),
     },
     {
-      label: 'Минуты',
+      label: t('Минуты'),
       onIncrease: () => onAdjustMinute(5),
       onDecrease: () => onAdjustMinute(-5),
     },
@@ -45,9 +46,7 @@ export function DraftClockStep({
           color: 'rgba(30,28,26,0.72)',
           textShadow: '0 1px 0 rgba(255,255,255,0.28)',
         }}
-      >
-        Время
-      </span>
+      >{t('Время')}</span>
 
       <div
         className="mt-3 flex items-center justify-center gap-2 font-mono text-[2rem] font-bold tracking-[0.08em]"
@@ -77,7 +76,7 @@ export function DraftClockStep({
             boxShadow:
               'inset 0 1px 3px rgba(48,34,24,0.13), 0 1px 0 rgba(255,255,255,0.18)',
           }}
-          aria-label="Часы"
+          aria-label={t('Часы')}
         />
         <span aria-hidden="true">:</span>
         <input
@@ -101,7 +100,7 @@ export function DraftClockStep({
             boxShadow:
               'inset 0 1px 3px rgba(48,34,24,0.13), 0 1px 0 rgba(255,255,255,0.18)',
           }}
-          aria-label="Минуты"
+          aria-label={t('Минуты')}
         />
       </div>
 
@@ -176,9 +175,7 @@ export function DraftClockStep({
               border: '1px dashed rgba(70,52,38,0.22)',
               backgroundColor: 'rgba(255,255,255,0.04)',
             }}
-          >
-            Пресет
-          </div>
+          >{t('Пресет')}</div>
         ))}
       </div>
 
@@ -187,9 +184,7 @@ export function DraftClockStep({
         style={{
           color: isSelectedDateTimeValid ? 'transparent' : palette.accentDark,
         }}
-      >
-        Выберите будущее время
-      </div>
+      >{t('Выберите будущее время')}</div>
     </div>
   );
 }

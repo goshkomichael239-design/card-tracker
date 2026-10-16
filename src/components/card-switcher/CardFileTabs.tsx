@@ -8,6 +8,7 @@ import {
   CARD_FILE_DIVIDER_HEIGHT,
   CARD_FILE_TAB_ROW_HEIGHT,
 } from './cardSwitcherConfig';
+import { t } from '../../app/i18n';
 
 export interface CardFileTabsProps {
   decks: Deck[];
@@ -187,7 +188,7 @@ export const CardFileTabs: React.FC<CardFileTabsProps> = ({
               onClick={() => (isActive ? onEdit(deck.id) : onSelect(deck.id))}
               onTouchStart={() => undefined}
               aria-pressed={isActive}
-              aria-label={`Колода «${deck.name}»${isActive ? ', настройки' : ''}${hits ? `, найдено: ${hits}` : ''}`}
+              aria-label={t('Колода «{name}»{v}{v2}', { name: deck.name, v: isActive ? t(', настройки') : '', v2: hits ? t(', найдено: {hits}', { hits }) : '' })}
               title={deck.name}
               className="relative flex min-w-0 flex-1 cursor-pointer items-center justify-center border-0 px-1.5 text-center"
               style={{
@@ -288,8 +289,8 @@ export const CardFileTabs: React.FC<CardFileTabsProps> = ({
                   type="button"
                   onClick={onOverduePress}
                   onTouchStart={() => undefined}
-                  aria-label={`Просрочено: ${activeOverdueCount}. К следующей просроченной`}
-                  title={`Просрочено: ${activeOverdueCount}`}
+                  aria-label={t('Просрочено: {activeOverdueCount}. К следующей просроченной', { activeOverdueCount })}
+                  title={t('Просрочено: {activeOverdueCount}', { activeOverdueCount })}
                   className="absolute z-10 cursor-pointer border-0 bg-transparent p-0 active:translate-y-px"
                   style={{ right: -4, top: -8, lineHeight: 0 }}
                 >
@@ -312,8 +313,8 @@ export const CardFileTabs: React.FC<CardFileTabsProps> = ({
             type="button"
             onClick={onCreate}
             onTouchStart={() => undefined}
-            aria-label="Новая колода"
-            title="Новая колода"
+            aria-label={t('Новая колода')}
+            title={t('Новая колода')}
             className="flex shrink-0 cursor-pointer items-center justify-center border-0 p-0"
             style={{
               width: 34,

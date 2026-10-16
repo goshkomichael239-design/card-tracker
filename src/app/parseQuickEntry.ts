@@ -1,4 +1,6 @@
 import type { RecurrenceRule } from './cardTheme';
+import { getLanguage } from './i18n';
+import { parseQuickEntryEn } from './parseQuickEntryEn';
 
 /**
  * What the app understood from one line typed into a new card: a task with a
@@ -189,7 +191,7 @@ const splitItems = (text: string): string[] =>
     .map((part) => part.trim())
     .filter(Boolean);
 
-export const parseQuickEntry = (
+const parseQuickEntryRu = (
   raw: string,
   now: Date,
 ): QuickEntry | null => {
@@ -596,3 +598,15 @@ export const parseQuickEntry = (
       : `Создать задачу «${title}» с напоминанием ${when} и оформить карточку?`,
   };
 };
+
+/**
+ * In English the English reading comes first (and Russian text typed anyway is
+ * still understood); in Russian only the Russian reading is used.
+ */
+export const parseQuickEntry = (
+  raw: string,
+  now: Date,
+): QuickEntry | null =>
+  getLanguage() === 'en'
+    ? (parseQuickEntryEn(raw, now) ?? parseQuickEntryRu(raw, now))
+    : parseQuickEntryRu(raw, now);

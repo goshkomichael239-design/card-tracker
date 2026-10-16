@@ -4,6 +4,7 @@ import type { CardPalette, TaskListData, TaskListItem } from '../../app/cardThem
 import { getListCompletedCount } from '../../app/listUtils';
 import { TaskListContent } from './TaskListContent';
 import { EmbossedArrow } from '../shared/EmbossedArrow';
+import { t } from '../../app/i18n';
 
 interface CardListFaceProps {
   list: TaskListData;
@@ -142,9 +143,7 @@ export const CardListFace: React.FC<CardListFaceProps> = ({
             color: palette.accentDark,
             backgroundColor: `${palette.accent}1d`,
           }}
-        >
-          Список · {completedCount} / {list.items.length}
-        </span>
+        >{t('Список · {completedCount} / {length}', { completedCount, length: list.items.length })}</span>
       </div>
 
       <div ref={areaRef} className="mt-3 flex min-h-0 flex-1 flex-col">
@@ -170,15 +169,15 @@ export const CardListFace: React.FC<CardListFaceProps> = ({
         <input
           value={input}
           onChange={(event) => setInput(event.target.value)}
-          placeholder="Добавить пункт…"
-          aria-label="Новый пункт"
+          placeholder={t('Добавить пункт…')}
+          aria-label={t('Новый пункт')}
           className="min-w-0 flex-1 border-0 bg-transparent p-0 text-[17px] leading-[1.35] outline-none placeholder:text-black/28"
           style={{ color: palette.ink }}
         />
         <button
           type="submit"
           disabled={!input.trim()}
-          aria-label="Добавить пункт"
+          aria-label={t('Добавить пункт')}
           className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full border bg-transparent text-[22px] font-light leading-none disabled:cursor-default disabled:opacity-25"
           style={{
             color: palette.accentDark,
@@ -198,17 +197,17 @@ export const CardListFace: React.FC<CardListFaceProps> = ({
           className="cursor-pointer border-0 bg-transparent px-0 font-mono text-[12px] font-bold uppercase tracking-[0.12em]"
           style={{ color: palette.accentDark }}
         >
-          <EmbossedArrow direction="left" size="1.1em" /> К карточке
+          <EmbossedArrow direction="left" size="1.1em" /> {t('К карточке')}
         </button>
 
         {pages.length > 1 && (
-          <div className="flex items-center gap-2" role="group" aria-label="Страницы списка">
+          <div className="flex items-center gap-2" role="group" aria-label={t('Страницы списка')}>
             <button
               type="button"
               onClick={() => setPage(Math.max(0, currentPage - 1))}
               onTouchStart={() => undefined}
               disabled={currentPage === 0}
-              aria-label="Предыдущая страница"
+              aria-label={t('Предыдущая страница')}
               className="pill-action disabled:cursor-default disabled:opacity-35"
               style={arrowStyle}
             >
@@ -226,7 +225,7 @@ export const CardListFace: React.FC<CardListFaceProps> = ({
               onClick={() => setPage(Math.min(pages.length - 1, currentPage + 1))}
               onTouchStart={() => undefined}
               disabled={currentPage >= pages.length - 1}
-              aria-label="Следующая страница"
+              aria-label={t('Следующая страница')}
               className="pill-action disabled:cursor-default disabled:opacity-35"
               style={arrowStyle}
             >

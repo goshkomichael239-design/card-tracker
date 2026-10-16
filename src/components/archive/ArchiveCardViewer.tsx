@@ -7,6 +7,7 @@ import { TaskCard } from '../task-card/TaskCard';
 import { INITIAL_TASK_CARD_V2_CONFIG } from '../task-card/taskCardV2Config';
 import { ListItemsSheet } from './ListItemsSheet';
 import { SeriesHistorySheet } from './SeriesHistorySheet';
+import { t } from '../../app/i18n';
 
 interface ArchiveCardViewerProps {
   card: VisualCard;
@@ -45,7 +46,7 @@ export const ArchiveCardViewer: React.FC<ArchiveCardViewerProps> = ({
   const [isShowingHistory, setIsShowingHistory] = useState(false);
   const isList = card.kind === 'list' && Boolean(card.list);
   const hasHistory = (card.kind === 'series' && Boolean(card.series)) || isList;
-  const historyLabel = isList ? 'Все пункты' : 'История шагов';
+  const historyLabel = isList ? t('Все пункты') : t('История шагов');
 
   useEffect(() => {
     if (!isConfirmingTrash) {
@@ -87,7 +88,7 @@ export const ArchiveCardViewer: React.FC<ArchiveCardViewerProps> = ({
       <button
         type="button"
         onClick={onClose}
-        aria-label="Поставить обратно"
+        aria-label={t('Поставить обратно')}
         className="absolute right-4 top-4 flex h-11 w-11 cursor-pointer items-center justify-center rounded-full border text-[26px] font-light leading-none"
         style={{
           color: '#4a3c2c',
@@ -128,9 +129,7 @@ export const ArchiveCardViewer: React.FC<ArchiveCardViewerProps> = ({
       <p
         className="-mt-2 text-center text-[11px] uppercase tracking-[0.12em]"
         style={{ color: 'rgba(250,244,226,0.7)' }}
-      >
-        Создана · {formatHumanDate(card.createdAt)}
-      </p>
+      >{t('Создана · {v}', { v: formatHumanDate(card.createdAt) })}</p>
 
       <div className="engraved flex flex-wrap items-center justify-center gap-3">
         {hasHistory && (
@@ -147,7 +146,7 @@ export const ArchiveCardViewer: React.FC<ArchiveCardViewerProps> = ({
               } as React.CSSProperties
             }
           >
-            {isShowingHistory ? 'Карточка' : historyLabel}
+            {isShowingHistory ? t('Карточка') : historyLabel}
           </button>
         )}
         <button
@@ -163,9 +162,7 @@ export const ArchiveCardViewer: React.FC<ArchiveCardViewerProps> = ({
               ['--pill-glow' as string]: palette.glow,
             } as React.CSSProperties
           }
-        >
-          Вернуть на стол
-        </button>
+        >{t('Вернуть на стол')}</button>
         <button
           type="button"
           onClick={() => {
@@ -188,7 +185,7 @@ export const ArchiveCardViewer: React.FC<ArchiveCardViewerProps> = ({
             } as React.CSSProperties
           }
         >
-          {isConfirmingTrash ? 'Точно в корзину?' : 'В корзину'}
+          {isConfirmingTrash ? t('Точно в корзину?') : t('В корзину')}
         </button>
       </div>
     </div>

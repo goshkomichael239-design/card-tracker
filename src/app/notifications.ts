@@ -3,6 +3,7 @@ import { LocalNotifications } from '@capacitor/local-notifications';
 
 import type { VisualCard } from './cardTheme';
 import { getCardTargetAt } from './timeOps';
+import { t } from './i18n';
 
 /**
  * Reminders as notifications of the phone. They exist only inside the Android
@@ -83,7 +84,7 @@ export const planReminders = (
       continue;
     }
 
-    const title = card.title || 'Карточка';
+    const title = card.title || t('Карточка');
 
     if (card.timeMode === 'deadline') {
       // An hour before, and at the deadline itself.
@@ -91,7 +92,7 @@ export const planReminders = (
         planned.push({
           id: numericId(`${card.id}:pre`),
           title,
-          body: 'Срок через час',
+          body: t('Срок через час'),
           at: new Date(time - HOUR_MS),
         });
       }
@@ -100,7 +101,7 @@ export const planReminders = (
         planned.push({
           id: numericId(`${card.id}:due`),
           title,
-          body: 'Срок вышел',
+          body: t('Срок вышел'),
           at: new Date(time),
         });
       }
@@ -108,7 +109,7 @@ export const planReminders = (
       planned.push({
         id: numericId(`${card.id}:rem`),
         title,
-        body: 'Напоминание',
+        body: t('Напоминание'),
         at: new Date(time),
       });
     }

@@ -9,6 +9,7 @@ import {
   INITIAL_COMPLETED_STACK_CONFIG,
   type CompletedStackConfig,
 } from './completedStackConfig';
+import { t } from '../../app/i18n';
 
 const SHOW_COMPLETED_STACK_DEBUG = false;
 
@@ -158,16 +159,12 @@ export const CompletedCardStack: React.FC<CompletedCardStackProps> = ({
               type="button"
               onClick={() => setDevCompletedCount(COMPLETED_STACK_MAX_LAYERS)}
               className="rounded-md border border-white/15 bg-black/75 px-3 py-2 font-mono text-[12.5px] text-white/80 shadow-lg"
-            >
-              Заполнить стопку
-            </button>
+            >{t('Заполнить стопку')}</button>
             <button
               type="button"
               onClick={() => setDevCompletedCount(1)}
               className="rounded-md border border-white/15 bg-black/75 px-3 py-2 font-mono text-[12.5px] text-white/80 shadow-lg"
-            >
-              Оставить одну
-            </button>
+            >{t('Оставить одну')}</button>
           </div>
         ))}
     </>

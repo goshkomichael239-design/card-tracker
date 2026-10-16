@@ -9,6 +9,7 @@ import { slotPath, tearLinesPath } from '../../app/couponEdge';
 import { useCouponTearProgress } from '../../app/couponTear';
 import { CouponFace } from './CouponFace';
 import { getCouponEdge } from './couponGeometry';
+import { t } from '../../app/i18n';
 
 interface CompletionCouponProps {
   completedAt?: string;
@@ -30,7 +31,7 @@ export const CompletionCoupon: React.FC<CompletionCouponProps> = ({
   palette,
   onComplete,
   paperTint,
-  actionLabel = 'Завершить',
+  actionLabel = t('Завершить'),
   series,
   progress,
   isReady = true,
@@ -183,7 +184,7 @@ export const CompletionCoupon: React.FC<CompletionCouponProps> = ({
             >
               {series
                 ? `${series.entries.length} / ${series.targetCount}`
-                : completedLabel ?? `Завершено · ${formatCompletedDate(completedAt)}`}
+                : completedLabel ?? t('Завершено · {v}', { v: formatCompletedDate(completedAt) })}
             </span>
           </div>
         </div>
@@ -199,7 +200,7 @@ export const CompletionCoupon: React.FC<CompletionCouponProps> = ({
           disabled={!isReady}
           className="coupon-press absolute inset-0 cursor-pointer border-0 bg-transparent p-0"
           style={{ borderRadius: '8px' }}
-          aria-label="Завершить задачу"
+          aria-label={t('Завершить задачу')}
         >
           {/* On a press (or the mouse over it) the corner it would be torn
               from lifts a little and throws a shadow under itself. */}

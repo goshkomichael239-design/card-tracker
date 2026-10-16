@@ -1,5 +1,6 @@
 import type { CardPalette, TaskListData } from '../../app/cardTheme';
 import { ListCheckbox } from './ListCheckbox';
+import { t } from '../../app/i18n';
 interface TaskListContentProps {
   list: TaskListData;
   palette: CardPalette;
@@ -32,7 +33,7 @@ export function TaskListContent({
         style={{ overscrollBehavior: 'contain' }}
       >
         {list.items.length === 0 ? (
-          <p className="text-[17px] text-black/40">Нет пунктов</p>
+          <p className="text-[17px] text-black/40">{t('Нет пунктов')}</p>
         ) : (
           visibleItems.map((item) => {
             const completed = Boolean(item.completedAt);
@@ -85,8 +86,8 @@ export function TaskListContent({
             style={{ color: palette.accentDark }}
           >
             {hasHiddenItems
-              ? `Показать все · ${list.items.length} →`
-              : '+ Добавить пункт'}
+              ? t('Показать все · {length} →', { length: list.items.length })
+              : t('+ Добавить пункт')}
           </button>
         )}
       </div>

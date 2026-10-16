@@ -6,6 +6,7 @@ import {
   piecePath,
   tearLinesPath,
 } from '../../app/couponEdge';
+import { t } from '../../app/i18n';
 
 export interface SpikeSlip {
   /** The paper colour of the card it was torn from. */
@@ -67,7 +68,7 @@ export const CouponSpike: React.FC<CouponSpikeProps> = ({
       data-coupon-spike=""
       role="img"
       aria-label={
-        count > 0 ? `Сегодня выполнено: ${count}` : 'Сегодня ещё ничего'
+        count > 0 ? t('Сегодня выполнено: {count}', { count }) : t('Сегодня ещё ничего')
       }
       className="trash-bin pointer-events-none absolute z-[35]"
       style={{

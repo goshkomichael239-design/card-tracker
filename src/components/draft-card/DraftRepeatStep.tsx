@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import cardboardTexture from '../../assets/cardboard.avif';
 import type { CardPalette, RecurrenceKind, RecurrenceRule } from '../../app/cardTheme';
 import { describeRecurrence, WEEKDAY_LABELS } from '../../app/recurrence';
+import { t } from '../../app/i18n';
 
 export interface DraftRepeatStepProps {
   rule: RecurrenceRule;
@@ -12,10 +13,10 @@ export interface DraftRepeatStepProps {
 }
 
 const OPTIONS: Array<{ kind: RecurrenceKind; label: string }> = [
-  { kind: 'daily', label: 'Каждый день' },
-  { kind: 'weekdays', label: 'По будням' },
-  { kind: 'weekly', label: 'По дням недели' },
-  { kind: 'interval', label: 'Раз в N дней' },
+  { kind: 'daily', label: t('Каждый день') },
+  { kind: 'weekdays', label: t('По будням') },
+  { kind: 'weekly', label: t('По дням недели') },
+  { kind: 'interval', label: t('Раз в N дней') },
 ];
 
 const pressStyle = (selected: boolean, palette: CardPalette): React.CSSProperties => ({
@@ -71,9 +72,7 @@ export function DraftRepeatStep({ rule, palette, onChange }: DraftRepeatStepProp
       <span
         className="font-mono text-[15px] font-bold uppercase tracking-[0.17em]"
         style={{ color: 'rgba(30,28,26,0.72)', textShadow: '0 1px 0 rgba(255,255,255,0.28)' }}
-      >
-        Как часто?
-      </span>
+      >{t('Как часто?')}</span>
 
       <div className="mt-4 grid grid-cols-2 gap-2">
         {OPTIONS.map((option, index) => (
@@ -95,7 +94,7 @@ export function DraftRepeatStep({ rule, palette, onChange }: DraftRepeatStepProp
       </div>
 
       {rule.kind === 'weekly' && (
-        <div className="mt-3 grid grid-cols-7 gap-1" role="group" aria-label="Дни недели">
+        <div className="mt-3 grid grid-cols-7 gap-1" role="group" aria-label={t('Дни недели')}>
           {WEEKDAY_LABELS.map((label, day) => {
             const selected = (rule.weekdays ?? []).includes(day);
 
@@ -123,7 +122,7 @@ export function DraftRepeatStep({ rule, palette, onChange }: DraftRepeatStepProp
             whileTap={tap}
             onClick={() => onChange({ kind: 'interval', intervalDays: Math.max(2, interval - 1) })}
             disabled={interval <= 2}
-            aria-label="Реже на день"
+            aria-label={t('Реже на день')}
             className="h-[40px] w-[48px] rounded-[10px] font-mono text-[20px] font-bold disabled:opacity-40"
             style={pressStyle(false, palette)}
           >
@@ -137,7 +136,7 @@ export function DraftRepeatStep({ rule, palette, onChange }: DraftRepeatStepProp
             whileTap={tap}
             onClick={() => onChange({ kind: 'interval', intervalDays: Math.min(60, interval + 1) })}
             disabled={interval >= 60}
-            aria-label="Чаще на день"
+            aria-label={t('Чаще на день')}
             className="h-[40px] w-[48px] rounded-[10px] font-mono text-[20px] font-bold disabled:opacity-40"
             style={pressStyle(false, palette)}
           >
@@ -149,9 +148,7 @@ export function DraftRepeatStep({ rule, palette, onChange }: DraftRepeatStepProp
       <p
         className="mt-3 text-center font-mono text-[11.5px] uppercase tracking-[0.1em]"
         style={{ color: 'rgba(30,28,26,0.5)' }}
-      >
-        Время выберете на следующем шаге
-      </p>
+      >{t('Время выберете на следующем шаге')}</p>
     </div>
   );
 }

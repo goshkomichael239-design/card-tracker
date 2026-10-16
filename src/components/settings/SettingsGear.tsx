@@ -1,4 +1,5 @@
 import React from 'react';
+import { t } from '../../app/i18n';
 
 interface SettingsGearProps {
   isOpen: boolean;
@@ -23,7 +24,7 @@ export const SettingsGear: React.FC<SettingsGearProps> = ({
     data-settings-keep=""
     onClick={onToggle}
     onTouchStart={() => undefined}
-    aria-label={isOpen ? 'Закрыть настройки' : 'Открыть настройки'}
+    aria-label={isOpen ? t('Закрыть настройки') : t('Открыть настройки')}
     aria-expanded={isOpen}
     className={`settings-gear${isOpen ? ' settings-gear--lit' : ''}`}
   >
