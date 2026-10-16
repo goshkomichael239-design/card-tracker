@@ -1,6 +1,7 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 
 import { SETTINGS, useSettings } from '../../app/settings';
+import { AboutView } from './AboutView';
 import { MotionSetting } from './MotionSetting';
 import { FileStyleSetting } from './FileStyleSetting';
 import { LanguageSetting } from './LanguageSetting';
@@ -29,6 +30,19 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   onClose,
 }) => {
   const { values, set } = useSettings();
+  const [isAboutOpen, setIsAboutOpen] = useState(false);
+
+  // Closing the settings also closes "About" (adjusting state while rendering,
+  // as React advises for state that follows a prop).
+  const [wasOpen, setWasOpen] = useState(isOpen);
+
+  if (wasOpen !== isOpen) {
+    setWasOpen(isOpen);
+
+    if (!isOpen) {
+      setIsAboutOpen(false);
+    }
+  }
 
   useEffect(() => {
     if (!isOpen) {
@@ -59,7 +73,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       aria-label={t('Настройки')}
       aria-hidden={!isOpen}
     >
-      {isOpen && (
+      {isOpen && isAboutOpen && (
+        <AboutView onBack={() => setIsAboutOpen(false)} />
+      )}
+
+      {isOpen && !isAboutOpen && (
         <div className="my-auto w-full max-w-[440px] py-12">
           <h2
             className="lit-in lit-text mb-7 text-center font-mono text-[15px] font-bold uppercase tracking-[0.3em]"
@@ -117,6 +135,16 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               );
             })}
           </ul>
+
+          <button
+            type="button"
+            onClick={() => setIsAboutOpen(true)}
+            onTouchStart={() => undefined}
+            className="lit-in lit-text lit-done mx-auto mt-5 block font-mono text-[13px] font-bold uppercase tracking-[0.24em]"
+            style={lit(160 + SETTINGS.length * 90 + 30)}
+          >
+            {t('О программе')}
+          </button>
 
           <button
             type="button"

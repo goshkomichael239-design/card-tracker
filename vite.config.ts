@@ -1,4 +1,4 @@
-import { readdirSync, statSync } from 'node:fs'
+import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { createHash } from 'node:crypto'
 import { join, relative, sep } from 'node:path'
 import { defineConfig, type Plugin } from 'vite'
@@ -103,5 +103,12 @@ export default defineConfig({
   // Relative paths: the build works from any folder or address (GitHub Pages
   // under /name/, a phone's local server, or inside an Android wrapper).
   base: './',
+  // The version of the app for the About screen.
+  define: {
+    __APP_VERSION__: JSON.stringify(
+      (JSON.parse(readFileSync('package.json', 'utf8')) as { version: string })
+        .version,
+    ),
+  },
   plugins: [react(), offlineCache()],
 })

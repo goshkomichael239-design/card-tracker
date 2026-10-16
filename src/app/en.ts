@@ -562,4 +562,38 @@ export const EN: Record<string, string> = {
   'Дальше': 'Next',
   '{label}: меньше': '{label}: less',
   '{label}: больше': '{label}: more',
+  'О программе': 'About',
+  'Версия {version}': 'Version {version}',
+  'Меня зовут Михаил, я разработчик из России. Я вынашивал это приложение год, а довести его до конца мне помог Claude Sonnet 5.5.':
+    'My name is Mikhail, I am a developer from Russia. I carried this app around in my head for a year, and Claude Sonnet 5.5 helped me finish it.',
+  'Идея появилась потому, что в других трекерах, когда я отмечаю дело сделанным, я не вижу результата: дела просто испаряются. Здесь всё сделанное остаётся в красивом «Журнале карточек» (архиве), и видно всё, что ты успел.':
+    'The idea came because in other trackers, when I mark a task as done, I don\'t see the result: the tasks just evaporate. Here everything you have done stays in a beautiful “Card Journal” (the archive), and you can see all that you managed to do.',
+  'И ещё чувство удовлетворения: дело сделано, купон оторвался по перфорации и лёг на штырь. В самых популярных трекерах (Todoist, TickTick, Microsoft To Do, Google Tasks, Any.do) это галочка и зачёркнутая строка; здесь это маленькое событие.':
+    'And there is the feeling of satisfaction: the task is done, the coupon tears off along its perforation and lands on the spike. In the most popular trackers (Todoist, TickTick, Microsoft To Do, Google Tasks, Any.do) it is a tick and a struck-through line; here it is a small event.',
+  'Чем отличается': 'What sets it apart',
+  'Всё как на настоящем столе: карточки, колоды, картотека, купон, штамп, штырь и корзина.':
+    'Everything as on a real desk: cards, decks, a card file, a coupon, a stamp, a spike and a bin.',
+  'Сделанное не исчезает: архив-«журнал» со сводкой и серией дней подряд.':
+    'What you have done does not vanish: an archive “journal” with a summary and a streak of days.',
+  'Быстрая запись одной строкой: «завтра в 9 позвонить маме».':
+    'Quick entry in one line: “call mom tomorrow at 9”.',
+  'Без аккаунта и сервера: данные только на вашем устройстве, работает без сети.':
+    'No account and no server: your data stays on your device, and it works offline.',
+  'Русский и английский, звуки, вибрация и уведомления на телефоне.':
+    'Russian and English, sounds, vibration and notifications on the phone.',
+  'Две версии': 'Two versions',
+  'Приложение для Android и веб-версия. Сейчас всё хранится только на вашем устройстве; позже можно будет войти через аккаунт Google.':
+    'An Android app and a web version. For now everything is stored only on your device; later you will be able to sign in with a Google account.',
+  'Поддержать': 'Support',
+  'Приложение бесплатное для всех. В будущем я не отказываюсь от монетизации: новых функций или других режимов, например трекера привычек.':
+    'The app is free for everyone. In the future I do not rule out monetization: new features or other modes, for example a habit tracker.',
+  'Если хотите поддержать автора, донат в сети TON:':
+    'If you want to support the author, a donation in the TON network:',
+  'Скопировать адрес': 'Copy the address',
+  'Скопировано': 'Copied',
+  'Нажмите, чтобы скопировать': 'Press to copy',
+  'Из чего сделано': 'Built with',
+  'React, TypeScript, Vite, Tailwind, Framer Motion, Zustand, Capacitor. Шрифты Lora и Playfair Display, звуки CC0, картинки нарисованы с помощью нейросетей.':
+    'React, TypeScript, Vite, Tailwind, Framer Motion, Zustand, Capacitor. Fonts Lora and Playfair Display, CC0 sounds, pictures drawn with the help of neural networks.',
+  'Исходный код:': 'Source code:',
 };
