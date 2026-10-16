@@ -108,7 +108,7 @@ rem ---- The APK ---------------------------------------------------------------
 echo.
 echo [5/6] Building the APK ^(the first time Gradle downloads a lot^)...
 pushd android
-call gradlew.bat assembleDebug --no-daemon
+call .\gradlew.bat assembleDebug --no-daemon
 if errorlevel 1 (
   popd
   goto :fail
