@@ -12,4 +12,5 @@ export const REPO_URL = 'https://github.com/goshkomichael239-design/card-tracker
  * Where a donation can be sent (the TON network). While it is empty the
  * "support" block of the About screen does not show an address.
  */
-export const TON_ADDRESS = '';
+export const TON_ADDRESS =
+  'UQCubsh1Af5AKdZnENzZVszC37M7vXb_Eo0Pqy1EI1hT3evi';

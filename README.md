@@ -86,7 +86,7 @@ What is done, postponed, cancelled and ahead: [ROADMAP.md](ROADMAP.md).
 
 ## Support
 
-The app is free for everyone. If you want to support the author, donations are accepted in the TON network (the address is on the *About* screen of the app). In the future I do not rule out monetization: new features or other modes, for example a habit tracker.
+The app is free for everyone. If you want to support the author, donations are accepted in USDT on the TON network, USDT only (address: `UQCubsh1Af5AKdZnENzZVszC37M7vXb_Eo0Pqy1EI1hT3evi`, also on the *About* screen of the app). In the future I do not rule out monetization: new features or other modes, for example a habit tracker.
 
 ## Privacy
 
@@ -94,6 +94,6 @@ Card Tracker has no account, no analytics and no server. Your cards are stored i
 
 ## License
 
-Not chosen yet; until then all rights are reserved.
+[GNU AGPL-3.0](LICENSE) © 2026 Mikhail. Free to use, study and change; if you distribute a modified version or run it as a network service, you must publish your source under the same licence. Third-party assets keep their own licences (see above).
 
 Russian version: [README.ru.md](README.ru.md).

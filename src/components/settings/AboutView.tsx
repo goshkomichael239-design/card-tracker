@@ -133,7 +133,7 @@ export const AboutView: React.FC<AboutViewProps> = ({ onBack }) => {
       </Paragraph>
       {TON_ADDRESS && (
         <div className="lit-in mb-3" style={lit(490)}>
-          <p style={BODY}>{t('Если хотите поддержать автора, донат в сети TON:')}</p>
+          <p style={BODY}>{t('Если хотите поддержать автора, донат в USDT (сеть TON, только USDT):')}</p>
           <button
             type="button"
             onClick={copyAddress}
