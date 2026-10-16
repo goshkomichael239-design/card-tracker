@@ -47,7 +47,7 @@ echo Android SDK: %SDK%
 
 rem ---- JDK: the one that comes with Android Studio, or JAVA_HOME ------------------
 set "JDK="
-for %%S in ("%ProgramFiles%\Android\Android Studio\jbr" "D:\Android\Android Studio\jbr" "D:\Android\Studio\jbr" "E:\Android\Android Studio\jbr" "%LOCALAPPDATA%\Programs\Android Studio\jbr") do (
+for %%S in ("D:\Android Studio\jbr" "%ProgramFiles%\Android\Android Studio\jbr" "D:\Android\Android Studio\jbr" "D:\Android\Studio\jbr" "E:\Android\Android Studio\jbr" "%LOCALAPPDATA%\Programs\Android Studio\jbr") do (
   if not defined JDK if exist "%%~S\bin\java.exe" set "JDK=%%~S"
 )
 if not defined JDK if defined JAVA_HOME if exist "%JAVA_HOME%\bin\java.exe" set "JDK=%JAVA_HOME%"
