@@ -6,6 +6,7 @@ import { FileStyleSetting } from './FileStyleSetting';
 import { SearchHitsSetting } from './SearchHitsSetting';
 import { SwipeStyleSetting } from './SwipeStyleSetting';
 import { canVibrate } from '../../app/haptics';
+import { isNotificationsAvailable } from '../../app/notifications';
 import { playSound } from '../../app/sounds';
 
 interface SettingsViewProps {
@@ -72,8 +73,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
           <ul>
             {SETTINGS.filter(
-              // A phone that cannot vibrate (an iPhone) has nothing to switch.
-              (setting) => setting.id !== 'haptics' || canVibrate(),
+              // A phone that cannot vibrate (an iPhone) has nothing to switch,
+              // and notifications exist only inside the phone's app.
+              (setting) =>
+                (setting.id !== 'haptics' || canVibrate()) &&
+                (setting.id !== 'reminders' || isNotificationsAvailable()),
             ).map((setting, index) => {
               const isOn = values[setting.id];
 

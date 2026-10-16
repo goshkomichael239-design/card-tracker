@@ -6,6 +6,7 @@ import { readValue, writeValue } from './storage/kv';
 export type SettingId =
   | 'haptics'
   | 'sounds'
+  | 'reminders'
   | 'hints'
   | 'lamp'
   | 'overdueCounter';
@@ -28,6 +29,12 @@ export const SETTINGS: SettingDefinition[] = [
     id: 'sounds',
     label: 'Звуки',
     hint: 'Шорох карточек, треск перфорации, штамп',
+    defaultValue: true,
+  },
+  {
+    id: 'reminders',
+    label: 'Уведомления',
+    hint: 'Телефон напомнит о сроках и напоминаниях, даже когда приложение закрыто',
     defaultValue: true,
   },
   {

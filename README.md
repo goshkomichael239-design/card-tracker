@@ -1,75 +1,54 @@
-# React + TypeScript + Vite
+# Card Tracker
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Трекер задач, который выглядит и ведёт себя как вещи на настоящем столе:
+карточки лежат стопкой на сукне, купон отрывается по перфорации, штамп
+«Отложено» ставится на бумагу, готовое уходит на штырь, а выброшенное в корзину.
 
-Currently, two official plugins are available:
+Принцип: функция появляется, только если у неё есть физический прообраз на столе.
+Нет прообраза — функцию не делаем или прячем (см. [ROADMAP.md](ROADMAP.md)).
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Что умеет
 
-## React Compiler
+- Карточки трёх видов: одна задача, серия (N раз), список.
+- Срок и напоминание, повторяющиеся задачи (отрывной календарь), «отложить» со штампом.
+- Колоды (до пяти) с рубашками, картотека сверху, быстрая запись одной строкой
+  («завтра в 9 позвонить маме»), поиск по всем колодам.
+- Отрыв купона с настоящей перфорацией, свайпы, звуки, вибрация.
+- Архив-картотека, корзина с возвратом, автоматические копии, экспорт в JSON.
+- Работает без сети и без сервера (PWA), данные лежат на устройстве.
+- Android-приложение (APK): уведомления о сроках и напоминаниях.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Запуск
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+Нужен Node.js (LTS).
 
 ```
-
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+npm install
+npm run dev        # разработка: http://localhost:5173
+npm run build      # сборка в dist/
+npm run preview    # посмотреть сборку
 ```
+
+На телефоне в той же сети: `npm run dev -- --host`, открыть адрес компьютера.
+
+## Android (APK)
+
+Один раз поставить Node.js, Android Studio и JDK 21, потом запустить
+`tools\build-apk.bat`: он соберёт `Card-Tracker.apk`. Подробно в
+[ANDROID.md](ANDROID.md).
+
+## Из чего сделано
+
+React 19, TypeScript, Vite, Tailwind 4, Framer Motion, Zustand, IndexedDB,
+Capacitor (оболочка Android). Все картинки-предметы рисуются кодом либо лежат в
+`src/assets`; шрифты Lora и Playfair Display (SIL OFL), звуки с лицензиями
+перечислены в `src/assets/sounds/SOURCES.md`.
+
+## Состояние
+
+Версия 0.1.0, идёт доработка. Что сделано, что отложено и что впереди:
+[ROADMAP.md](ROADMAP.md). Первый запуск показывает тестовый набор из ста
+карточек в трёх колодах (выключается константой `SHOW_DEMO_DECK` в
+`src/app/deckStore.ts`).
+
+Лицензия пока не выбрана.

@@ -90,6 +90,7 @@ import { playSound } from './sounds';
 import { getCouponSeed } from './couponEdge';
 import { clearCouponTear, markCouponTear } from './couponTear';
 import { SHOW_DEV_TOOLS } from './devTools';
+import { syncReminders } from './notifications';
 import { SettingsGear } from '../components/settings/SettingsGear';
 import { SettingsView } from '../components/settings/SettingsView';
 import { useWheelNavigation } from './useWheelNavigation';
@@ -951,6 +952,16 @@ const MainApp: React.FC = () => {
   })();
 
   const { values: appSettings } = useSettings();
+
+  // The phone's notifications follow the cards (in the phone's app only).
+  useEffect(() => {
+    const timer = window.setTimeout(
+      () => void syncReminders(allCards, appSettings.reminders),
+      1_500,
+    );
+
+    return () => window.clearTimeout(timer);
+  }, [allCards, appSettings.reminders]);
   const canShowSwipeHint =
     isPhone &&
     appSettings.hints &&
