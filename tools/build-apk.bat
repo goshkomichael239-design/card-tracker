@@ -89,6 +89,8 @@ if not exist android\app (
   call npx cap add android
   if errorlevel 1 goto :fail
 )
+rem The launcher icon of the app (instead of the default one).
+xcopy /e /y /i /q "tools\android-icons\res" "android\app\src\main\res" >nul
 call npx cap sync android
 if errorlevel 1 goto :fail
 > android\local.properties echo sdk.dir=%SDK:\=\\%

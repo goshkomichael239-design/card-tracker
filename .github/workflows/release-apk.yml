@@ -23,6 +23,8 @@ jobs:
       - run: npm ci
       - run: npm run build
       - run: npx cap add android
+      - name: Launcher icon
+        run: cp -r tools/android-icons/res/. android/app/src/main/res/
       - run: npx cap sync android
       - name: Build debug APK
         working-directory: android
