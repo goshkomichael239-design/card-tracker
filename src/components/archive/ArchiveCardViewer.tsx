@@ -6,6 +6,7 @@ import { getCardScale, useViewportSize } from '../../app/viewportScale';
 import { TaskCard } from '../task-card/TaskCard';
 import { INITIAL_TASK_CARD_V2_CONFIG } from '../task-card/taskCardV2Config';
 import { ListItemsSheet } from './ListItemsSheet';
+import { ARCHIVE_NAVIGATION_HEIGHT } from './ArchiveNavigation';
 import { SeriesHistorySheet } from './SeriesHistorySheet';
 import { t } from '../../app/i18n';
 
@@ -36,7 +37,8 @@ export const ArchiveCardViewer: React.FC<ArchiveCardViewerProps> = ({
   const { width, height } = INITIAL_TASK_CARD_V2_CONFIG;
   const scale = getCardScale(
     viewportWidth - 40,
-    viewportHeight - 210,
+    // The card, its date line and the buttons all stand above the archive bar.
+    viewportHeight - 210 - ARCHIVE_NAVIGATION_HEIGHT,
     width,
     height,
   );
@@ -75,7 +77,10 @@ export const ArchiveCardViewer: React.FC<ArchiveCardViewerProps> = ({
     <div
       // text-left: the archive page centres its text, the card must not inherit it.
       className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-5 px-4 text-left"
-      style={{ backgroundColor: 'rgba(48,38,26,0.28)' }}
+      style={{
+        backgroundColor: 'rgba(48,38,26,0.28)',
+        paddingBottom: ARCHIVE_NAVIGATION_HEIGHT,
+      }}
       role="dialog"
       aria-modal="true"
       aria-label={card.title}
@@ -89,7 +94,7 @@ export const ArchiveCardViewer: React.FC<ArchiveCardViewerProps> = ({
         type="button"
         onClick={onClose}
         aria-label={t('Поставить обратно')}
-        className="absolute right-4 top-4 flex h-11 w-11 cursor-pointer items-center justify-center rounded-full border text-[26px] font-light leading-none"
+        className="absolute left-4 top-4 flex h-11 w-11 cursor-pointer items-center justify-center rounded-full border text-[26px] font-light leading-none"
         style={{
           color: '#4a3c2c',
           borderColor: 'rgba(74,60,44,0.3)',
