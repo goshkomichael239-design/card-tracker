@@ -2296,12 +2296,12 @@ const MainApp: React.FC = () => {
                   rotate: -3,
                   transformOrigin: 'bottom center',
                   borderRadius: '11px 11px 0 0',
-                  backgroundColor: INITIAL_TASK_CARD_V2_CONFIG.paperTint,
-                  backgroundImage: `linear-gradient(180deg, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0) 62%), url(${cardboardTexture})`,
+                  backgroundColor: '#FFFDF2',
+                  backgroundImage: `linear-gradient(180deg, rgba(255,255,255,0.85) 0%, rgba(255,255,255,0) 72%), url(${cardboardTexture})`,
                   backgroundSize: '100% 100%, cover',
                   backgroundBlendMode: 'normal, multiply',
                   boxShadow:
-                    'inset 0 1px 0 rgba(255,255,255,0.9), inset 0 0 0 1px rgba(91,76,59,0.2), 2px 3px 6px rgba(0,0,0,0.4)',
+                    'inset 0 1px 0 #fff, inset 0 0 0 1px rgba(91,76,59,0.16), 0 0 14px rgba(255,238,196,0.5), 0 -3px 10px rgba(255,244,210,0.3), 2px 3px 6px rgba(0,0,0,0.42)',
                 }}
               >
                 {/* A plus pressed into the paper: ink with a light edge below. */}
@@ -2310,9 +2310,9 @@ const MainApp: React.FC = () => {
                   style={{
                     top: 6,
                     fontSize: 25,
-                    color: 'rgba(70,56,40,0.72)',
+                    color: 'rgba(126,86,22,0.92)',
                     textShadow:
-                      '0 1px 0 rgba(255,255,255,0.9), 0 -1px 0 rgba(0,0,0,0.22)',
+                      '0 1px 0 rgba(255,255,255,0.95), 0 -1px 0 rgba(60,30,0,0.28)',
                   }}
                   aria-hidden="true"
                 >

@@ -1771,8 +1771,16 @@ html[data-swipe-style='coupon'] [data-swipe-side='left'] .swipe-coupon--delete {
   --shadow-0: 1px 1px 1px rgba(28, 18, 10, 0.3), 2px 3px 5px rgba(28, 18, 10, 0.18);
   --shadow-1: 1px 2px 2px rgba(28, 18, 10, 0.28), 6px 12px 20px -2px rgba(28, 18, 10, 0.3);
   --shadow-2: 2px 4px 4px rgba(28, 18, 10, 0.26), 12px 24px 30px -4px rgba(28, 18, 10, 0.3);
+  /* The cards lying on the cloth: a contact shadow, a nearer and a long soft one,
+     all to the lower right (the lamp is at the upper left). */
+  --shadow-card:
+    1px 2px 3px rgba(20, 12, 6, 0.36),
+    7px 13px 20px -2px rgba(14, 8, 4, 0.42),
+    16px 28px 44px -8px rgba(8, 4, 2, 0.34);
   /* The layers of a stack under the front card. */
-  --shadow-stack: 3px 6px 10px -2px rgba(28, 18, 10, 0.3);
+  --shadow-stack:
+    3px 6px 10px -2px rgba(20, 12, 6, 0.4),
+    7px 13px 20px -6px rgba(10, 6, 3, 0.3);
   --rim-lit: inset 1px 1px 0 rgba(255, 255, 255, 0.5);
   --rim-dark: inset -1px -1px 0 rgba(28, 18, 10, 0.2);
   --well: inset 1px 2px 3px rgba(28, 18, 10, 0.34), inset -1px -1px 0 rgba(255, 255, 255, 0.55);
