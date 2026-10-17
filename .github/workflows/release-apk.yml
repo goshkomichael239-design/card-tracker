@@ -1,6 +1,10 @@
 name: Release APK
 
-# A tag like v0.1.0 builds the Android app and attaches it to the release.
+# Off by default. The official APK is built and signed on the author's computer
+# (tools/build-apk.bat) and attached to the release by hand. To let GitHub build it
+# instead, set the repository variable BUILD_APK to true (Settings > Secrets and
+# variables > Actions > Variables); then a tag like v0.1.0 builds the Android app and
+# attaches it to the release.
 # With the repository secrets KEYSTORE_BASE64 (the key file, base64) and
 # KEYSTORE_PASSWORD set, the APK is signed with the project's own key (see ANDROID.md).
 # Without them it is a debug APK: it works, but Android trusts it less and it cannot
@@ -16,6 +20,7 @@ permissions:
 
 jobs:
   apk:
+    if: ${{ vars.BUILD_APK == 'true' }}
     runs-on: ubuntu-latest
     env:
       KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
