@@ -33,3 +33,4 @@ android/
 *.jks
 *.keystore
 *.pass
+*.idsig
