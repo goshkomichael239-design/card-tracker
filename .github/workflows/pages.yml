@@ -1,8 +1,15 @@
 name: Pages
 
+# The site holds two builds of the web version:
+#   - the main one ("stable", from the `stable` branch) at the site's address;
+#   - the experimental one (from `main`: the newer look and features still being
+#     tried) in the `next/` folder, reached by the switch in the settings.
+# To make the experimental version the main one, move `stable` to `main`:
+#   git push origin main:stable
+
 on:
   push:
-    branches: [main]
+    branches: [main, stable]
   workflow_dispatch:
 
 permissions:
@@ -21,15 +28,49 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - uses: actions/checkout@v4
+      - name: Check out the experimental build (main)
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: next-src
+      - name: Check out the main build (stable)
+        uses: actions/checkout@v4
+        with:
+          ref: stable
+          path: stable-src
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
-      - run: npm ci
-      - run: npm run build
+          cache-dependency-path: |
+            next-src/package-lock.json
+            stable-src/package-lock.json
+
+      - name: Build the main version
+        working-directory: stable-src
+        env:
+          VITE_CHANNEL: stable
+        run: |
+          npm ci
+          npm run build
+
+      - name: Build the experimental version
+        working-directory: next-src
+        env:
+          VITE_CHANNEL: next
+        run: |
+          npm ci
+          npm run build
+
+      - name: Put the two together
+        run: |
+          mkdir site
+          cp -r stable-src/dist/. site/
+          mkdir site/next
+          cp -r next-src/dist/. site/next/
+
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: dist
+          path: site
       - id: deployment
         uses: actions/deploy-pages@v4

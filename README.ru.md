@@ -12,6 +12,8 @@
 
 > **Попробовать:** веб-версия <https://goshkomichael239-design.github.io/card-tracker/> · **Android:** APK в разделе [Releases](https://github.com/goshkomichael239-design/card-tracker/releases).
 
+> **Экспериментальная версия** (новый вид и возможности, которые ещё проверяются; карточки те же): <https://goshkomichael239-design.github.io/card-tracker/next/>, или включите «Экспериментальная версия» в настройках основной.
+
 ## Зачем
 
 Меня зовут Михаил, я разработчик из России. Я вынашивал эту идею год, а довести её до конца мне помог Claude Sonnet 5.5.
