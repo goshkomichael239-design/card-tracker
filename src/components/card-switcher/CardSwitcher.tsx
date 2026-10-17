@@ -12,6 +12,7 @@ import type { Deck } from '../../app/decks';
 import {
   CARD_FILE_MAX_WIDTH,
   getEdgesHeight,
+  getFoldedEdgesHeight,
   getSwitcherMetrics,
 } from './cardSwitcherConfig';
 import { CardFileTabs } from './CardFileTabs';
@@ -49,6 +50,13 @@ interface CardSwitcherProps {
   onSelectDeck: (deckId: string) => void;
   onEditDeck: (deckId: string) => void;
   onCreateDeck: () => void;
+  /**
+   * The file is pushed back into its box: the tabs and one edge (the card on
+   * the table) stay, the rest is hidden.
+   */
+  isFolded?: boolean;
+  /** Asked to bring the file out again (a tap on it, or a pull down). */
+  onUnfold?: () => void;
 }
 
 // Every edge is as wide as the others and stands exactly under the one
@@ -99,6 +107,8 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
   onSelectDeck,
   onEditDeck,
   onCreateDeck,
+  isFolded = false,
+  onUnfold,
 }) => {
   const metrics = getSwitcherMetrics(isPhone, viewportHeight);
   const fileStyle = useFileStyle();
@@ -158,7 +168,10 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
   };
 
   const count = cards.length;
-  const listHeight = getEdgesHeight(metrics, count);
+  const openHeight = getEdgesHeight(metrics, count);
+  const listHeight = isFolded
+    ? Math.min(openHeight, getFoldedEdgesHeight(metrics))
+    : openHeight;
 
   // The list picks by itself: the edge at the top is the chosen card, so
   // scrolling the list chooses cards, and a card chosen any other way is
@@ -419,17 +432,20 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
       {count > 0 && (
         <div
           ref={edgesRef}
-          className="relative"
+          className="file-edges relative"
           style={{ height: listHeight, zIndex: 1 }}
         >
           {/* Scrolls under a finger (and by wheel through the cards). */}
           <div
             ref={listRef}
-            className="no-scrollbar relative flex flex-col overflow-y-auto"
+            className="file-edges no-scrollbar relative flex flex-col overflow-y-auto"
             style={{
               height: listHeight,
               overscrollBehavior: 'contain',
-              touchAction: 'pan-y',
+              // Folded, the list only shows the card on the table; the
+              // handle over it takes the touches.
+              touchAction: isFolded ? 'none' : 'pan-y',
+              overflowY: isFolded ? 'hidden' : undefined,
               scrollSnapType: 'y mandatory',
             }}
             onScroll={handleListScroll}
@@ -572,10 +588,75 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
               );
             })}
           </div>
+
+          {isFolded && count > 1 && onUnfold && (
+            <FoldHandle onUnfold={onUnfold} />
+          )}
         </div>
       )}
 
     </div>
+  );
+};
+
+/**
+ * What a folded file is pressed or pulled by: a layer over its edge (a tap or
+ * a pull down brings the file out) and a small slot cut in the box's lip, as a
+ * drawer has to pull it by.
+ */
+const FoldHandle: React.FC<{ onUnfold: () => void }> = ({ onUnfold }) => {
+  const startYRef = useRef<number | null>(null);
+
+  return (
+    <>
+      <div
+        role="button"
+        tabIndex={0}
+        aria-label={t('Выдвинуть картотеку')}
+        aria-expanded={false}
+        className="absolute inset-0 cursor-pointer"
+        style={{ zIndex: 5, touchAction: 'none' }}
+        onClick={onUnfold}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            onUnfold();
+          }
+        }}
+        onPointerDown={(event) => {
+          startYRef.current = event.clientY;
+        }}
+        onPointerMove={(event) => {
+          if (
+            startYRef.current !== null &&
+            event.clientY - startYRef.current > 12
+          ) {
+            startYRef.current = null;
+            onUnfold();
+          }
+        }}
+        onPointerUp={() => {
+          startYRef.current = null;
+        }}
+        onPointerCancel={() => {
+          startYRef.current = null;
+        }}
+      />
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute left-1/2"
+        style={{
+          zIndex: 6,
+          top: 'calc(100% + 2px)',
+          width: 34,
+          height: 3,
+          marginLeft: -17,
+          borderRadius: 2,
+          backgroundColor: 'rgba(24,14,6,0.5)',
+          boxShadow: '0 1px 0 rgba(255,236,190,0.55)',
+        }}
+      />
+    </>
   );
 };
 

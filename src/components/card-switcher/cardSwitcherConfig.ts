@@ -85,6 +85,13 @@ export const getEdgesHeight = (
   return Math.min(metrics.visibleRows, Math.max(1, count)) * metrics.rowStep;
 };
 
+/**
+ * The edges of a file that is pushed back into its box: the edge of the card on
+ * the table, and a thin strip of the next one under it, as a hint of the rest.
+ */
+export const getFoldedEdgesHeight = (metrics: SwitcherMetrics): number =>
+  metrics.rowStep + 3;
+
 /** The whole card file: tabs, divider and the edges. */
 export const getCardFileHeight = (
   metrics: SwitcherMetrics,

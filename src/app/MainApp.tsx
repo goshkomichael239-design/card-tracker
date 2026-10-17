@@ -96,8 +96,11 @@ import { SettingsView } from '../components/settings/SettingsView';
 import { useWheelNavigation } from './useWheelNavigation';
 import {
   getCardFileHeight,
+  getEdgesHeight,
+  getFoldedEdgesHeight,
   getSwitcherMetrics,
 } from '../components/card-switcher/cardSwitcherConfig';
+import { useFileFoldMode, useIsEditingCard } from './fileFold';
 import { useSearchHitsStyle } from './searchHitsStyle';
 import {
   DetachedCompletionCoupon,
@@ -352,6 +355,38 @@ const MainApp: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [archiveInitialQuery, setArchiveInitialQuery] = useState('');
   const isSearching = isSearchOpen && searchQuery.trim() !== '';
+
+  // The card file folds away while the card on the table is worked with: when
+  // it is edited or a new one is made (and comes back when that is done), and
+  // after the cards have been paged a couple of times (and stays until it is
+  // pulled out). Searching always shows it whole.
+  const fileFoldMode = useFileFoldMode();
+  const isEditingCard = useIsEditingCard();
+  const isWorkingWithCard = isCreating || isEditingCard;
+  const [isFileFolded, setIsFileFolded] = useState(false);
+  const [foldedByWork, setFoldedByWork] = useState(false);
+  const [wasWorking, setWasWorking] = useState(false);
+  const pagedAtRef = useRef<number[]>([]);
+
+  if (wasWorking !== isWorkingWithCard) {
+    setWasWorking(isWorkingWithCard);
+
+    if (isWorkingWithCard && !isFileFolded) {
+      setIsFileFolded(true);
+      setFoldedByWork(true);
+    } else if (!isWorkingWithCard && foldedByWork) {
+      setIsFileFolded(false);
+      setFoldedByWork(false);
+    }
+  }
+
+  const isFileFoldedNow =
+    fileFoldMode === 'auto' && isFileFolded && !isSearching && !isArchiveOpen;
+  const unfoldFile = () => {
+    setIsFileFolded(false);
+    setFoldedByWork(false);
+    playSound('rustle', { volume: 0.5 });
+  };
   const navCards = useMemo(
     () => (isSearching ? searchCards(cards, searchQuery) : cards),
     [cards, isSearching, searchQuery],
@@ -416,6 +451,13 @@ const MainApp: React.FC = () => {
   // it (never less than the gap) holds the "take back" line.
   const sceneBottomReserve =
     ARCHIVE_NAVIGATION_HEIGHT + CARD_BOTTOM_GAP + STACK_PEEK_BELOW;
+  // The room a folded file gives back, and what the card does with it while it
+  // is edited or created: it moves up and, if the width allows, grows.
+  const freedByFold = Math.max(
+    0,
+    getEdgesHeight(switcherMetrics, cards.length) -
+      getFoldedEdgesHeight(switcherMetrics),
+  );
   // A phone: the stack's centre, and the widest card that leaves the reserve.
   const phoneCenterX = viewportWidth * (0.5 - PHONE_CENTER_SHIFT_RATIO);
   const phoneMaxWidth = Math.max(
@@ -430,6 +472,15 @@ const MainApp: React.FC = () => {
     INITIAL_TASK_CARD_V2_CONFIG.width,
     INITIAL_TASK_CARD_V2_CONFIG.height,
   );
+  const isCardLifted = isFileFoldedNow && isWorkingWithCard && freedByFold > 0;
+  const liftedScale = isCardLifted
+    ? getCardScale(
+        isPhone ? phoneMaxWidth : viewportWidth - sceneSideOverhang * 2,
+        viewportHeight - sceneTopReserve - sceneBottomReserve + freedByFold,
+        INITIAL_TASK_CARD_V2_CONFIG.width,
+        INITIAL_TASK_CARD_V2_CONFIG.height,
+      ) / sceneScale
+    : 1;
   const createTransientOutgoing = useCallback(
     (card: VisualCard, kind: TransientOutgoingKind, turn?: DeckTurn) => {
       transientSequenceRef.current += 1;
@@ -634,6 +685,24 @@ const MainApp: React.FC = () => {
     (direction: -1 | 1) => {
       if (navCards.length <= 1) {
         return;
+      }
+
+      // The second page turn within a few seconds: the file folds away.
+      const now = Date.now();
+
+      pagedAtRef.current = [
+        ...pagedAtRef.current.filter((at) => now - at < 6000),
+        now,
+      ];
+
+      if (pagedAtRef.current.length >= 2) {
+        setIsFileFolded((already) => {
+          if (!already) {
+            playSound('rustle', { volume: 0.5 });
+          }
+
+          return true;
+        });
       }
 
       const currentIndex = navCards.findIndex(
@@ -1942,6 +2011,8 @@ const MainApp: React.FC = () => {
             }}
             onEditDeck={(deckId) => setDeckSheet({ deckId })}
             onCreateDeck={() => setDeckSheet({ deckId: null })}
+            isFolded={isFileFoldedNow}
+            onUnfold={unfoldFile}
           />
 
           {/* Nothing here: say so, and offer the other decks and the archive. */}
@@ -2011,6 +2082,13 @@ const MainApp: React.FC = () => {
           style={{
             width: INITIAL_TASK_CARD_V2_CONFIG.width * sceneScale,
             height: INITIAL_TASK_CARD_V2_CONFIG.height * sceneScale,
+            // While the card is edited or created and the file is folded, it
+            // rises into the room the file gave back (and grows if it can).
+            transform: isCardLifted
+              ? `translateY(${-freedByFold}px) scale(${liftedScale})`
+              : undefined,
+            transformOrigin: 'top center',
+            transition: 'transform 520ms cubic-bezier(0.22, 1, 0.36, 1)',
           }}
         >
           {/* The page dots beside the stack are off for now (DeckDots.tsx is

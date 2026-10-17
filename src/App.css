@@ -704,6 +704,12 @@ body {
   display: none;
 }
 
+/* The card file's edges slide back into their box and out again: the box's
+   front wall (its outline follows the height) travels over the edges. */
+.file-edges {
+  transition: height 520ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
 /* --- Settings lit onto the cloth --------------------------------------- */
 
 /* While the settings are open everything on the table fades away; only the

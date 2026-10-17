@@ -46,6 +46,7 @@ import { FOLD_CUT_PATH, FOLD_SIZE, FoldedFlap } from './FoldedCorner';
 import { playSound } from '../../app/sounds';
 import { CountdownPanel } from './CountdownPanel';
 import { SeriesTicks } from './SeriesTicks';
+import { setIsEditingCard } from '../../app/fileFold';
 import { INITIAL_TASK_CARD_V2_CONFIG } from './taskCardV2Config';
 import { TaskListContent } from './TaskListContent';
 import { getLocale, t } from '../../app/i18n';
@@ -132,6 +133,16 @@ export const TaskCard: React.FC<TaskCardProps> = ({
 
   const goToFace = (next: CardFace, direction: FaceDirection) =>
     setFaceState({ cardId: card.id, face: next, direction });
+
+  // The table folds the card file away while this card is being edited.
+  useEffect(() => {
+    if (face !== 'edit' || isStatic) {
+      return;
+    }
+
+    setIsEditingCard(true);
+    return () => setIsEditingCard(false);
+  }, [face, isStatic]);
 
   useEffect(() => {
     if (face === 'view') {

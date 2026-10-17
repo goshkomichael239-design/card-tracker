@@ -625,4 +625,10 @@ export const EN: Record<string, string> = {
   'Две колоды и три десятка карточек всех видов, чтобы всё посмотреть. Удалить можно одним нажатием.': 'Two decks and thirty cards of every kind, to look at everything. One press removes them.',
   'Осталось {v}': '{v} left',
   'Через {v}': 'In {v}',
+  'Сама': 'Automatic',
+  'Никогда': 'Never',
+  'Картотека задвигается': 'Card file slides in',
+  'Пока вы правите или листаете карточки, картотека задвигается в ящик; нажмите на неё или потяните вниз, чтобы выдвинуть': 'While you edit or page through cards, the card file slides back into its box; press it or pull it down to bring it out',
+  'Картотека всегда выдвинута': 'The card file always stays out',
+  'Выдвинуть картотеку': 'Bring out the card file',
 };
