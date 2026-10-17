@@ -1,7 +1,10 @@
 import React, { useRef } from 'react';
 
 import type { VisualCard } from '../../app/cardTheme';
-import { STAMP_RED_GLOW } from '../../app/stampRed';
+import {
+  STAMP_RED_DOT_BACKGROUND,
+  STAMP_RED_DARK,
+} from '../../app/stampRed';
 import { useWheelNavigation } from '../../app/useWheelNavigation';
 import { t } from '../../app/i18n';
 
@@ -25,6 +28,16 @@ const REACH = 3;
 
 const SCALE_BY_DISTANCE = [1.18, 1, 0.78, 0.5];
 const OPACITY_BY_DISTANCE = [1, 1, 0.75, 0.35];
+/**
+ * How far the dots further from the middle are drawn back toward the stack
+ * (px): the rail is the rim of a wheel sunk in the table, so its middle stands
+ * out the most and its ends curve away.
+ */
+const ARC_BY_DISTANCE = [0, 0.8, 2.8, 5.5];
+
+/** The brass bead of the card on the table: raised, lit from the upper left. */
+const BRASS_BEAD =
+  'radial-gradient(circle at 32% 28%, #fff4c8 0%, #e2b556 42%, #9a6c22 100%)';
 
 const RAIL_MASK =
   'linear-gradient(180deg, transparent 0, #000 22%, #000 78%, transparent 100%)';
@@ -176,6 +189,23 @@ export const DeckDots: React.FC<DeckDotsProps> = ({
       onPointerUp={finishGesture}
       onPointerCancel={finishGesture}
     >
+      {/* The slot in the cloth the rim shows through. */}
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute"
+        style={{
+          left: 6,
+          top: 0,
+          bottom: 0,
+          width: 18,
+          borderRadius: 9,
+          background:
+            'linear-gradient(90deg, rgba(0,14,7,0.42), rgba(0,14,7,0.22))',
+          boxShadow:
+            'inset 1.5px 2px 3px rgba(0,0,0,0.55), 0.5px 1px 0 rgba(255,255,255,0.1)',
+        }}
+      />
+
       {slots.map(({ card, index, offset }) => {
         const isActive = index === activeIndex;
         const distance = Math.min(Math.abs(offset), 3);
@@ -183,7 +213,7 @@ export const DeckDots: React.FC<DeckDotsProps> = ({
         const scale = isShort ? 1 : SCALE_BY_DISTANCE[distance]!;
         const opacity = isShort ? 1 : OPACITY_BY_DISTANCE[distance]!;
         const isOverdue = Boolean(overdueIds?.has(card.id));
-        const ring = isOverdue ? STAMP_RED_GLOW : 'rgba(250,244,226,0.9)';
+        const arc = isShort ? 0 : ARC_BY_DISTANCE[distance]!;
 
         return (
           <span
@@ -197,7 +227,8 @@ export const DeckDots: React.FC<DeckDotsProps> = ({
               width: 30,
               height: SLOT_PX,
               marginTop: -SLOT_PX / 2,
-              transform: 'translate3d(0, ' + offset * SLOT_PX + 'px, 0)',
+              transform:
+                'translate3d(' + -arc + 'px, ' + offset * SLOT_PX + 'px, 0)',
               opacity,
               transition:
                 'transform 260ms cubic-bezier(0.2, 0.8, 0.2, 1), opacity 200ms ease-out',
@@ -206,15 +237,29 @@ export const DeckDots: React.FC<DeckDotsProps> = ({
             <span
               className="block rounded-full"
               style={{
-                width: 10,
-                height: 10,
+                width: isActive ? 11 : 10,
+                height: isActive ? 11 : 10,
                 boxSizing: 'border-box',
-                border: '2px solid ' + ring,
-                backgroundColor: isActive ? ring : 'transparent',
-                boxShadow: '0 1px 2px rgba(0,0,0,0.45)',
+                // The card on the table is a raised bead (brass, or the red
+                // wax of the stamp if it is overdue); the others are holes
+                // sunk in the cloth, the overdue ones with a red floor.
+                background: isActive
+                  ? isOverdue
+                    ? STAMP_RED_DOT_BACKGROUND
+                    : BRASS_BEAD
+                  : isOverdue
+                    ? 'radial-gradient(circle at 60% 65%, rgba(184,72,58,0.55), rgba(60,10,6,0.7) 80%)'
+                    : 'radial-gradient(circle at 62% 66%, rgba(255,255,255,0.1), rgba(0,12,6,0.55) 78%)',
+                boxShadow: isActive
+                  ? '1.5px 2px 3px rgba(0,0,0,0.55), 0 0 7px ' +
+                    (isOverdue ? 'rgba(240,144,127,0.5)' : 'rgba(255,214,120,0.5)') +
+                    ', inset -1px -1px 1.5px rgba(60,30,0,0.35)'
+                  : 'inset 1.3px 1.6px 2px rgba(0,0,0,0.78), 0.6px 1px 0 rgba(255,255,255,0.2)' +
+                    (isOverdue ? ', 0 0 0 1px ' + STAMP_RED_DARK + '99' : ''),
                 transform: 'scale(' + scale + ')',
+                // A little overshoot, as a detent clicking into place.
                 transition:
-                  'transform 260ms cubic-bezier(0.2, 0.8, 0.2, 1), background-color 160ms ease-out',
+                  'transform 280ms cubic-bezier(0.34, 1.56, 0.64, 1), width 160ms ease-out, height 160ms ease-out',
               }}
             />
           </span>

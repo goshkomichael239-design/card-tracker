@@ -82,6 +82,7 @@ import { readValue, writeValue } from './storage/kv';
 import { searchCards } from './searchCards';
 import { filterArchive } from './archiveUtils';
 import { CardStack } from '../components/card-stack/CardStack';
+import { DeckDots } from '../components/card-stack/DeckDots';
 import { CardSwitcher } from '../components/card-switcher/CardSwitcher';
 import { ARCHIVE_NAVIGATION_HEIGHT } from '../components/archive/ArchiveNavigation';
 import { getCardScale, useViewportSize } from './viewportScale';
@@ -175,6 +176,7 @@ const PHONE_WIDTH_PX = 640;
 // layers of the stack and the dots.
 const PHONE_CENTER_SHIFT_RATIO = 0.018;
 const PHONE_RIGHT_RESERVE = 54;
+const PHONE_DOTS_OFFSET = 22;
 // The arrow and the words "Править / удалить" at the folded corner: switched
 // off for now (the code is all still here, set this to true to bring it back).
 const SHOW_CORNER_HINT = false;
@@ -243,6 +245,8 @@ const BAR_OBJECT_HEIGHT = { bin: 80, spike: 90 };
 const BAR_OBJECT_OVERHANG = 34;
 // The stack peeks this far below the front card (the next card, the layers).
 const STACK_PEEK_BELOW = 12;
+/** On a wide screen the stack stands this share of the width left of the middle, leaving room for the dots. */
+const STACK_SHIFT_RATIO = 0.03;
 // Clear cloth between the lowest edge of the stack and the archive bar: the
 // same on every screen. The "done / take back" line stands in it.
 const CARD_BOTTOM_GAP = 48;
@@ -989,6 +993,14 @@ const MainApp: React.FC = () => {
       }
     } else {
       handleDeleteCard(activeCard.id);
+    }
+  };
+
+  const handleSelectCardIndex = (index: number) => {
+    const target = navCards[index];
+
+    if (target) {
+      handleSelectCard(target.id);
     }
   };
 
@@ -2084,15 +2096,30 @@ const MainApp: React.FC = () => {
             height: INITIAL_TASK_CARD_V2_CONFIG.height * sceneScale,
             // While the card is edited or created and the file is folded, it
             // rises into the room the file gave back (and grows if it can).
-            transform: isCardLifted
-              ? `translateY(${-freedByFold}px) scale(${liftedScale})`
-              : undefined,
+            transform:
+              [
+                isPhone
+                  ? ''
+                  : `translateX(${-viewportWidth * STACK_SHIFT_RATIO}px)`,
+                isCardLifted
+                  ? `translateY(${-freedByFold}px) scale(${liftedScale})`
+                  : '',
+              ]
+                .filter(Boolean)
+                .join(' ') || undefined,
             transformOrigin: 'top center',
             transition: 'transform 520ms cubic-bezier(0.22, 1, 0.36, 1)',
           }}
         >
-          {/* The page dots beside the stack are off for now (DeckDots.tsx is
-              still here): a calmer position indicator is being designed. */}
+          <DeckDots
+            cards={navCards}
+            activeCardId={activeCardId}
+            overdueIds={appSettings.overdueCounter ? overdueIds : undefined}
+            onSelectIndex={handleSelectCardIndex}
+            onNext={handleNextCard}
+            onPrevious={handlePreviousCard}
+            offsetX={isPhone ? PHONE_DOTS_OFFSET : undefined}
+          />
 
 <div
           className="absolute left-0 top-0"
