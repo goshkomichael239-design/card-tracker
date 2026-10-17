@@ -2,8 +2,8 @@ import React, { useEffect, useState } from 'react';
 
 import { SETTINGS, useSettings } from '../../app/settings';
 import { AboutView } from './AboutView';
+import { DemoDataSetting } from './DemoDataSetting';
 import { MotionSetting } from './MotionSetting';
-import { FileStyleSetting } from './FileStyleSetting';
 import { LanguageSetting } from './LanguageSetting';
 import { SearchHitsSetting } from './SearchHitsSetting';
 import { SwipeStyleSetting } from './SwipeStyleSetting';
@@ -88,7 +88,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           <MotionSetting style={lit(110)} />
           <SwipeStyleSetting style={lit(135)} />
           <SearchHitsSetting style={lit(150)} />
-          <FileStyleSetting style={lit(155)} />
+          <DemoDataSetting style={lit(155)} />
 
           <ul>
             {SETTINGS.filter(

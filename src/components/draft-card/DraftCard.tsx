@@ -1,7 +1,7 @@
 import type { FormEvent, RefObject } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 
-import cardboardTexture from '../../assets/cardboard.avif';
+import cardboardTexture from '../../assets/cardboard.svg';
 import {
   CARD_SHADOW,
   DRAFT_SHADOW,

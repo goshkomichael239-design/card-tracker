@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import tableTexture from '../../assets/table-background.webp';
-import cardboardTexture from '../../assets/cardboard.avif';
+import cardboardTexture from '../../assets/cardboard.svg';
 import cardBackTexture from '../../assets/card_back.png';
 
 interface CardColorPreset {

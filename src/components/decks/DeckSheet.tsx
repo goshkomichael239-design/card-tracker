@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 
-import cardboardTexture from '../../assets/cardboard.avif';
+import cardboardTexture from '../../assets/cardboard.svg';
 import { DECK_BACKS, getDeckBack } from '../../app/deckBacks';
 import { STAMP_RED } from '../../app/stampRed';
 import {

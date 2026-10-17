@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 
-import cardboardTexture from '../../assets/cardboard.avif';
+import cardboardTexture from '../../assets/cardboard.svg';
 import cardBackTexture from '../../assets/card_back.png';
 import { CARD_RADIUS } from '../../app/cardTheme';
 import { CompletedStackDebugPanel } from './CompletedStackDebugPanel';

@@ -1,6 +1,6 @@
 import React, { useId, useRef } from 'react';
 
-import cardboardTexture from '../../assets/cardboard.avif';
+import cardboardTexture from '../../assets/cardboard.svg';
 import type { CardPalette } from '../../app/cardTheme';
 import { formatCompletedDate } from '../../app/dateTimeUtils';
 import { getSeriesProgress } from '../../app/seriesUtils';

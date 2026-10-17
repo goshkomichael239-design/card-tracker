@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 
-import cardboardTexture from '../../assets/cardboard.avif';
+import cardboardTexture from '../../assets/cardboard.svg';
 import { getCardPalette, type VisualCard } from '../../app/cardTheme';
 import { getDeckBack } from '../../app/deckBacks';
 import { useFileStyle } from '../../app/fileStyle';

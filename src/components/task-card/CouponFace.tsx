@@ -1,6 +1,6 @@
 import React from 'react';
 
-import cardboardTexture from '../../assets/cardboard.avif';
+import cardboardTexture from '../../assets/cardboard.svg';
 import type { CouponEdge } from '../../app/couponEdge';
 import { PerforationHoles } from './CouponPerforation';
 

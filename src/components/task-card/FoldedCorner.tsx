@@ -1,6 +1,6 @@
 import React from 'react';
 
-import cardboardTexture from '../../assets/cardboard.avif';
+import cardboardTexture from '../../assets/cardboard.svg';
 
 /** Size of the folded corner and the clip that removes it from the card body. */
 export const FOLD_SIZE = 46;

@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 
-import cardboardTexture from '../../assets/cardboard.avif';
+import cardboardTexture from '../../assets/cardboard.svg';
 import type { BackupImportResult } from '../../app/backupUtils';
 import { AutoBackupSheet } from './AutoBackupSheet';
 import { t } from '../../app/i18n';

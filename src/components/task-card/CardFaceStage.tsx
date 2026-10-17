@@ -1,7 +1,7 @@
 import React from 'react';
 import { AnimatePresence, motion, useIsPresent } from 'framer-motion';
 
-import cardboardTexture from '../../assets/cardboard.avif';
+import cardboardTexture from '../../assets/cardboard.svg';
 import { INITIAL_TASK_CARD_V2_CONFIG } from './taskCardV2Config';
 
 export type CardFace =

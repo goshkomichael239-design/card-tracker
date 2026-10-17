@@ -1,15 +1,9 @@
 import { create } from 'zustand';
 
 import { createAutoBackup } from './storage/autoBackup';
-import type { TimeMode, VisualCard } from './cardTheme';
+import type { VisualCard } from './cardTheme';
 import { createId, pinnedFirst } from './cardOps';
-import { createDemoSet } from './demoCards';
 
-/**
- * A first run starts with the test set: three decks and a hundred varied
- * cards (set false for a single card).
- */
-const SHOW_DEMO_DECK = true;
 import {
   loadActiveCards,
   loadArchivedCards,
@@ -18,9 +12,7 @@ import {
 } from './persistence';
 import { loadTrash, saveTrash, type TrashedCard } from './trash';
 import {
-  DEFAULT_DECK_ID,
   loadDecksState,
-  MAX_DECKS,
   saveDecksState,
   type Deck,
 } from './decks';
@@ -54,63 +46,19 @@ export interface DeckState {
 const resolve = <T,>(next: Updater<T>, previous: T): T =>
   typeof next === 'function' ? (next as (value: T) => T)(previous) : next;
 
-const DAY_MS = 24 * 60 * 60 * 1000;
-
-/** What a first run (nothing stored) starts with, besides the demo set. */
-const createFirstRunCards = (): VisualCard[] => {
-  if (!import.meta.env.DEV) {
-    return [
-      {
-        id: createId(),
-        title: t('Моя первая карточка'),
-        kind: 'single',
-        timeMode: 'none',
-        createdAt: new Date().toISOString(),
-      },
-    ];
-  }
-
-  const now = Date.now();
-  const seeds: Array<{ title: string; timeMode: TimeMode }> = [
-    { title: t('Хлеб'), timeMode: 'none' },
-    { title: t('Абсолютное безумие'), timeMode: 'none' },
-    { title: t('Мама мыла раму'), timeMode: 'deadline' },
-    { title: t('Рыба в воде'), timeMode: 'reminder' },
-    { title: t('Кленовый сироп'), timeMode: 'deadline' },
-    { title: t('Продумать движение новой карточки'), timeMode: 'reminder' },
-    {
-      title:
-        t('Очень длинное название карточки для проверки обрезания текста в переключателе'),
-      timeMode: 'none',
-    },
-  ];
-
-  return seeds.map((seed, index) => {
-    const targetAt = new Date(now + (index + 1) * DAY_MS).toISOString();
-
-    return {
-      id: createId(),
-      title: seed.title,
-      kind: 'single',
-      timeMode: seed.timeMode,
-      deadlineAt: seed.timeMode === 'deadline' ? targetAt : undefined,
-      reminderAt: seed.timeMode === 'reminder' ? targetAt : undefined,
-      createdAt: new Date(now - index * 60 * 1000).toISOString(),
-    };
-  });
-};
+/** What a first run (nothing stored) starts with: one card. */
+const createFirstRunCards = (): VisualCard[] => [
+  {
+    id: createId(),
+    title: t('Моя первая карточка'),
+    kind: 'single',
+    timeMode: 'none',
+    createdAt: new Date().toISOString(),
+  },
+];
 
 const storedCards = loadActiveCards();
-// A first run (no cards stored) gets the whole test set: its decks and cards.
-const demoSet =
-  storedCards === null && SHOW_DEMO_DECK ? createDemoSet() : null;
-const storedDecks = loadDecksState();
-const initialDecks = demoSet
-  ? {
-      decks: [...storedDecks.decks, ...demoSet.decks].slice(0, MAX_DECKS),
-      activeDeckId: DEFAULT_DECK_ID,
-    }
-  : storedDecks;
+const initialDecks = loadDecksState();
 
 export const useDeckStore = create<DeckState>((set) => ({
   decks: initialDecks.decks,
@@ -124,7 +72,7 @@ export const useDeckStore = create<DeckState>((set) => ({
     set((state) =>
       activeDeckId === state.activeDeckId ? state : { activeDeckId },
     ),
-  cards: storedCards ?? demoSet?.cards ?? createFirstRunCards(),
+  cards: storedCards ?? createFirstRunCards(),
   archivedCards: loadArchivedCards(),
   trash: loadTrash(),
   // Whatever changes the deck, pinned cards stay at its head.
@@ -199,11 +147,7 @@ useDeckStore.subscribe((state, previous) => {
 // A first run stores its starting cards at once, and every start leaves one
 // snapshot of what was loaded (before anything is changed).
 {
-  const { cards, archivedCards, trash, decks, activeDeckId } = getDeckState();
-
-  if (demoSet) {
-    saveDecksState({ decks, activeDeckId });
-  }
+  const { cards, archivedCards, trash } = getDeckState();
 
   saveActiveCards(cards);
   saveArchivedCards(archivedCards);

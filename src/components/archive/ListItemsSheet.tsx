@@ -1,6 +1,6 @@
 import React from 'react';
 
-import cardboardTexture from '../../assets/cardboard.avif';
+import cardboardTexture from '../../assets/cardboard.svg';
 import { formatArchiveMoment } from '../../app/archiveUtils';
 import { getCardPalette, type VisualCard } from '../../app/cardTheme';
 import { getListCompletedCount } from '../../app/listUtils';

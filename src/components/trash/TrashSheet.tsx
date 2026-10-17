@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 
-import cardboardTexture from '../../assets/cardboard.avif';
+import cardboardTexture from '../../assets/cardboard.svg';
 import { getCardPalette } from '../../app/cardTheme';
 import { STAMP_RED_DARK } from '../../app/stampRed';
 import {

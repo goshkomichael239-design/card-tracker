@@ -1,6 +1,6 @@
 import React from 'react';
 
-import cardboardTexture from '../../assets/cardboard.avif';
+import cardboardTexture from '../../assets/cardboard.svg';
 import { getCardPalette, type VisualCard } from '../../app/cardTheme';
 import type { DeckBack } from '../../app/deckBacks';
 import { INITIAL_TASK_CARD_V2_CONFIG } from '../task-card/taskCardV2Config';

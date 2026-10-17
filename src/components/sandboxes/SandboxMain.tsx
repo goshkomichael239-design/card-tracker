@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import tableTexture from '../../assets/table-background.webp';
-import cardboardTexture from '../../assets/cardboard.avif';
+import cardboardTexture from '../../assets/cardboard.svg';
 
 interface CardColorPreset {
   name: string;
@@ -106,7 +106,7 @@ const SandboxMain: React.FC = () => {
           padding: '30px 22px 22px',
         }}>
 
-        {/* Текстура картона — cardboard.avif */}
+        {/* Текстура картона — cardboard.svg */}
         <div
           className="absolute inset-0 rounded-[32px] pointer-events-none z-0"
           style={{

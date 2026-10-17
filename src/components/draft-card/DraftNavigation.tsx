@@ -1,6 +1,6 @@
 import { AnimatePresence, motion } from 'framer-motion';
 
-import cardboardTexture from '../../assets/cardboard.avif';
+import cardboardTexture from '../../assets/cardboard.svg';
 import type { DraftStep } from '../../app/cardTheme';
 import { EmbossedArrow } from '../shared/EmbossedArrow';
 import { t } from '../../app/i18n';

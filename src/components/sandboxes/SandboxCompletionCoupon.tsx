@@ -5,7 +5,7 @@ import {
 } from 'framer-motion';
 
 import tableTexture from '../../assets/table-background.webp';
-import cardboardTexture from '../../assets/cardboard.avif';
+import cardboardTexture from '../../assets/cardboard.svg';
 
 /* -------------------------------------------------------------------------- */
 /*                                    Типы                                    */

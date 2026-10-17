@@ -1,9 +1,9 @@
 import React from 'react';
 
-import bin0 from '../../assets/bin-new-0.png';
-import bin1 from '../../assets/bin-new-1.png';
-import bin2 from '../../assets/bin-new-2.png';
-import bin3 from '../../assets/bin-new-3.png';
+import bin0 from '../../assets/bin-new-0.webp';
+import bin1 from '../../assets/bin-new-1.webp';
+import bin2 from '../../assets/bin-new-2.webp';
+import bin3 from '../../assets/bin-new-3.webp';
 import { t } from '../../app/i18n';
 
 interface TrashBinProps {

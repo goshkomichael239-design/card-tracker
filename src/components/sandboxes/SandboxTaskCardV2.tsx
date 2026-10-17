@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-import cardboardTexture from '../../assets/cardboard.avif';
+import cardboardTexture from '../../assets/cardboard.svg';
 import tableTexture from '../../assets/table-background.webp';
 import {
   INITIAL_TASK_CARD_V2_CONFIG,

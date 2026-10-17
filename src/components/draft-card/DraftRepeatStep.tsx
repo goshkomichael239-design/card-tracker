@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 
-import cardboardTexture from '../../assets/cardboard.avif';
+import cardboardTexture from '../../assets/cardboard.svg';
 import type { CardPalette, RecurrenceKind, RecurrenceRule } from '../../app/cardTheme';
 import { describeRecurrence, WEEKDAY_LABELS } from '../../app/recurrence';
 import { t } from '../../app/i18n';

@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 
-import cardboardTexture from '../../assets/cardboard.avif';
+import cardboardTexture from '../../assets/cardboard.svg';
 import type { CardPalette } from '../../app/cardTheme';
 import {
   formatDraftDate,
