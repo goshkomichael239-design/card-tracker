@@ -623,4 +623,7 @@ export const EN: Record<string, string> = {
   'Удалить их': 'Remove them',
   'Тестовый набор добавлен. Удаляются только его колоды и карточки.': 'The test set is added. Only its own decks and cards are removed.',
   'Две колоды и три десятка карточек всех видов, чтобы всё посмотреть. Удалить можно одним нажатием.': 'Two decks and thirty cards of every kind, to look at everything. One press removes them.',
+  'Экспериментальная версия': 'Experimental version',
+  'Вы в экспериментальной версии. Выключите, чтобы вернуться в основную. Карточки те же.': 'You are in the experimental version. Switch it off to go back to the main one. Your cards are the same.',
+  'Новый вид и новые возможности, которые ещё проверяются. Страница откроется заново, карточки те же.': 'A newer look and features that are still being tried. The page reopens; your cards are the same.',
 };
