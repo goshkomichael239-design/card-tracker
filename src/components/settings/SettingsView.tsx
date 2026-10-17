@@ -2,12 +2,14 @@ import React, { useEffect, useState } from 'react';
 
 import { SETTINGS, useSettings } from '../../app/settings';
 import { AboutView } from './AboutView';
+import { ChannelSetting } from './ChannelSetting';
 import { DemoDataSetting } from './DemoDataSetting';
 import { FileFoldSetting } from './FileFoldSetting';
 import { MotionSetting } from './MotionSetting';
 import { LanguageSetting } from './LanguageSetting';
 import { SearchHitsSetting } from './SearchHitsSetting';
 import { SwipeStyleSetting } from './SwipeStyleSetting';
+import { canSwitchChannel } from '../../app/channel';
 import { canVibrate } from '../../app/haptics';
 import { isNotificationsAvailable } from '../../app/notifications';
 import { playSound } from '../../app/sounds';
@@ -137,6 +139,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               );
             })}
           </ul>
+
+          {canSwitchChannel() && (
+            <ChannelSetting style={lit(160 + SETTINGS.length * 90)} />
+          )}
 
           <button
             type="button"

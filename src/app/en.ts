@@ -631,4 +631,7 @@ export const EN: Record<string, string> = {
   'Пока вы правите или листаете карточки, картотека задвигается в ящик; нажмите на неё или потяните вниз, чтобы выдвинуть': 'While you edit or page through cards, the card file slides back into its box; press it or pull it down to bring it out',
   'Картотека всегда выдвинута': 'The card file always stays out',
   'Выдвинуть картотеку': 'Bring out the card file',
+  'Экспериментальная версия': 'Experimental version',
+  'Вы в экспериментальной версии. Выключите, чтобы вернуться в основную. Карточки те же.': 'You are in the experimental version. Switch it off to go back to the main one. Your cards are the same.',
+  'Новый вид и новые возможности, которые ещё проверяются. Страница откроется заново, карточки те же.': 'A newer look and features that are still being tried. The page reopens; your cards are the same.',
 };
