@@ -45,9 +45,9 @@ export function TaskListContent({
                 disabled={disabled}
                 onClick={() => onToggle(item.id)}
                 aria-pressed={completed}
-                className="flex w-full items-start gap-3 border-b py-2.5 text-left disabled:cursor-default"
+                className="flex w-full items-start gap-3 border-b py-3 text-left disabled:cursor-default"
                 style={{
-                  minHeight: isSheet ? 62 : 48,
+                  minHeight: isSheet ? 62 : 52,
                   borderColor: isSheet
                     ? 'rgba(69,57,44,0.075)'
                     : 'rgba(69,57,44,0.045)',

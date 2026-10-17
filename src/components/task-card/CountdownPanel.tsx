@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { PALETTES, type CardPalette, type TimeMode } from '../../app/cardTheme';
+import { type CardPalette, type TimeMode } from '../../app/cardTheme';
+import { STAMP_RED_INK } from '../../app/stampRed';
 import {
   formatOverdueTime,
   formatRemainingTime,
@@ -66,8 +67,8 @@ export const CountdownPanel: React.FC<CountdownPanelProps> = ({
 
   const remaining = new Date(targetAt).getTime() - now;
   const isPast = !completedAt && Number.isFinite(remaining) && remaining <= 0;
-  // A passed deadline or reminder switches to the warm "alert" paper tone.
-  const tone = isPast ? PALETTES.none : palette;
+  // A passed deadline or reminder is written in the red of the rubber stamp.
+  const ink = isPast ? STAMP_RED_INK : completedAt ? palette.accentDark : '#3C342B';
 
   const label = completedAt
     ? t('Выполнено')
@@ -75,11 +76,13 @@ export const CountdownPanel: React.FC<CountdownPanelProps> = ({
       ? mode === 'deadline'
         ? t('Просрочено · {v}', { v: formatOverdueTime(-remaining) })
         : t('Пора · {v} назад', { v: formatOverdueTime(-remaining) })
-      : formatRemainingTime(remaining);
+      : mode === 'deadline'
+        ? t('Осталось {v}', { v: formatRemainingTime(remaining) })
+        : t('Через {v}', { v: formatRemainingTime(remaining) });
 
   return (
     <div
-      className="relative flex min-h-[42px] items-center rounded-[10px] border px-4 py-2.5"
+      className="relative"
       aria-label={
         completedAt
           ? t('Задача завершена')
@@ -91,14 +94,9 @@ export const CountdownPanel: React.FC<CountdownPanelProps> = ({
               ? t('Осталось для выполнения')
               : t('Осталось до напоминания')
       }
-      style={{
-        color: tone.accentDark,
-        backgroundColor: `${tone.accent}${isPast ? '24' : '16'}`,
-        borderColor: `${tone.accent}${isPast ? '5c' : '38'}`,
-        boxShadow: 'inset 0 1px rgba(255,255,255,0.7)',
-      }}
+      style={{ color: ink }}
     >
-      <div className="font-mono text-[17px] font-semibold tracking-[-0.02em]">
+      <div className="font-mono text-[20px] font-semibold leading-[1.2] tracking-[-0.02em]">
         {label}
       </div>
     </div>

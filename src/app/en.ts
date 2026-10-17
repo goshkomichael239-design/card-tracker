@@ -623,4 +623,6 @@ export const EN: Record<string, string> = {
   'Удалить их': 'Remove them',
   'Тестовый набор добавлен. Удаляются только его колоды и карточки.': 'The test set is added. Only its own decks and cards are removed.',
   'Две колоды и три десятка карточек всех видов, чтобы всё посмотреть. Удалить можно одним нажатием.': 'Two decks and thirty cards of every kind, to look at everything. One press removes them.',
+  'Осталось {v}': '{v} left',
+  'Через {v}': 'In {v}',
 };

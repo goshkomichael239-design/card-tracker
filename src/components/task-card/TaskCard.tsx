@@ -45,6 +45,7 @@ import { PinStar } from './PinStar';
 import { FOLD_CUT_PATH, FOLD_SIZE, FoldedFlap } from './FoldedCorner';
 import { playSound } from '../../app/sounds';
 import { CountdownPanel } from './CountdownPanel';
+import { SeriesTicks } from './SeriesTicks';
 import { INITIAL_TASK_CARD_V2_CONFIG } from './taskCardV2Config';
 import { TaskListContent } from './TaskListContent';
 import { getLocale, t } from '../../app/i18n';
@@ -169,11 +170,9 @@ export const TaskCard: React.FC<TaskCardProps> = ({
   const recurrence = card.recurrence;
   // A repeating sheet can only be torn off on its day (or later, if missed).
   const isSheetAvailable = isOccurrenceAvailable(card);
-  const timeLabel = recurrence
-    ? t('Следующий раз')
-    : card.timeMode === 'deadline'
-      ? t('Срок')
-      : t('Напоминание');
+  // The countdown line says what it counts; only a repeating card keeps a
+  // small caption of its own.
+  const timeLabel = recurrence ? t('Следующий раз') : null;
   const series = card.kind === 'series' ? card.series : undefined;
   const lastSeriesEntry = series?.entries.at(-1);
   const list = card.kind === 'list' ? card.list : undefined;
@@ -285,35 +284,54 @@ export const TaskCard: React.FC<TaskCardProps> = ({
     }, FINISH_WIPE_WAIT_MS);
   };
 
+  const isTypeOverdue = isOverdue && !card.completedAt;
+  // A short, soft letterpress rule: it parts the title from the facts without
+  // a line across the whole card.
+  const softRule = (
+    <div
+      aria-hidden="true"
+      style={{
+        width: 72,
+        height: 2,
+        borderRadius: 1,
+        backgroundColor: 'rgba(69,57,44,0.24)',
+        boxShadow: '0 1px 0 rgba(255,255,255,0.75)',
+      }}
+    />
+  );
+
   const viewFace = (
     <div className="relative flex h-full flex-col">
       <div className="flex items-center justify-between">
         <span
-          className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 font-mono text-[11.5px] font-bold uppercase tracking-[0.12em]"
-          style={{
-            color: palette.accentDark,
-            backgroundColor: `${palette.accent}1d`,
-          }}
+          className="inline-flex items-center gap-2.5 font-mono text-[11.5px] font-bold uppercase tracking-[0.16em]"
+          style={{ color: palette.accentDark }}
         >
-          {/* Overdue: a red dot in front of the label. */}
-          {isOverdue && !card.completedAt && (
-            <span
-              className="h-2.5 w-2.5 shrink-0 rounded-full"
-              style={{
-                background: STAMP_RED_DOT_BACKGROUND,
-                boxShadow: '0 1px 2px rgba(40,12,8,0.4)',
-              }}
-              role="img"
-              aria-label={t('Просрочено')}
-            />
-          )}
+          {/* The kind's dot; red in front of the label when overdue. */}
+          <span
+            className="h-2.5 w-2.5 shrink-0 rounded-full"
+            style={
+              isTypeOverdue
+                ? {
+                    background: STAMP_RED_DOT_BACKGROUND,
+                    boxShadow: '0 1px 2px rgba(40,12,8,0.4)',
+                  }
+                : {
+                    backgroundColor: palette.accent,
+                    boxShadow: '0 1px 1.5px rgba(40,30,20,0.28)',
+                  }
+            }
+            role={isTypeOverdue ? 'img' : undefined}
+            aria-label={isTypeOverdue ? t('Просрочено') : undefined}
+            aria-hidden={isTypeOverdue ? undefined : true}
+          />
           {kindLabel}
         </span>
       </div>
 
       {!list && (
         <h2
-          className="shrink-0 font-semibold leading-[1.08]"
+          className="shrink-0 font-semibold leading-[1.1]"
           style={{
             marginTop: config.titleGap,
             fontSize: config.titleSize,
@@ -327,7 +345,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
 
       {list ? (
         <div
-          className="mt-5 flex min-h-0 flex-1 flex-col"
+          className="mt-6 flex min-h-0 flex-1 flex-col"
           style={{
             paddingBottom:
               config.couponBottom + config.couponHeight + 4,
@@ -338,7 +356,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
             palette={palette}
             disabled={Boolean(card.completedAt)}
             onToggle={(itemId) => onToggleListItem?.(itemId)}
-            maxItems={5}
+            maxItems={4}
             // The whole list opens on the card itself, as a face of its own.
             onOpenList={
               canOpenMenu && onAddListItem
@@ -349,34 +367,45 @@ export const TaskCard: React.FC<TaskCardProps> = ({
         </div>
       ) : series ? (
         <div
-          className="shrink-0 border-t pt-4"
-          style={{
-            marginTop: config.infoGap,
-            borderColor: 'rgba(69,57,44,0.13)',
-          }}
+          className="shrink-0"
+          style={{ marginTop: config.infoGap }}
+          role="group"
+          aria-label={t('Выполнено {done} из {target}', {
+            done: series.entries.length,
+            target: series.targetCount,
+          })}
         >
-          <p className="font-mono text-[11.5px] uppercase tracking-[0.12em] text-[#6B6258]">{t('Выполнено')}</p>
-          <p className="mt-1 font-mono text-[27px] font-semibold tracking-[-0.04em] text-[#28231D]">
-            {series.entries.length} / {series.targetCount}
+          {softRule}
+          <p
+            className="mt-5 font-mono font-semibold text-[#28231D]"
+            style={{ fontSize: 40, lineHeight: 1, letterSpacing: '-0.04em' }}
+          >
+            {series.entries.length}
+            <span className="mx-1.5" style={{ opacity: 0.4 }}>/</span>
+            {series.targetCount}
           </p>
+          <div className="mt-4">
+            <SeriesTicks
+              done={series.entries.length}
+              target={series.targetCount}
+              palette={palette}
+            />
+          </div>
           {lastSeriesEntry ? (
-            <p className="mt-2 font-mono text-[12.5px] leading-snug text-[#776E63]">{t('Последняя · {toLocaleTimeString} · за {v}', { toLocaleTimeString: new Date(lastSeriesEntry.completedAt).toLocaleTimeString(getLocale(), { hour: '2-digit', minute: '2-digit' }), v: formatSeriesDuration(lastSeriesEntry.durationMs) })}</p>
+            <p className="mt-3 font-mono text-[12.5px] leading-snug text-[#776E63]">{t('Последняя · {toLocaleTimeString} · за {v}', { toLocaleTimeString: new Date(lastSeriesEntry.completedAt).toLocaleTimeString(getLocale(), { hour: '2-digit', minute: '2-digit' }), v: formatSeriesDuration(lastSeriesEntry.durationMs) })}</p>
           ) : (
-            <p className="mt-2 font-mono text-[12.5px] text-[#776E63]">{t('Начато · {toLocaleTimeString}', { toLocaleTimeString: new Date(series.startedAt).toLocaleTimeString(getLocale(), { hour: '2-digit', minute: '2-digit' }) })}</p>
+            <p className="mt-3 font-mono text-[12.5px] text-[#776E63]">{t('Начато · {toLocaleTimeString}', { toLocaleTimeString: new Date(series.startedAt).toLocaleTimeString(getLocale(), { hour: '2-digit', minute: '2-digit' }) })}</p>
           )}
         </div>
       ) : targetAt ? (
-        <div
-          className="shrink-0 border-t pt-4"
-          style={{
-            marginTop: config.infoGap,
-            borderColor: 'rgba(69,57,44,0.13)',
-          }}
-        >
-          <p className="font-mono text-[11.5px] uppercase tracking-[0.12em] text-[#6B6258]">
-            {timeLabel}
-          </p>
-          <div className="mt-2">
+        <div className="shrink-0" style={{ marginTop: config.infoGap }}>
+          {softRule}
+          {timeLabel && (
+            <p className="mt-5 font-mono text-[11.5px] uppercase tracking-[0.14em] text-[#8A8074]">
+              {timeLabel}
+            </p>
+          )}
+          <div className={timeLabel ? 'mt-2' : 'mt-5'}>
             <CountdownPanel
               targetAt={targetAt}
               mode={card.timeMode === 'deadline' ? 'deadline' : 'reminder'}
@@ -385,18 +414,17 @@ export const TaskCard: React.FC<TaskCardProps> = ({
               isStatic={isStatic}
             />
           </div>
-          <p className="mt-2 font-mono text-[13.5px] leading-relaxed text-[#776E63]">
+          <p className="mt-1.5 font-mono text-[13px] leading-relaxed text-[#8A8074]">
             {formatHumanDate(targetAt)}
           </p>
         </div>
       ) : (
-        <p
-          className="shrink-0 border-t pt-4 font-mono text-[11.5px] uppercase tracking-[0.12em] text-[#776E63]"
-          style={{
-            marginTop: config.infoGap,
-            borderColor: 'rgba(69,57,44,0.13)',
-          }}
-        >{t('Без срока')}</p>
+        <div className="shrink-0" style={{ marginTop: config.infoGap }}>
+          {softRule}
+          <p className="mt-5 font-mono text-[11.5px] uppercase tracking-[0.14em] text-[#8A8074]">
+            {t('Без срока')}
+          </p>
+        </div>
       )}
 
       {card.postponements && !card.completedAt && (

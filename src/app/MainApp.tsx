@@ -94,7 +94,6 @@ import { syncReminders } from './notifications';
 import { SettingsGear } from '../components/settings/SettingsGear';
 import { SettingsView } from '../components/settings/SettingsView';
 import { useWheelNavigation } from './useWheelNavigation';
-import { DeckDots } from '../components/card-stack/DeckDots';
 import {
   getCardFileHeight,
   getSwitcherMetrics,
@@ -173,13 +172,10 @@ const PHONE_WIDTH_PX = 640;
 // layers of the stack and the dots.
 const PHONE_CENTER_SHIFT_RATIO = 0.018;
 const PHONE_RIGHT_RESERVE = 54;
-const PHONE_DOTS_OFFSET = 22;
 // The arrow and the words "Править / удалить" at the folded corner: switched
 // off for now (the code is all still here, set this to true to bring it back).
 const SHOW_CORNER_HINT = false;
 const NO_DECK_COUNTS: Readonly<Record<string, number>> = {};
-/** The stack stands this share of the screen's width left of the middle. */
-const STACK_SHIFT_RATIO = 0.03;
 /**
  * A finger dragging the card turns it once it has gone this far (px): slower
  * than over the dots, so the card can be turned through with some care.
@@ -924,14 +920,6 @@ const MainApp: React.FC = () => {
       }
     } else {
       handleDeleteCard(activeCard.id);
-    }
-  };
-
-  const handleSelectCardIndex = (index: number) => {
-    const target = navCards[index];
-
-    if (target) {
-      handleSelectCard(target.id);
     }
   };
 
@@ -2023,22 +2011,10 @@ const MainApp: React.FC = () => {
           style={{
             width: INITIAL_TASK_CARD_V2_CONFIG.width * sceneScale,
             height: INITIAL_TASK_CARD_V2_CONFIG.height * sceneScale,
-            // The stack stands a little left of the middle, leaving room for
-            // the dots on its right.
-            transform: isPhone
-              ? undefined
-              : `translateX(${-viewportWidth * STACK_SHIFT_RATIO}px)`,
           }}
         >
-          <DeckDots
-            cards={navCards}
-            activeCardId={activeCardId}
-            overdueIds={appSettings.overdueCounter ? overdueIds : undefined}
-            onSelectIndex={handleSelectCardIndex}
-            onNext={handleNextCard}
-            onPrevious={handlePreviousCard}
-            offsetX={isPhone ? PHONE_DOTS_OFFSET : undefined}
-          />
+          {/* The page dots beside the stack are off for now (DeckDots.tsx is
+              still here): a calmer position indicator is being designed. */}
 
 <div
           className="absolute left-0 top-0"
@@ -2275,7 +2251,7 @@ const MainApp: React.FC = () => {
                 >
                   <motion.span
                     animate={{
-                      opacity: isGhostHovered ? 1 : 0.78,
+                      opacity: isGhostHovered ? 1 : 0.46,
                       scale: isGhostHovered ? 1.015 : 1,
                     }}
                     transition={{ duration: 0.24 }}

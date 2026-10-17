@@ -124,7 +124,7 @@ export const GHOST_SETTINGS: GhostSettings = {
   y: -41,
   rotate: -7,
   scale: 1,
-  opacity: 0.2,
+  opacity: 0.11,
 };
 
 // Colours of the time-mode choice in the creation flow (and the "alert" tone of
