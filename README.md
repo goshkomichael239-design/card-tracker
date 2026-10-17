@@ -42,6 +42,20 @@ In the most popular trackers (Todoist, TickTick, Microsoft To Do, Google Tasks, 
 
 For now everything is stored locally on the device. Signing in with a Google account (to have the same tasks on several devices) is planned.
 
+## Install on Android
+
+**The easiest way, with no warnings:** open the web version in Chrome on your phone, then use the menu ⋮ → *Install app* (or *Add to Home screen*). It opens like an app and works offline. Reminders (notifications) are only in the APK.
+
+**The APK (with reminders):**
+
+1. Download `Card-Tracker.apk` from [Releases](https://github.com/goshkomichael239-design/card-tracker/releases) and open it.
+2. Android asks to allow installing apps from this source (your browser or Files app): allow it once.
+3. Google Play Protect may say the app comes from an unrecognized developer and offer *Install anyway*. This is only because the app is not in Google Play; it is not a sign of anything wrong. Choose *More details* → *Install anyway*.
+4. To be sure the file is genuine, check its signing certificate: it must have the SHA-256 fingerprint `dd4ef4fa7893a64ccd05491b9dbc752be4d6ceb45cfb2715bffeace3fe9bc6b3` (for example with `apksigner verify --print-certs Card-Tracker.apk`).
+
+Updates come as a new APK signed with the same key, so they install over the old one and keep your cards.
+
+
 ## Run it
 
 You need Node.js (LTS).

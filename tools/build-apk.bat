@@ -106,11 +106,29 @@ if exist "%SDK%\cmdline-tools\latest\bin\sdkmanager.bat" (
   echo      "Android SDK Command-line Tools", Apply, and run this file again.
 )
 
+rem ---- The signing key (made once, kept OUTSIDE the project) ----------------------------
+set "KEYDIR=%CARD_TRACKER_SIGNING_DIR%"
+if not defined KEYDIR set "KEYDIR=%USERPROFILE%\card-tracker-signing"
+set "KEYSTORE=%KEYDIR%\card-tracker-release.jks"
+set "KEYPASS=%KEYDIR%\card-tracker-release.pass"
+set "SIGN=0"
+if exist "%KEYSTORE%" if exist "%KEYPASS%" set "SIGN=1"
+if "%SIGN%"=="1" (
+  echo Signing key: %KEYSTORE%
+) else (
+  echo [!] No signing key in %KEYDIR%: the APK will be a DEBUG one, which Android
+  echo     distrusts more and which cannot be updated over a release one.
+)
+
 rem ---- The APK ------------------------------------------------------------------------------
 echo.
 echo [5/6] Building the APK ^(the first time Gradle downloads a lot^)...
 pushd android
-call .\gradlew.bat assembleDebug --no-daemon
+if "%SIGN%"=="1" (
+  call .\gradlew.bat assembleRelease --no-daemon
+) else (
+  call .\gradlew.bat assembleDebug --no-daemon
+)
 if errorlevel 1 (
   popd
   goto :fail
@@ -119,12 +137,38 @@ popd
 
 echo.
 echo [6/6] Done.
+if "%SIGN%"=="1" goto :sign
 set "APK=android\app\build\outputs\apk\debug\app-debug.apk"
 if not exist "%APK%" (
   echo [!] The APK was not found where expected: %APK%
   goto :fail
 )
 copy /y "%APK%" "%CD%\Card-Tracker.apk" >nul
+goto :finished
+
+:sign
+set "UNSIGNED=android\app\build\outputs\apk\release\app-release-unsigned.apk"
+if not exist "%UNSIGNED%" (
+  echo [!] The release APK was not found where expected: %UNSIGNED%
+  goto :fail
+)
+set "BT="
+for /d %%B in ("%SDK%\build-tools\*") do set "BT=%%B"
+if not defined BT (
+  echo [!] The Android build-tools were not found in %SDK%\build-tools.
+  echo     Android Studio ^> SDK Manager ^> SDK Tools ^> tick "Android SDK Build-Tools", Apply.
+  goto :fail
+)
+echo Signing with build-tools %BT%
+"%BT%\zipalign.exe" -f -p 4 "%UNSIGNED%" "android\app\build\outputs\apk\release\aligned.apk"
+if errorlevel 1 goto :fail
+call "%BT%\apksigner.bat" sign --ks "%KEYSTORE%" --ks-key-alias card-tracker --ks-pass file:"%KEYPASS%" --out "%CD%\Card-Tracker.apk" "android\app\build\outputs\apk\release\aligned.apk"
+if errorlevel 1 goto :fail
+echo.
+echo Certificate of the signed APK ^(should be the same every time^):
+call "%BT%\apksigner.bat" verify --print-certs "%CD%\Card-Tracker.apk" | findstr /i "SHA-256 Verifies"
+
+:finished
 echo.
 echo  APK: %CD%\Card-Tracker.apk
 echo  Copy it to the phone ^(cable, Telegram, Drive^) and open it there.

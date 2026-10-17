@@ -1,5 +1,12 @@
 name: Release APK
 
+# A tag like v0.1.0 builds the Android app and attaches it to the release.
+# With the repository secrets KEYSTORE_BASE64 (the key file, base64) and
+# KEYSTORE_PASSWORD set, the APK is signed with the project's own key (see ANDROID.md).
+# Without them it is a debug APK: it works, but Android trusts it less and it cannot
+# be updated over a signed one. The usual way is to build the signed APK on the
+# author's computer (tools/build-apk.bat) and attach it to the release by hand.
+
 on:
   push:
     tags: ['v*']
@@ -10,6 +17,9 @@ permissions:
 jobs:
   apk:
     runs-on: ubuntu-latest
+    env:
+      KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+      KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -26,11 +36,28 @@ jobs:
       - name: Launcher icon
         run: cp -r tools/android-icons/res/. android/app/src/main/res/
       - run: npx cap sync android
-      - name: Build debug APK
+      - name: Build APK
         working-directory: android
-        run: ./gradlew assembleDebug
-      - name: Rename
-        run: cp android/app/build/outputs/apk/debug/app-debug.apk Card-Tracker.apk
+        run: |
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            ./gradlew assembleRelease
+          else
+            ./gradlew assembleDebug
+          fi
+      - name: Sign (when the key is set) and name the file
+        run: |
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.jks"
+            printf '%s' "$KEYSTORE_PASSWORD" > "$RUNNER_TEMP/release.pass"
+            BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
+            "$BT/zipalign" -f -p 4 android/app/build/outputs/apk/release/app-release-unsigned.apk "$RUNNER_TEMP/aligned.apk"
+            "$BT/apksigner" sign --ks "$RUNNER_TEMP/release.jks" --ks-key-alias card-tracker \
+              --ks-pass "file:$RUNNER_TEMP/release.pass" \
+              --out Card-Tracker.apk "$RUNNER_TEMP/aligned.apk"
+            "$BT/apksigner" verify --print-certs Card-Tracker.apk
+          else
+            cp android/app/build/outputs/apk/debug/app-debug.apk Card-Tracker.apk
+          fi
       - uses: softprops/action-gh-release@v2
         with:
           files: Card-Tracker.apk

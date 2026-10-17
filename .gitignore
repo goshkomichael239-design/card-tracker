@@ -28,3 +28,8 @@ design-source/
 # The Android project and the built APK (made by tools/build-apk.bat)
 android/
 *.apk
+
+# Signing keys must never get into the project
+*.jks
+*.keystore
+*.pass
