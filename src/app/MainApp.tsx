@@ -389,6 +389,8 @@ const MainApp: React.FC = () => {
   const unfoldFile = () => {
     setIsFileFolded(false);
     setFoldedByWork(false);
+    // The count of page turns starts again.
+    pagedAtRef.current = [];
     playSound('rustle', { volume: 0.5 });
   };
   const navCards = useMemo(
@@ -686,27 +688,30 @@ const MainApp: React.FC = () => {
   );
 
   const moveActiveCard = useCallback(
-    (direction: -1 | 1) => {
+    (direction: -1 | 1, isFromFile = false) => {
       if (navCards.length <= 1) {
         return;
       }
 
-      // The second page turn within a few seconds: the file folds away.
-      const now = Date.now();
+      // The second page turn within a few seconds: the file folds away (but
+      // not when it is the file itself being turned: someone is using it).
+      if (!isFromFile) {
+        const now = Date.now();
 
-      pagedAtRef.current = [
-        ...pagedAtRef.current.filter((at) => now - at < 6000),
-        now,
-      ];
+        pagedAtRef.current = [
+          ...pagedAtRef.current.filter((at) => now - at < 6000),
+          now,
+        ];
 
-      if (pagedAtRef.current.length >= 2) {
-        setIsFileFolded((already) => {
-          if (!already) {
-            playSound('rustle', { volume: 0.5 });
-          }
+        if (pagedAtRef.current.length >= 2) {
+          setIsFileFolded((already) => {
+            if (!already) {
+              playSound('rustle', { volume: 0.5 });
+            }
 
-          return true;
-        });
+            return true;
+          });
+        }
       }
 
       const currentIndex = navCards.findIndex(
@@ -728,6 +733,17 @@ const MainApp: React.FC = () => {
 
   const handlePreviousCard = useCallback(
     () => moveActiveCard(-1),
+    [moveActiveCard],
+  );
+
+  // The same turns made through the card file itself (its wheel): they do not
+  // fold it.
+  const handleNextFromFile = useCallback(
+    () => moveActiveCard(1, true),
+    [moveActiveCard],
+  );
+  const handlePreviousFromFile = useCallback(
+    () => moveActiveCard(-1, true),
     [moveActiveCard],
   );
 
@@ -1998,8 +2014,8 @@ const MainApp: React.FC = () => {
             onSelectCard={(cardId, direction) =>
               handleSelectCard(cardId, direction ? { direction } : undefined)
             }
-            onNextCard={handleNextCard}
-            onPreviousCard={handlePreviousCard}
+            onNextCard={handleNextFromFile}
+            onPreviousCard={handlePreviousFromFile}
             isPhone={isPhone}
             viewportHeight={viewportHeight}
             overdueIds={

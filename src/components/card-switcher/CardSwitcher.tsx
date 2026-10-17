@@ -442,6 +442,9 @@ export const CardSwitcher: React.FC<CardSwitcherProps> = ({
             style={{
               height: listHeight,
               overscrollBehavior: 'contain',
+              // The edges' own stacking order stays inside the list, so the
+              // handle of a folded file is always above them.
+              isolation: 'isolate',
               // Folded, the list only shows the card on the table; the
               // handle over it takes the touches.
               touchAction: isFolded ? 'none' : 'pan-y',
