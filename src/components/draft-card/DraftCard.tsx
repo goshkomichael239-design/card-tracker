@@ -5,7 +5,6 @@ import cardboardTexture from '../../assets/cardboard.svg';
 import {
   CARD_SHADOW,
   DRAFT_SHADOW,
-  GHOST_SETTINGS,
   GHOST_SHADOW,
   PHYSICAL_SPRING,
   type CardKind,
@@ -88,6 +87,38 @@ export interface DraftCardProps {
   onNext: () => void;
 }
 
+/**
+ * A clean sheet lies under the working stack (its tab is what peeks out). Pulled
+ * out, it slides from under the cards up and to the left, clear of them, and
+ * then lays itself on top of the stack, straight. Until it is on top it is
+ * below the cards (z-index 10, the stack is 14 and up).
+ */
+const SHEET_START = { x: 0, y: -16, rotate: -2, scale: 1, opacity: 1, zIndex: 10 };
+const SHEET_SLIDE_OUT = {
+  x: [0, -38, 0],
+  y: [-16, -54, 0],
+  rotate: [-2, -7, 0],
+  scale: 1,
+  opacity: 1,
+  zIndex: [10, 10, 40, 40],
+};
+const SHEET_COMMIT = {
+  x: 0,
+  y: 4,
+  rotate: 0,
+  scale: 0.988,
+  opacity: 1,
+  zIndex: 40,
+};
+const SHEET_SLIDE_TRANSITION = {
+  duration: 0.82,
+  ease: [0.22, 1, 0.36, 1] as [number, number, number, number],
+  x: { times: [0, 0.52, 1] },
+  y: { times: [0, 0.52, 1] },
+  rotate: { times: [0, 0.52, 1] },
+  zIndex: { times: [0, 0.52, 0.54, 1], ease: 'linear' as const },
+};
+
 export function DraftCard(props: DraftCardProps) {
   const disabled = props.creationState === 'committing';
   const config = INITIAL_TASK_CARD_V2_CONFIG;
@@ -96,37 +127,16 @@ export function DraftCard(props: DraftCardProps) {
     <motion.form
       key={`draft-${props.creationCycle}`}
       onSubmit={props.onSubmit}
-      initial={{
-        x: GHOST_SETTINGS.x,
-        y: GHOST_SETTINGS.y,
-        rotate: GHOST_SETTINGS.rotate,
-        scale: GHOST_SETTINGS.scale,
-        opacity: GHOST_SETTINGS.opacity,
-        filter: 'saturate(0.45) brightness(0.96)',
-      }}
-      animate={
-        props.creationState === 'committing'
-          ? {
-              x: 0,
-              y: 4,
-              rotate: 0,
-              scale: 0.988,
-              opacity: 1,
-              filter: 'saturate(1) brightness(1)',
-            }
-          : {
-              x: 0,
-              y: 0,
-              rotate: 0,
-              scale: 1,
-              opacity: 1,
-              filter: 'saturate(1) brightness(1)',
-            }
-      }
+      initial={SHEET_START}
+      animate={props.creationState === 'committing' ? SHEET_COMMIT : SHEET_SLIDE_OUT}
       exit={{ opacity: 0, scale: 0.985 }}
-      transition={PHYSICAL_SPRING}
+      transition={
+        props.creationState === 'committing'
+          ? PHYSICAL_SPRING
+          : SHEET_SLIDE_TRANSITION
+      }
       className="absolute inset-0"
-      style={{ zIndex: 40, transformOrigin: 'center center' }}
+      style={{ transformOrigin: 'center center' }}
     >
       {/* The cast shadow has its own layer: the paper above is cut along the
           crease of the folded corner, which would clip it. */}
@@ -174,6 +184,7 @@ export function DraftCard(props: DraftCardProps) {
         border: '1px solid rgba(91,76,59,0.16)',
       }}
     >
+      <div className="draft-content-in flex min-h-0 flex-1 flex-col">
       <DraftCardHeader
         palette={props.palette}
         selectedKind={props.selectedKind}
@@ -287,6 +298,7 @@ export function DraftCard(props: DraftCardProps) {
             />
           </motion.div>
         </AnimatePresence>
+      </div>
       </div>
       </motion.div>
 

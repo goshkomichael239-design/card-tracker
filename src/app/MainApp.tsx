@@ -10,11 +10,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import cardboardTexture from '../assets/cardboard.svg';
 
 import {
-  CARD_RADIUS,
-  GHOST_SETTINGS,
-  GHOST_SHADOW,
   getCardPalette,
-  PALETTES,
   PHYSICAL_SPRING,
   type VisualCard,
 } from './cardTheme';
@@ -2266,154 +2262,69 @@ const MainApp: React.FC = () => {
             />
           )}
 
+          {/* Under the working stack lies a clean sheet; only its little tab
+              with a plus peeks out above the top edge. Pressed, the sheet slides
+              out from under the cards (see DraftCard). */}
           <AnimatePresence initial={false}>
             {draft.creationState === 'idle' && (
-              <motion.div
-                key={`ghost-border-${draft.creationCycle}`}
-                initial={{
-                  x: GHOST_SETTINGS.x,
-                  y: GHOST_SETTINGS.y,
-                  rotate: GHOST_SETTINGS.rotate,
-                  scale: GHOST_SETTINGS.scale,
-                  opacity: 0,
+              <motion.button
+                key={`add-tab-${draft.creationCycle}`}
+                type="button"
+                onClick={() => {
+                  if (draft.startCreating()) {
+                    setIsGhostHovered(false);
+                  }
                 }}
-                animate={{
-                  x: GHOST_SETTINGS.x,
-                  y: GHOST_SETTINGS.y,
-                  rotate: GHOST_SETTINGS.rotate,
-                  scale: GHOST_SETTINGS.scale,
-                  opacity: 1,
-                }}
-                exit={{ opacity: 0 }}
+                onHoverStart={() => setIsGhostHovered(true)}
+                onHoverEnd={() => setIsGhostHovered(false)}
+                onFocus={() => setIsGhostHovered(true)}
+                onBlur={() => setIsGhostHovered(false)}
+                onTouchStart={() => undefined}
+                initial={{ y: 22, opacity: 0 }}
+                animate={{ y: isGhostHovered ? -4 : 0, opacity: 1 }}
+                exit={{ y: 14, opacity: 0, transition: { duration: 0.18 } }}
                 transition={PHYSICAL_SPRING}
-                className="absolute inset-0"
+                aria-label={t('Добавить карту')}
+                title={t('Добавить карту')}
+                className="absolute cursor-pointer border-0 p-0"
                 style={{
-                  zIndex: 13,
-                  pointerEvents: 'none',
-                  borderRadius: `${CARD_RADIUS}px`,
-                  border: '1.7px dashed rgba(239,232,216,1)',
-                  boxSizing: 'border-box',
-                  filter: isGhostHovered
-                    ? 'brightness(1.14) drop-shadow(0 1px 0 rgba(0,0,0,0.3))'
-                    : 'brightness(1) drop-shadow(0 1px 0 rgba(0,0,0,0.3))',
-                  transformOrigin: 'center center',
+                  zIndex: 10,
+                  left: '57%',
+                  top: -31,
+                  width: 64,
+                  height: 48,
+                  rotate: -3,
+                  transformOrigin: 'bottom center',
+                  borderRadius: '11px 11px 0 0',
+                  backgroundColor: INITIAL_TASK_CARD_V2_CONFIG.paperTint,
+                  backgroundImage: `linear-gradient(180deg, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0) 62%), url(${cardboardTexture})`,
+                  backgroundSize: '100% 100%, cover',
+                  backgroundBlendMode: 'normal, multiply',
+                  boxShadow:
+                    'inset 0 1px 0 rgba(255,255,255,0.9), inset 0 0 0 1px rgba(91,76,59,0.2), 2px 3px 6px rgba(0,0,0,0.4)',
                 }}
-              />
+              >
+                {/* A plus pressed into the paper: ink with a light edge below. */}
+                <span
+                  className="absolute left-0 right-0 select-none text-center font-serif font-medium leading-none"
+                  style={{
+                    top: 6,
+                    fontSize: 25,
+                    color: 'rgba(70,56,40,0.72)',
+                    textShadow:
+                      '0 1px 0 rgba(255,255,255,0.9), 0 -1px 0 rgba(0,0,0,0.22)',
+                  }}
+                  aria-hidden="true"
+                >
+                  +
+                </span>
+              </motion.button>
             )}
           </AnimatePresence>
 
           <AnimatePresence initial={false} mode="sync">
-            {draft.creationState === 'idle' ? (
-              <motion.div
-                key={`ghost-${draft.creationCycle}`}
-                initial={{
-                  opacity: 0,
-                  x: GHOST_SETTINGS.x,
-                  y: GHOST_SETTINGS.y,
-                  rotate: GHOST_SETTINGS.rotate,
-                  scale: GHOST_SETTINGS.scale,
-                }}
-                animate={{
-                  opacity: 1,
-                  x: GHOST_SETTINGS.x,
-                  y: GHOST_SETTINGS.y,
-                  rotate: GHOST_SETTINGS.rotate,
-                  scale: GHOST_SETTINGS.scale,
-                }}
-                exit={{ opacity: 0 }}
-                transition={PHYSICAL_SPRING}
-                onHoverStart={() => setIsGhostHovered(true)}
-                onHoverEnd={() => setIsGhostHovered(false)}
-                className="absolute inset-0"
-                style={{
-                  zIndex: 10,
-                  transformOrigin: 'center center',
-                }}
-              >
-                <motion.div
-                  className="absolute inset-0 overflow-hidden"
-                  animate={{
-                    opacity: isGhostHovered
-                      ? Math.min(0.52, GHOST_SETTINGS.opacity + 0.14)
-                      : GHOST_SETTINGS.opacity,
-                    filter: isGhostHovered
-                      ? 'saturate(0.72) brightness(1.05)'
-                      : 'saturate(0.42) brightness(0.94)',
-                    boxShadow: isGhostHovered
-                      ? `
-                          12px 20px 38px rgba(0,0,0,0.28),
-                          inset 2px 2px 5px rgba(255,255,255,0.24),
-                          inset -2px -2px 5px rgba(0,0,0,0.15)
-                        `
-                      : GHOST_SHADOW,
-                  }}
-                  transition={{ duration: 0.24 }}
-                  style={{
-                    borderRadius: `${CARD_RADIUS}px`,
-                    backgroundColor: PALETTES.none.paper,
-                    backgroundImage: `url(${cardboardTexture})`,
-                    backgroundPosition: 'center',
-                    backgroundSize: 'cover',
-                    backgroundBlendMode: 'multiply',
-                  }}
-                />
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (draft.startCreating()) {
-                      setIsGhostHovered(false);
-                    }
-                  }}
-                  onFocus={() => setIsGhostHovered(true)}
-                  onBlur={() => setIsGhostHovered(false)}
-                  className="absolute inset-0 cursor-pointer border-0 bg-transparent p-0"
-                  aria-label={t('Добавить карту')}
-                >
-                  <motion.span
-                    animate={{
-                      opacity: isGhostHovered ? 1 : 0.46,
-                      scale: isGhostHovered ? 1.015 : 1,
-                    }}
-                    transition={{ duration: 0.24 }}
-                    className="absolute right-[18px] top-[13px] flex select-none items-center gap-2 whitespace-nowrap text-left"
-                  >
-                    {/* Stamped into the ghost sheet: a dark edge up-left and a
-                        light one down-right, as before. The ink itself is light
-                        because the ghost is a translucent sheet over the dark
-                        table, where dark ink on it disappears. Sits at the right
-                        end of the ghost's top edge, where most of it sticks out
-                        above the card. */}
-                    <span
-                      className="font-serif text-[24px] font-medium leading-none"
-                      style={{
-                        color: 'rgba(214,205,186,0.8)',
-                        textShadow: `
-                          -1px -1px 1px rgba(0,0,0,0.72),
-                          1px 1px 1px rgba(255,255,255,0.42)
-                        `,
-                      }}
-                    >
-                      +
-                    </span>
-
-                    <span
-                      className="font-mono text-[12.5px] font-bold uppercase leading-none tracking-[0.16em]"
-                      style={{
-                        color: 'rgba(214,205,186,0.78)',
-                        textShadow: `
-                          -1px -1px 1px rgba(0,0,0,0.72),
-                          1px 1px 1px rgba(255,255,255,0.4)
-                        `,
-                      }}
-                    >{t('Добавить карту')}</span>
-                  </motion.span>
-                </button>
-              </motion.div>
-            ) : (
-              <div
-                className="absolute inset-0 z-40"
-              >
+            {draft.creationState !== 'idle' && (
+              <div key="draft" className="absolute inset-0">
                 <DraftCard {...draft.draftCardProps} />
               </div>
             )}

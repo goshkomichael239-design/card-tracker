@@ -710,6 +710,21 @@ body {
   transition: height 520ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
+/* What is written on a new sheet shows once it has been pulled out from under
+   the cards (the slide takes about half a second). */
+@keyframes draft-content-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.draft-content-in {
+  animation: draft-content-in 260ms ease-out 400ms both;
+}
+
 /* --- Settings lit onto the cloth --------------------------------------- */
 
 /* While the settings are open everything on the table fades away; only the
